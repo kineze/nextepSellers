@@ -40,8 +40,8 @@ class GenaralController extends Controller
                 } else{
                     return redirect()->route('adminDashboard');
                 }
-        }else{
-            return redirect()->route('login');
+        } else {
+            return view('site.home');
         }
     }
 

@@ -1,137 +1,142 @@
 <template>
-  <div class="flex flex-col lg:flex-row w-full gap-3 p-3">
-    <!-- Left Column: Roles -->
-    <div class="w-full lg:w-4/12 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-      <h2 class="text-lg font-bold mb-4 dark:text-white flex items-center gap-2">
-        <i class="fas fa-user-shield text-cyan-500"></i>
-        Roles
-      </h2>
-
-      <!-- Floating Label Input + Add -->
-      <div class="flex items-center gap-2 mb-6">
-         <div class="relative w-full">
-          <input
-            type="text"
-            id="role_name"
-            v-model="roleForm.name"
-            class="block px-2.5 pb-2.5 pt-4 w-full text-sm text-gray-900 bg-transparent rounded-lg border border-gray-300 appearance-none dark:text-white dark:border-gray-600 dark:focus:border-cyan-500 focus:outline-none focus:ring-0 focus:border-cyan-600 peer"
-            placeholder=" "
-          />
-          <label
-            for="role_name"
-            class="absolute text-sm text-gray-500 dark:text-gray-400 duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-white dark:bg-gray-800 px-2
-              peer-focus:px-2 peer-focus:text-cyan-600 peer-focus:dark:text-cyan-500
-              peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2
-              peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4"
-          >
-            Create Role
-          </label>
-        </div>
-        <button
-          @click="saveRole"
-          class="bg-gradient-to-tr uppercase text-sm font-bold from-cyan-600 to-cyan-400 text-white px-4 py-3 rounded-lg hover:opacity-90 transition whitespace-nowrap"
-        >
-          + Create
-        </button>
-      </div>
-
-      <!-- Role Radio List -->
-      <ul class="grid w-full gap-4">
-        <li v-for="role in roles" :key="role.id">
-          <input
-            type="radio"
-            :id="'role-' + role.id"
-            name="role"
-            :value="role.id"
-            v-model="selectedRoleId"
-            class="hidden peer"
-            @change="selectRole(role)"
-          />
-          <label
-            :for="'role-' + role.id"
-            class="inline-flex items-center justify-between w-full p-5 text-gray-500 bg-white border border-gray-200 rounded-lg cursor-pointer
-                   dark:hover:text-gray-300 dark:border-gray-700 dark:peer-checked:text-cyan-500
-                   peer-checked:border-cyan-600 dark:peer-checked:border-cyan-600 peer-checked:text-cyan-600
-                   hover:text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:bg-gray-800 dark:hover:bg-gray-700 transition"
-          >
-            <div>
-              <div class="text-lg font-semibold capitalize">{{ role.name }}</div>
-              <div class="text-sm">System Role</div>
-            </div>
-            <svg class="w-5 h-5 ms-3 rtl:rotate-180" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 10">
-              <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 5h12m0 0L9 1m4 4L9 9"/>
-            </svg>
-          </label>
-        </li>
-      </ul>
-
-      <!-- Delete Role -->
-      <div v-if="selectedRole" class="mt-5">
-        <button
-          @click="confirmDelete(selectedRole)"
-          class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition w-full"
-        >
-          Delete "{{ selectedRole.name }}"
-        </button>
-      </div>
+  <div class="role-page p-6 w-full">
+    <div class="mb-6">
+      <p class="text-[0.7rem] uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Settings</p>
+      <h2 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Roles & Permissions</h2>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-300">
+        Define access levels and toggle permissions per role.
+      </p>
     </div>
 
-    <!-- Right Column: Permissions -->
-    <div v-if="selectedRole" class="w-full lg:w-8/12 bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-      <h2 class="text-lg font-bold mb-6 dark:text-white flex items-center gap-2">
-        <i class="fas fa-lock text-cyan-500"></i>
-        Permissions for "{{ selectedRole.name }}"
-      </h2>
+    <div class="grid gap-4 lg:grid-cols-3">
+      <!-- Left Column: Roles -->
+      <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900">
+            <i class="fas fa-user-shield"></i>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">Roles</p>
+            <p class="text-xs text-slate-500 dark:text-slate-300">Create and manage role types</p>
+          </div>
+        </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div
-          v-for="perm in permissions"
-          :key="perm.id"
-          class="flex items-center justify-between p-4 border border-gray-200 rounded-lg dark:border-gray-700 dark:bg-gray-800 bg-white hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-        >
-          <span class="text-sm font-medium text-gray-800 dark:text-gray-200">
-            {{ perm.name }}
-          </span>
-
-          <!-- Custom cyan Toggle -->
-          <label class="inline-flex items-center cursor-pointer">
+        <!-- Input + Add -->
+        <div class="mt-5 flex items-center gap-2">
+          <div class="relative w-full">
             <input
-              type="checkbox"
-              class="sr-only peer"
-              :value="perm.name"
-              v-model="permissionState[perm.name]"
-              @change="togglePermission(perm)"
+              type="text"
+              id="role_name"
+              v-model="roleForm.name"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-900/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:focus:border-slate-400"
+              placeholder="Create role..."
             />
-            <div
-              class="relative w-11 h-6 rounded-full bg-gray-200 dark:bg-gray-700 transition-all duration-300
-                     after:content-[''] after:absolute after:top-0.5 after:start-[2px]
-                     after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow-md after:transition-all
-                     peer-focus:ring-4 peer-focus:ring-cyan-300 dark:peer-focus:ring-cyan-800
-                     peer-checked:bg-cyan-600 dark:peer-checked:bg-cyan-600
-                     peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
-            ></div>
-          </label>
+          </div>
+          <button
+            @click="saveRole"
+            class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/25 transition hover:bg-black dark:bg-white dark:text-slate-900"
+          >
+            Create
+          </button>
+        </div>
+
+        <!-- Role Radio List -->
+        <ul class="mt-5 grid w-full gap-3">
+          <li v-for="role in roles" :key="role.id">
+            <input
+              type="radio"
+              :id="'role-' + role.id"
+              name="role"
+              :value="role.id"
+              v-model="selectedRoleId"
+              class="hidden peer"
+              @change="selectRole(role)"
+            />
+            <label
+              :for="'role-' + role.id"
+              class="role-option flex items-center justify-between w-full rounded-xl border border-transparent bg-white/70 px-4 py-3 text-slate-600 cursor-pointer
+                     dark:bg-slate-800/70 dark:text-slate-300
+                     hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            >
+              <div class=" outline-none border-none ">
+                <div class="text-sm font-semibold capitalize text-slate-900 dark:text-white">{{ role.name }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">System Role</div>
+              </div>
+              <span class="text-xs text-slate-400">Select</span>
+            </label>
+          </li>
+        </ul>
+
+        <!-- Delete Role -->
+        <div v-if="selectedRole" class="mt-5">
+          <button
+            @click="confirmDelete(selectedRole)"
+            class="w-full rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white hover:bg-rose-700"
+          >
+            Delete "{{ selectedRole.name }}"
+          </button>
         </div>
       </div>
-    </div>
 
-    <!-- Empty State -->
-    <div v-else class="w-full lg:w-8/12 flex items-center justify-center text-gray-500 dark:text-gray-300">
-      <p class="text-lg italic">Select a role to view permissions</p>
+      <!-- Right Column: Permissions -->
+      <div v-if="selectedRole" class="lg:col-span-2 rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <p class="text-sm font-semibold text-slate-900 dark:text-white">Permissions</p>
+            <p class="text-xs text-slate-500 dark:text-slate-300">Role: {{ selectedRole.name }}</p>
+          </div>
+          <div class="text-[0.7rem] uppercase tracking-[0.3em] text-slate-400 dark:text-slate-500">Access</div>
+        </div>
+
+        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div
+            v-for="perm in permissions"
+            :key="perm.id"
+            class="perm-card flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-700 dark:bg-slate-800"
+          >
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">
+              {{ perm.name }}
+            </span>
+
+            <label class="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                class="sr-only peer"
+                :value="perm.name"
+                v-model="permissionState[perm.name]"
+                @change="togglePermission(perm)"
+              />
+              <div
+                class="relative w-11 h-6 rounded-full bg-slate-200 dark:bg-slate-700 transition-all duration-300
+                       after:content-[''] after:absolute after:top-0.5 after:start-[2px]
+                       after:w-5 after:h-5 after:bg-white after:rounded-full after:shadow-md after:transition-all
+                       peer-focus:ring-4 peer-focus:ring-slate-300 dark:peer-focus:ring-slate-800
+                       peer-checked:bg-slate-900 dark:peer-checked:bg-white
+                       peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full"
+              ></div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div v-else class="lg:col-span-2 rounded-2xl border border-dashed border-slate-300/60 bg-white/60 p-6 text-center text-slate-500 dark:border-slate-700/60 dark:bg-slate-900/40 dark:text-slate-300">
+        <p class="text-sm">Select a role to view permissions.</p>
+      </div>
     </div>
 
     <!-- Delete Modal -->
-    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xl w-80 text-center">
-        <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-2">Confirm Delete</h3>
-        <p class="text-gray-500 dark:text-gray-300 mb-4">
+    <div v-if="showDeleteModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center">
+      <div class="bg-white/95 dark:bg-slate-900/95 p-6 rounded-2xl shadow-2xl w-80 text-center border border-slate-200/70 dark:border-slate-800/70">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Confirm Delete</h3>
+        <p class="text-slate-500 dark:text-slate-300 mb-4">
           Are you sure you want to delete <b>{{ roleToDelete?.name }}</b>?
         </p>
         <div class="flex justify-center gap-3">
-          <button @click="deleteRole" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:opacity-90">Delete</button>
+          <button @click="deleteRole" class="rounded-xl bg-rose-600 px-4 py-2 text-white hover:bg-rose-700">Delete</button>
           <button
             @click="showDeleteModal = false"
-            class="border border-gray-300 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            class="rounded-xl border border-slate-200 px-4 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Cancel
           </button>
@@ -235,6 +240,53 @@ onMounted(() => {
 
 <style scoped>
 input[type='radio']:checked + label {
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  box-shadow: none;
+}
+.role-option {
+  position: relative;
+}
+.role-option::after {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 0.75rem;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+input[type='radio']:checked + .role-option {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: transparent;
+  color: #0f172a;
+}
+input[type='radio']:checked + .role-option::after {
+  border-color: transparent;
+}
+.dark input[type='radio']:checked + .role-option {
+  background: rgba(56, 189, 248, 0.18);
+  border-color: transparent;
+  color: #ffffff;
+}
+.dark input[type='radio']:checked + .role-option::after {
+  border-color: transparent;
+}
+.dark .role-option {
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+.dark .perm-card {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+.role-page {
+  background:
+    radial-gradient(800px 400px at 10% 0%, rgba(59, 130, 246, 0.12), transparent 60%),
+    radial-gradient(700px 500px at 90% 20%, rgba(56, 189, 248, 0.1), transparent 55%),
+    linear-gradient(180deg, rgba(248, 250, 252, 0.85), rgba(255, 255, 255, 0.95));
+  border-radius: 1.5rem;
+}
+.dark .role-page {
+  background:
+    radial-gradient(800px 400px at 10% 0%, rgba(56, 189, 248, 0.18), transparent 60%),
+    radial-gradient(700px 500px at 90% 20%, rgba(14, 116, 144, 0.18), transparent 55%),
+    linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.96));
 }
 </style>

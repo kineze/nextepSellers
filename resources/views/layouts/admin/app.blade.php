@@ -21,7 +21,7 @@
         @include('dashboards.marketer.includes.sidebar')
     @endrole
        
-    <main  id="mainContent" class="relative h-full   duration-200 ease-soft-in-out z-50 rounded-xl">
+    <main  id="mainContent" class="content-gradient relative h-full duration-200 ease-soft-in-out z-50 rounded-xl">
 
         <div id="app">
         @include('dashboards.admin.includes.nav')

@@ -322,9 +322,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const THEME_STORAGE_KEY = 'sidebarTheme';
   const sidebar = document.getElementById('sidebar');
   const cfg = (window.SidebarThemeConfig && window.SidebarThemeConfig.logos) || {};
-  const lightLogo = cfg.light || '/assets/img/ceylon-bloom-icon.webp';
-  const darkLogo  = cfg.dark  || '/assets/img/ceylon-bloom-icon.webp';
-  const iconLogo  = cfg.icon  || '/assets/img/ceylon-bloom-icon.webp';
+  const lightLogo = cfg.light || '/assets/img/nextep-logo.webp';
+  const darkLogo  = cfg.dark  || '/assets/img/nextep-logo-dark.webp';
+  const iconLogo  = cfg.icon  || '/assets/img/nextep-icon.webp';
 
 
   // If you have alternate icon versions you can extend config.

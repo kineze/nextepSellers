@@ -1,36 +1,37 @@
-<aside id="sidebar" class="fixed top-0 left-0 h-full overflow-y-auto w-60 bg-white dark:bg-slate-900 shadow-xl
+<aside id="sidebar" class="sidebar-modern fixed top-0 left-0 h-full overflow-y-auto w-60 bg-white dark:bg-slate-900 shadow-xl
               transition-all duration-300 z-[100] overflow-hidden
               transform -translate-x-full lg:translate-x-0">
 
       <!-- Top Brand -->
-      <div class="flex items-center justify-center px-3 h-20 border-b border-stone-500 dark:border-stone-700">
-        <a href="{{ route('setDashboard') }}" class="relative flex items-center">
+      <div class="sidebar-brand flex items-center justify-center px-3 h-20">
+        <a href="{{ route('setDashboard') }}" class="relative flex items-center gap-2">
           <!-- Expanded: Light Logo -->
           <img
-            src="/assets/img/ceylon-bloom-icon.webp"
+            src="/assets/img/nextep-logo.webp"
             alt="Nextep"
             class="sidebar-logo sidebar-logo-full block h-12 w-auto dark:hidden transition-opacity duration-200"
             loading="lazy"
           />
           <!-- Expanded: Dark Logo -->
           <img
-            src="/assets/img/ceylon-bloom-icon.webp"
+            src="/assets/img/nextep-logo-dark.webp"
             alt="Nextep"
             class="sidebar-logo sidebar-logo-full hidden dark:block h-12 w-auto transition-opacity duration-200"
             loading="lazy"
           />
           <!-- Mini: Icon -->
           <img
-            src="/assets/img/ceylon-bloom-icon.webp"
+            src="/assets/img/nextep-icon.webp"
             alt="Nextep Icon"
             class="sidebar-logo sidebar-logo-icon hidden h-9 w-9 transition-opacity duration-200"
             loading="lazy"
           />
+          <span class="sidebar-badge sidebar-label">Ops</span>
         </a>
       </div>
 
       <!-- Nav -->
-      <nav class="mt-4 space-y-1 px-3">
+      <nav class="mt-4 space-y-2 px-3">
 
         @can('Manage Inventory')
         <!-- Call Center -->
@@ -110,5 +111,3 @@
   </div>
   <div id="subSidebarLinks" class="py-2 max-h-[calc(100vh-60px)] overflow-y-auto"></div>
 </div>
-
-

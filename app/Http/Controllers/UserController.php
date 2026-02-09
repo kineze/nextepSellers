@@ -29,6 +29,8 @@ class UserController extends Controller
     {
         $search = $request->get('search');
         $role = $request->get('role');
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = max(1, min($perPage, 100));
 
         $query = User::with('roles');
 
@@ -43,8 +45,18 @@ class UserController extends Controller
             $query->whereHas('roles', fn($q) => $q->where('name', $role));
         }
 
+        $users = $query->latest()->paginate($perPage);
+
         return response()->json([
-            'users' => $query->latest()->get(),
+            'users' => $users->items(),
+            'pagination' => [
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'per_page' => $users->perPage(),
+                'total' => $users->total(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+            ],
             'roles' => Role::all(['id', 'name']),
         ]);
     }

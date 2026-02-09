@@ -2,94 +2,122 @@
 
 @section('content')
 
-<style>
-.otp-input {
-  background-color: #213a5b00; /* Tailwind gray-800 */
-  color: #ffffff;           /* White text */
-  border: 1px solid #ffd92e; /* Tailwind gray-700 */
-}
-
-.otp-input:focus {
-  outline: none;
-  border-color: #ffd92e;      /* Emerald-500 border on focus */
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.5);
-}
-</style>
-
-<div class="w-full h-screen flex flex-col bg-black items-center justify-center bg-cover bg-center">
-
-    <video autoplay muted loop playsinline class="absolute top-0 left-0 w-full h-full object-cover">
+<div class="relative min-h-screen w-full overflow-hidden bg-slate-950 text-white">
+    <video autoplay muted loop playsinline class="absolute inset-0 h-full w-full object-cover opacity-40">
         <source src="{{ asset('assets/videos/login-bg.mp4') }}" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 
-    <div class="absolute top-0 left-0 bg-black/10 w-full h-full"></div>
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-950/90 via-slate-900/70 to-black/90"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.2),_transparent_45%)]"></div>
 
-    <div class="lg:w-4/12 xl:w-4/12 md:w-7/12 max-w-md bg-black/30  backdrop-blur-md rounded-2xl dark:border-neutral-700 w-full dark:shadow-none p-6 shadow-stone-300 dark:shadow-neutral-800">
-
-        <div class="w-full flex p-6 items-center justify-center">
-            <a href="{{url('/')}}">
-            <img src="{{asset('assets/img/ceylon-bloom-logo-text.webp')}}" alt="" class="dark:hidden w-40">
-            <img src="{{asset('assets/img/ceylon-bloom-logo-text.webp')}}" alt="" class=" w-40 hidden dark:block">
-            </a>
-        </div>
-
-        <div class="w-full flex px-3 py-6 items-center flex-col justify-center">
-
-                <form method="POST" action="{{ route('login') }}" class="w-full flex gap-4 flex-col py-3">
-                    @csrf
-
-                    @error('email')
-                    <div class="w-full p-3 bg-red-50 rounded-sm">
-                        <p class="text-red-500 text-xs font-bold mt-1">{{ $message }}</p>
-                    </div>
-                    @enderror
-
-                   <div class="relative w-full">
-                        <input type="text" id="email" name="email" value="{{ old('email') }}" required autofocus class="block otp-input rounded-lg px-2.5 pb-2.5 pt-5 w-full text-sm text-zinc-300 bg-[#4a5b71] dark:bg-rose-700 border-0 border-b-2 border-stone-300 appearance-none dark:text-zinc-300 dark:border-stone-600 dark:focus:border-stone-700 focus:outline-none focus:ring-0 focus:border-stone-700 peer pr-10" placeholder=" " />
-                        
-                        <label for="email" class="absolute text-sm text-zinc-300 dark:text-zinc-300 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-2.5 peer-focus:text-zinc-300 peer-focus:dark:text-zinc-300 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Email</label>
-                        
-                        <!-- Font Awesome Email Icon -->
-                        <i class="fa-solid fa-envelope absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-300 dark:text-zinc-300 peer-focus:text-zinc-300"></i>
+    <div class="relative z-10 flex min-h-screen items-center justify-center px-6 py-10">
+        <div class="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/10 bg-white/10 shadow-2xl backdrop-blur-xl">
+            <div class="grid gap-0 lg:grid-cols-2">
+                <div class="flex flex-col justify-between gap-10 px-8 py-10 sm:px-12">
+                    <div class="flex items-center gap-3">
+                        <a href="{{ url('/') }}" class="inline-flex items-center gap-3">
+                            <img src="{{ asset('assets/img/nextep-logo.webp') }}" alt="Nextep" class="h-10 w-auto dark:hidden">
+                            <img src="{{ asset('assets/img/nextep-logo-dark.webp') }}" alt="Nextep" class="h-10 w-auto hidden dark:block">
+                        </a>
                     </div>
 
-                    <div class="relative w-full">
-                        <input type="password" id="password" name="password"  required class="block rounded-lg px-2.5 otp-input pb-2.5 pt-5 w-full text-sm text-stone-900 bg-stone-50 dark:bg-rose-700 border-0 border-b-2 border-stone-300 appearance-none dark:text-zinc-300 dark:border-stone-600 dark:focus:border-stone-700 focus:outline-none focus:ring-0 focus:border-stone-700 peer pr-10" placeholder=" " />
-                        
-                        <label for="password" class="absolute text-sm text-zinc-300 dark:text-zinc-300 duration-300 transform -translate-y-4 scale-75 top-4 z-10 origin-[0] start-2.5 peer-focus:text-zinc-300 peer-focus:dark:text-zinc-300 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-4">Password</label>
-                        
-                        <!-- Password Toggle Icon -->
-                        <i id="togglePassword" class="fa-solid fa-eye absolute right-3 top-1/2 transform -translate-y-1/2 text-zinc-300 dark:text-zinc-300 cursor-pointer"></i>
+                    <div>
+                        <p class="text-sm uppercase tracking-[0.3em] text-white/60">Welcome Back</p>
+                        <h1 class="mt-3 text-3xl font-semibold leading-tight text-white sm:text-4xl">
+                            Sign in to manage your workspace.
+                        </h1>
+                        <p class="mt-4 text-sm text-white/70">
+                            Secure access to orders, inventory, and team updates in one place.
+                        </p>
                     </div>
 
-                    <div class="block mt-6">
-                        <label for="remember_me" class="flex items-center">
-                            <x-checkbox id="remember_me" name="remember" />
-                            <span class="ms-2 text-sm text-amber-50 dark:text-amber-400">{{ __('Remember me') }}</span>
-                        </label>
+                    <div class="flex items-center gap-3 text-xs text-white/60">
+                        <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                        Encrypted sessions and account protection enabled.
+                    </div>
+                </div>
+
+                <div class="bg-white px-8 py-10 text-slate-900 sm:px-12">
+                    <div>
+                        <h2 class="text-2xl font-semibold">Log in</h2>
+                        <p class="mt-2 text-sm text-slate-500">Use your email and password to continue.</p>
                     </div>
 
-                    <div class="flex items-center justify-end mt-6">
-                        {{-- @if (Route::has('password.request'))
-                            <a class="underline text-sm text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-stone-500 dark:focus:ring-offset-stone-800" href="{{ route('password.request') }}">
-                                {{ __('Forgot your password?') }}
-                            </a>
-                        @endif --}}
-        
+                    <form method="POST" action="{{ route('login') }}" class="mt-8 flex w-full flex-col gap-6">
+                        @csrf
+                        @error('email')
+                        <div class="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p class="font-medium">{{ $message }}</p>
+                        </div>
+                        @enderror
 
-                        <button class=" dark:bg-cyan-600 mb-0 text-sm text-zinc-300 py-2 px-4 ml-2 rounded-full shadow-lg flex items-center gap-3 bg-gradient-to-tr from-amber-400 to-yellow-700">
+                        <div>
+                            <label for="email" class="text-sm font-medium text-slate-700">Email</label>
+                            <div class="relative mt-2">
+                                <input
+                                    type="text"
+                                    name="email"
+                                    id="email"
+                                    value="{{ old('email') }}"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                    placeholder="name@company.com"
+                                    required
+                                    autofocus
+                                />
+                                <i class="fa-solid fa-envelope pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            </div>
+                            @error('email')
+                            <p class="mt-2 text-xs font-medium text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label for="password" class="text-sm font-medium text-slate-700">Password</label>
+                            <div class="relative mt-2">
+                                <input
+                                    type="password"
+                                    name="password"
+                                    id="password"
+                                    class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
+                                    placeholder="Enter your password"
+                                    required
+                                />
+                                <i id="togglePassword" class="fa-solid fa-eye absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-700"></i>
+                            </div>
+                            @error('password')
+                            <p class="mt-2 text-xs font-medium text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="flex items-center justify-between text-sm">
+                            <label for="remember_me" class="flex items-center gap-2 text-slate-600">
+                                <x-checkbox id="remember_me" name="remember" />
+                                <span>{{ __('Remember me') }}</span>
+                            </label>
+                            {{-- @if (Route::has('password.request'))
+                                <a class="font-medium text-slate-600 hover:text-slate-900" href="{{ route('password.request') }}">
+                                    {{ __('Forgot your password?') }}
+                                </a>
+                            @endif --}}
+                        </div>
+
+                        <button class="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-black">
                             {{ __('Log in') }}
-
-                            <i class="fa-solid fa-arrow-right"></i>
                         </button>
-                    </div>
-                </form>
+
+                        <p class="text-xs text-slate-500">
+                            Need help? Contact your administrator for access.
+                        </p>
+                    </form>
+                </div>
+            </div>
         </div>
-
     </div>
-
-   
 </div>
 
 @endsection

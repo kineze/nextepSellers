@@ -10,7 +10,7 @@ class GenaralController extends Controller
     public function index(){
 
 
-        return view('site.index');
+        return view('site.home');
     }
 
     public function about(){
@@ -23,6 +23,14 @@ class GenaralController extends Controller
 
 
         return view('site.contact');
+    }
+
+    public function sellerRegistration(){
+        return view('site.seller-registration');
+    }
+
+    public function learnMore(){
+        return view('site.learn-more');
     }
 
     public function home(){

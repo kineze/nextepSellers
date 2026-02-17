@@ -5,3 +5,98 @@
 [x-cloak] {
     display: none;
 }
+
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.theme-comfort {
+    background-color: #fdf6e3 !important;
+    color: #586e75 !important;
+}
+
+body.theme-light {
+    color: #0f172a;
+}
+
+body.theme-dark {
+    color: #e2e8f0;
+}
+
+body.theme-comfort #app {
+    background-color: #fdf6e3 !important;
+}
+
+body.theme-comfort .bg-white {
+    background-color: #eee8d5 !important;
+}
+
+body.theme-comfort .bg-white\/80 {
+    background-color: rgba(238, 232, 213, 0.9) !important;
+}
+
+body.theme-comfort .bg-slate-50,
+body.theme-comfort .bg-sky-50,
+body.theme-comfort .bg-indigo-50,
+body.theme-comfort .bg-cyan-50 {
+    background-color: #f7f0dc !important;
+}
+
+body.theme-comfort .border-slate-200,
+body.theme-comfort .border-slate-200\/70,
+body.theme-comfort .border-sky-200,
+body.theme-comfort .border-indigo-200,
+body.theme-comfort .border-emerald-200 {
+    border-color: #d6cdb6 !important;
+}
+
+body.theme-comfort .text-slate-900,
+body.theme-comfort .text-slate-700,
+body.theme-comfort .text-slate-600,
+body.theme-comfort .text-slate-500 {
+    color: #586e75 !important;
+}
+
+body.theme-comfort .text-sky-700,
+body.theme-comfort .text-sky-600,
+body.theme-comfort .text-indigo-600,
+body.theme-comfort .text-emerald-600 {
+    color: #7c6f64 !important;
+}
+
+body.theme-comfort .bg-gradient-to-b.from-sky-50.via-cyan-50.to-white,
+body.theme-comfort .bg-gradient-to-b.from-sky-50.to-white {
+    background-image: linear-gradient(to bottom, #fdf6e3, #f7f0dc, #eee8d5) !important;
+}
+
+body.theme-comfort .bg-gradient-to-r.from-sky-600.to-cyan-500 {
+    background-image: linear-gradient(to right, #a88959, #8fbc8f) !important;
+}
+
+/* Seller registration comfort-tuned UI */
+body.theme-comfort .reg-shell {
+    background-image: linear-gradient(to bottom, #fdf6e3, #f6efdc, #eee8d5) !important;
+}
+
+body.theme-comfort .reg-card {
+    background: #f7f0dd !important;
+    border-color: #d6cdb6 !important;
+    box-shadow: 0 8px 20px rgba(124, 111, 100, 0.08) !important;
+}
+
+body.theme-comfort .reg-step-dot {
+    background: #e9dcc0 !important;
+    color: #6f5e4b !important;
+}
+
+body.theme-comfort .reg-cta {
+    border-color: #cdbf9f !important;
+    background-image: linear-gradient(to right, #efe5cb, #e3d6b6) !important;
+}

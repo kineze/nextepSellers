@@ -7,15 +7,17 @@ use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
 
 Route::controller(GenaralController::class)->group(function () {
-    Route::get('/index', 'index')->name('index');
+    Route::get('/', 'index')->name('index');
     Route::get('/about', 'about')->name('about');
     Route::get('/contact', 'contact')->name('contact');
-    Route::get('/', 'home')->name('home');
+    Route::get('/home', 'home')->name('home');
     Route::get('/redirect-dashboard', 'dashboardRedirect')->name('dashboardRedirect');
     Route::get('/setdashboard', 'setDashboard')->name('setDashboard');
     Route::get('/dashboard', 'setDashboard')->name('dashboard');
     Route::get('/blocked', 'blocked')->name('blocked');
     Route::get('/privacy-policy', 'privacyPolicy')->name('privacyPolicy');
+    Route::get('/seller-registration', 'sellerRegistration')->name('sellerRegistration');
+    Route::get('/learn-more', 'learnMore')->name('learnMore');
 });
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Dashboard', config('jetstream.auth_session'), 'verified',])->group(function () {

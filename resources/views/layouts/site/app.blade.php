@@ -4,10 +4,13 @@
 @include('site.includes.headerlinks')
 
 <body class="m-0 font-sans antialiased text-slate-600 dark:bg-slate-950 dark:text-white">
+    @php
+        $isLanding = request()->routeIs('index');
+    @endphp
     <div id="app" class="min-h-screen bg-slate-50 dark:bg-slate-950">
         @include('site.includes.nav')
 
-        <main class="mx-auto w-full max-w-6xl px-6 py-10">
+        <main class="mx-auto w-full max-w-6xl px-6">
             @yield('content')
         </main>
 

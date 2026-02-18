@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Brevo\Client\Model\SendSmtpEmail;
 use Brevo\Client\Configuration;
 use Brevo\Client\Api\TransactionalEmailsApi;
 use GuzzleHttp\Client as GuzzleClient;
@@ -63,6 +62,28 @@ class BrevoMailer
                 'name' => $toName,
                 'email' => $toEmail,
                 'password' => $newPassword,
+            ])->render(),
+        ])->successful();
+    }
+
+    public function sendSellerEmailOtp(string $toEmail, string $toName, string $otp): bool
+    {
+        return Http::withHeaders([
+            'api-key' => $this->apiKey,
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
+            'sender' => [
+                'name' => 'nextepSellers',
+                'email' => 'helliumgk@gmail.com',
+            ],
+            'to' => [
+                ['email' => $toEmail, 'name' => $toName],
+            ],
+            'subject' => 'Your Seller Registration Verification Code',
+            'htmlContent' => view('emails.seller-email-otp', [
+                'name' => $toName,
+                'otp' => $otp,
             ])->render(),
         ])->successful();
     }

@@ -118,6 +118,12 @@
                   {{ user.roles[0].name }}
                 </span>
                 <span v-else class="text-slate-400 italic">No Role</span>
+                <span
+                  v-if="user.is_blocked"
+                  class="ml-2 text-[0.65rem] font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-200"
+                >
+                  Blocked
+                </span>
               </td>
               <td class="px-3 py-4 text-right space-x-3">
                 <button @click="editUser(user)" class="btn-icon text-slate-500 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">
@@ -125,6 +131,22 @@
                 </button>
                 <button @click="openPasswordModal(user.id)" class="btn-icon text-amber-500 hover:text-amber-600">
                   <i class="fas fa-key"></i>
+                </button>
+                <button
+                  v-if="!user.is_blocked"
+                  @click="openBlockModal(user)"
+                  class="btn-icon text-orange-500 hover:text-orange-600"
+                  title="Block user"
+                >
+                  <i class="fas fa-user-slash"></i>
+                </button>
+                <button
+                  v-else
+                  @click="openBlockModal(user)"
+                  class="btn-icon text-emerald-500 hover:text-emerald-600"
+                  title="Unblock user"
+                >
+                  <i class="fas fa-user-check"></i>
                 </button>
                 <button @click="openDeleteModal(user.id)" class="btn-icon text-rose-500 hover:text-rose-600">
                   <i class="fas fa-trash-alt"></i>
@@ -335,9 +357,19 @@
           {{ blockAction === 'block' ? 'Block User' : 'Unblock User' }}
         </h3>
 
-        <p class="text-slate-600 dark:text-slate-300 mb-6">
-          Are you sure you want to {{ blockAction }} this user?
+        <p class="text-slate-600 dark:text-slate-300 mb-3">
+          {{ blockAction === 'block'
+            ? 'Please provide a reason for blocking this user. This reason will be sent by email.'
+            : 'Are you sure you want to unblock this user?' }}
         </p>
+
+        <textarea
+          v-if="blockAction === 'block'"
+          v-model="blockReason"
+          rows="4"
+          class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+          placeholder="Enter blocking reason..."
+        ></textarea>
 
         <div class="flex justify-end space-x-3">
           <button
@@ -413,6 +445,7 @@ const passwordResetUserId = ref(null)
 const showBlockModal = ref(false)
 const blockUserId = ref(null)
 const blockAction = ref("block")
+const blockReason = ref("")
 
 let searchTimeout = null
 
@@ -490,19 +523,30 @@ const confirmResetPassword = async () => {
 const openBlockModal = (user) => {
   blockUserId.value = user.id
   blockAction.value = user.is_blocked ? "unblock" : "block"
+  blockReason.value = ""
   showBlockModal.value = true
 }
 
-const confirmBlock = async () => {
+const confirmBlockUser = async () => {
+  if (blockAction.value === "block" && !blockReason.value.trim()) {
+    toast.error("Block reason is required.")
+    return
+  }
+
   try {
-    await axios.post(`/api/users/${blockUserId.value}/block`, {
-      action: blockAction.value
-    })
-    toast.success(`User ${blockAction.value}ed successfully!`)
+    if (blockAction.value === "block") {
+      await axios.post(`/api/users/${blockUserId.value}/block`, {
+        reason: blockReason.value
+      })
+      toast.success("User blocked successfully and email sent.")
+    } else {
+      await axios.post(`/api/users/${blockUserId.value}/unblock`)
+      toast.success("User unblocked successfully.")
+    }
     showBlockModal.value = false
-    fetchUsers()
-  } catch {
-    toast.error("Failed to update user status.")
+    fetchUsers(pagination.value.current_page)
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Failed to update user status.")
   }
 }
 

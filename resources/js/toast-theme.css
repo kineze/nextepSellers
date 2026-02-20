@@ -1,0 +1,79 @@
+/* Modern + soft toast theme for vue-toastification */
+.Vue-Toastification__container {
+  width: min(92vw, 420px);
+}
+
+.Vue-Toastification__toast {
+  border-radius: 16px !important;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.2);
+  padding: 12px 14px !important;
+  min-height: 56px;
+}
+
+.Vue-Toastification__toast-body {
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.Vue-Toastification__close-button {
+  opacity: 0.8;
+  font-size: 18px;
+}
+
+.Vue-Toastification__close-button:hover {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+.Vue-Toastification__progress-bar {
+  height: 4px;
+  opacity: 0.75;
+}
+
+.Vue-Toastification__toast--success {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+  color: #065f46 !important;
+}
+
+.Vue-Toastification__toast--error {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%) !important;
+  color: #9f1239 !important;
+}
+
+.Vue-Toastification__toast--info {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1e3a8a !important;
+}
+
+.Vue-Toastification__toast--warning {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%) !important;
+  color: #92400e !important;
+}
+
+.dark .Vue-Toastification__toast {
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 16px 36px rgba(2, 6, 23, 0.45);
+}
+
+.dark .Vue-Toastification__toast--success {
+  background: linear-gradient(135deg, rgba(6, 78, 59, 0.95), rgba(4, 120, 87, 0.9)) !important;
+  color: #d1fae5 !important;
+}
+
+.dark .Vue-Toastification__toast--error {
+  background: linear-gradient(135deg, rgba(136, 19, 55, 0.95), rgba(190, 24, 93, 0.9)) !important;
+  color: #ffe4e6 !important;
+}
+
+.dark .Vue-Toastification__toast--info {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.95), rgba(37, 99, 235, 0.9)) !important;
+  color: #dbeafe !important;
+}
+
+.dark .Vue-Toastification__toast--warning {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.95), rgba(180, 83, 9, 0.9)) !important;
+  color: #fef3c7 !important;
+}

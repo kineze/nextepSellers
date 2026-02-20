@@ -128,4 +128,47 @@ class UserController extends Controller
 
         return response()->json(['message' => 'Password reset and emailed successfully']);
     }
+
+    public function block(Request $request, User $user)
+    {
+        $validated = $request->validate([
+            'reason' => 'required|string|max:1000',
+        ]);
+
+        if ($request->user() && (int) $request->user()->id === (int) $user->id) {
+            return response()->json(['message' => 'You cannot block your own account.'], 422);
+        }
+
+        if ($user->is_blocked) {
+            return response()->json(['message' => 'User is already blocked.'], 422);
+        }
+
+        $user->update([
+            'is_blocked' => true,
+            'blocked_reason' => $validated['reason'],
+        ]);
+
+        $sent = $this->mailer->sendUserBlockedEmail($user->email, $user->name, $validated['reason']);
+        if (!$sent) {
+            return response()->json([
+                'message' => 'User blocked, but failed to send block notification email.',
+            ], 500);
+        }
+
+        return response()->json(['message' => 'User blocked and notification email sent successfully.']);
+    }
+
+    public function unblock(User $user)
+    {
+        if (!$user->is_blocked) {
+            return response()->json(['message' => 'User is not blocked.'], 422);
+        }
+
+        $user->update([
+            'is_blocked' => false,
+            'blocked_reason' => null,
+        ]);
+
+        return response()->json(['message' => 'User unblocked successfully.']);
+    }
 }

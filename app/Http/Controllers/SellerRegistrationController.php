@@ -85,8 +85,8 @@ class SellerRegistrationController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:sellers,email'],
             'phone' => ['nullable', 'string', 'max:25'],
+            'seller_image' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
             'email_verified' => ['required', 'boolean'],
-            'phone_verified' => ['required', 'boolean'],
             'seller_type' => ['required', Rule::in(['individual', 'business'])],
             'tax_number' => ['nullable', 'string', 'max:255'],
             'nic_number' => ['nullable', 'string', 'max:255'],
@@ -107,11 +107,11 @@ class SellerRegistrationController extends Controller
             'business_registration_document' => ['required_if:seller_type,business', 'nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
         ]);
 
-        if (!$validated['email_verified'] && !$validated['phone_verified']) {
+        if (!$validated['email_verified']) {
             return response()->json([
-                'message' => 'Please verify at least one contact method.',
+                'message' => 'Email verification is required.',
                 'errors' => [
-                    'verification' => ['Please verify at least one of email or phone before continuing.'],
+                    'verification' => ['Please verify your email before continuing.'],
                 ],
             ], 422);
         }
@@ -132,19 +132,22 @@ class SellerRegistrationController extends Controller
         DB::transaction(function () use ($request, $validated) {
             $nicFrontPath = $request->file('nic_front')->store('seller-documents/nic', 'public');
             $nicBackPath = $request->file('nic_back')->store('seller-documents/nic', 'public');
+            $sellerImagePath = $request->file('seller_image')
+                ?->store('seller-documents/profile', 'public');
 
             $seller = Seller::create([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
+                'seller_image' => $sellerImagePath,
                 'seller_type' => $validated['seller_type'],
                 'tax_number' => $validated['tax_number'] ?? null,
                 'nic_number' => $validated['nic_number'] ?? null,
                 'nic_front' => $nicFrontPath,
                 'nic_back' => $nicBackPath,
                 'email_verified' => (bool) $validated['email_verified'],
-                'phone_verified' => (bool) $validated['phone_verified'],
+                'phone_verified' => false,
                 'agreement_accepted' => true,
                 'status' => 'pending',
             ]);

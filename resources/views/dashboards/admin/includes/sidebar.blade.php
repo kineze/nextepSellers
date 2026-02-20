@@ -65,6 +65,37 @@
         </div>
         @endcan
 
+          @can('Manage Sellers')
+        <!-- Sellers -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Sellers"
+            data-links='[
+              {"label":"Active Sellers","href":"{{ url('/active-sellers') }}"},
+              {"label":"Seller Manager","href":"{{ url('/seller-registrations') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-emerald-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-store" aria-hidden="true"></i>
+              <span class="sr-only">Sellers</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-emerald-700 dark:text-white text-left">
+              Sellers
+            </span>
+            <i class="fas fa-chevron-down text-xs text-emerald-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ url('/active-sellers') }}" class="block px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-slate-700 rounded-md">
+              Active Sellers
+            </a>
+            <a href="{{ url('/seller-registrations') }}" class="block px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-slate-700 rounded-md">
+              Seller Manager
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage Settings')
         <!-- Users -->
         <div class="relative sidebar-dropdown"
@@ -95,6 +126,8 @@
           </div>
         </div>
         @endcan
+
+      
 
       </nav>
 </aside>

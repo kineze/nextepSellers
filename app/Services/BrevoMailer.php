@@ -28,13 +28,13 @@ class BrevoMailer
             'content-type' => 'application/json',
         ])->post('https://api.brevo.com/v3/smtp/email', [
             'sender' => [
-                'name' => 'Software Engineering',
+                'name' => 'Nextep',
                 'email' => 'helliumgk@gmail.com',
             ],
             'to' => [
                 ['email' => $toEmail, 'name' => $toName],
             ],
-            'subject' => 'Welcome to the Team!',
+            'subject' => 'Welcome to Nextep',
             'htmlContent' => view('emails.welcome', [
                 'name' => $toName,
                 'email' => $toEmail,
@@ -84,6 +84,54 @@ class BrevoMailer
             'htmlContent' => view('emails.seller-email-otp', [
                 'name' => $toName,
                 'otp' => $otp,
+            ])->render(),
+        ])->successful();
+    }
+
+    public function sendSellerOnboardingEmail(string $toEmail, string $toName, string $password): bool
+    {
+        return Http::withHeaders([
+            'api-key' => $this->apiKey,
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
+            'sender' => [
+                'name' => 'Nextep',
+                'email' => 'helliumgk@gmail.com',
+            ],
+            'to' => [
+                ['email' => $toEmail, 'name' => $toName],
+            ],
+            'subject' => 'Congratulations! Welcome to Nextep Seller Hub',
+            'htmlContent' => view('emails.seller-onboarding', [
+                'name' => $toName,
+                'email' => $toEmail,
+                'password' => $password,
+            ])->render(),
+        ])->successful();
+    }
+
+    public function sendUserBlockedEmail(string $toEmail, string $toName, string $reason): bool
+    {
+        $supportEmail = config('mail.from.address', 'support@nextep.com');
+
+        return Http::withHeaders([
+            'api-key' => $this->apiKey,
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
+            'sender' => [
+                'name' => 'Nextep Support',
+                'email' => 'helliumgk@gmail.com',
+            ],
+            'to' => [
+                ['email' => $toEmail, 'name' => $toName],
+            ],
+            'subject' => 'Your Nextep account has been blocked',
+            'htmlContent' => view('emails.user-blocked', [
+                'name' => $toName,
+                'reason' => $reason,
+                'supportEmail' => $supportEmail,
             ])->render(),
         ])->successful();
     }

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class BusinessInformation extends Model
 {
+    protected $table = 'business_informations';
+
     protected $fillable = [
         'seller_id',
         'business_name',
@@ -19,6 +21,10 @@ class BusinessInformation extends Model
         'postal_code',
         'country',
         'business_registration_document',
+    ];
+
+    protected $casts = [
+        'business_registered_date' => 'date',
     ];
 
     public function seller()

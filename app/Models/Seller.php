@@ -11,6 +11,7 @@ class Seller extends Model
         'last_name',
         'email',
         'phone',
+        'seller_image',
         'seller_type',
         'tax_number',
         'nic_number',

@@ -74,18 +74,13 @@
 
               <div>
                 <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Phone</label>
-                <div class="flex gap-2">
-                  <input v-model="form.phone" type="text" class="input flex-1" placeholder="+94 77 123 4567" autocomplete="tel" />
-                  <button type="button" class="verify-btn" :class="form.phone_verified ? 'verified' : ''" @click="verifyPhone">
-                    {{ form.phone_verified ? 'Verified' : 'Verify' }}
-                  </button>
-                </div>
+                <input v-model="form.phone" type="text" class="input" placeholder="+94 77 123 4567" autocomplete="tel" />
                 <p v-if="errors.phone" class="error-text">{{ errors.phone[0] }}</p>
               </div>
             </div>
 
             <p class="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-medium text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
-              To continue to the next step, verifying at least one contact method (email or mobile) is mandatory.
+              To continue to the next step, email verification is mandatory.
             </p>
 
             <div class="flex justify-end">
@@ -202,6 +197,14 @@
 
             <div class="grid gap-4 sm:grid-cols-2">
               <div>
+                <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Seller Image (Optional)</label>
+                <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.webp" @change="onFileChange($event, 'seller_image')" />
+                <p v-if="errors.seller_image" class="error-text">{{ errors.seller_image[0] }}</p>
+              </div>
+            </div>
+
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
                 <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">NIC Front</label>
                 <input type="file" class="file-input" accept=".jpg,.jpeg,.png,.pdf" @change="onFileChange($event, 'nic_front')" />
                 <p v-if="errors.nic_front" class="error-text">{{ errors.nic_front[0] }}</p>
@@ -292,6 +295,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useToast } from 'vue-toastification'
 
 const props = defineProps({
   submitUrl: {
@@ -322,6 +326,7 @@ const emailOtpSending = ref(false)
 const emailOtpVerifying = ref(false)
 const emailOtpMessage = ref('')
 const emailOtpError = ref('')
+const toast = useToast()
 
 const form = reactive({
   first_name: '',
@@ -329,7 +334,6 @@ const form = reactive({
   email: '',
   phone: '',
   email_verified: false,
-  phone_verified: false,
   seller_type: 'individual',
   tax_number: '',
   nic_number: '',
@@ -345,6 +349,7 @@ const form = reactive({
   postal_code: '',
   country: 'Sri Lanka',
 
+  seller_image: null,
   nic_front: null,
   nic_back: null,
   business_registration_document: null,
@@ -364,12 +369,14 @@ watch(() => form.email, () => {
   emailOtpMessage.value = ''
 })
 
-watch(() => form.phone, () => {
-  form.phone_verified = false
-})
-
 function resetErrors() {
   errors.value = {}
+}
+
+function notifyErrorMessages(payload) {
+  Object.values(payload || {})
+    .flat()
+    .forEach((message) => toast.error(message))
 }
 
 async function verifyEmail() {
@@ -379,6 +386,7 @@ async function verifyEmail() {
 
   if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email)) {
     errors.value.email = ['Enter a valid email before verifying.']
+    notifyErrorMessages(errors.value)
     return
   }
 
@@ -397,21 +405,14 @@ async function verifyEmail() {
     if (error.response?.status === 422) {
       const message = error.response?.data?.message || 'Unable to send OTP.'
       errors.value.email = [message]
+      notifyErrorMessages(errors.value)
       return
     }
     errors.value.email = ['Failed to send verification code. Please try again.']
+    notifyErrorMessages(errors.value)
   } finally {
     emailOtpSending.value = false
   }
-}
-
-function verifyPhone() {
-  resetErrors()
-  if (!form.phone || form.phone.length < 7) {
-    errors.value.phone = ['Enter a valid phone before verifying.']
-    return
-  }
-  form.phone_verified = true
 }
 
 function goToStepTwo() {
@@ -421,11 +422,14 @@ function goToStepTwo() {
   if (!form.last_name) errors.value.last_name = ['Last name is required.']
   if (!form.email || !/^\S+@\S+\.\S+$/.test(form.email)) errors.value.email = ['A valid email is required.']
 
-  if (!form.email_verified && !form.phone_verified) {
-    errors.value.verification = ['Verify at least one of email or phone before continuing.']
+  if (!form.email_verified) {
+    errors.value.verification = ['Verify your email before continuing.']
   }
 
-  if (Object.keys(errors.value).length) return
+  if (Object.keys(errors.value).length) {
+    notifyErrorMessages(errors.value)
+    return
+  }
   step.value = 2
 }
 
@@ -440,7 +444,10 @@ function goToStepThree() {
     if (!form.city) errors.value.city = ['City is required.']
   }
 
-  if (Object.keys(errors.value).length) return
+  if (Object.keys(errors.value).length) {
+    notifyErrorMessages(errors.value)
+    return
+  }
   step.value = 3
 }
 
@@ -454,6 +461,7 @@ async function confirmEmailOtp() {
 
   if (!/^\d{6}$/.test(emailOtpCode.value)) {
     emailOtpError.value = 'Enter a valid 6-digit code.'
+    toast.error(emailOtpError.value)
     return
   }
 
@@ -473,9 +481,11 @@ async function confirmEmailOtp() {
   } catch (error) {
     if (error.response?.status === 422) {
       emailOtpError.value = error.response?.data?.message || 'Invalid verification code.'
+      toast.error(emailOtpError.value)
       return
     }
     emailOtpError.value = 'Unable to verify code right now. Please try again.'
+    toast.error(emailOtpError.value)
   } finally {
     emailOtpVerifying.value = false
   }
@@ -506,7 +516,6 @@ function resetForm() {
     email: '',
     phone: '',
     email_verified: false,
-    phone_verified: false,
     seller_type: 'individual',
     tax_number: '',
     nic_number: '',
@@ -520,6 +529,7 @@ function resetForm() {
     district: '',
     postal_code: '',
     country: 'Sri Lanka',
+    seller_image: null,
     nic_front: null,
     nic_back: null,
     business_registration_document: null,
@@ -541,7 +551,10 @@ async function submitForm() {
   }
   if (!form.agreement_accepted) errors.value.agreement_accepted = ['You must accept the seller agreement.']
 
-  if (Object.keys(errors.value).length) return
+  if (Object.keys(errors.value).length) {
+    notifyErrorMessages(errors.value)
+    return
+  }
 
   submitting.value = true
 
@@ -553,6 +566,7 @@ async function submitForm() {
     })
 
     successMessage.value = response.data.message || 'Seller registration submitted successfully.'
+    toast.success(successMessage.value)
     resetForm()
     step.value = 1
   } catch (error) {
@@ -560,12 +574,14 @@ async function submitForm() {
       errors.value = error.response.data.errors || {
         general: ['Validation failed. Please review your form.'],
       }
+      notifyErrorMessages(errors.value)
       return
     }
 
     errors.value = {
       general: ['Something went wrong while submitting your registration. Please try again.'],
     }
+    notifyErrorMessages(errors.value)
   } finally {
     submitting.value = false
   }

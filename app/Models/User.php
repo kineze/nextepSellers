@@ -31,6 +31,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_blocked',
+        'blocked_reason',
     ];
 
     /**
@@ -64,6 +66,12 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_blocked' => 'boolean',
         ];
+    }
+
+    public function seller()
+    {
+        return $this->hasOne(Seller::class);
     }
 }

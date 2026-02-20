@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SellerController;
 use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerRegistrationController;
@@ -45,6 +46,16 @@ Route::middleware(['permission:Manage Settings', config('jetstream.auth_session'
 
     Route::controller(RoleController::class)->group(function () {
         Route::get('/roles-and-permission', 'roleManagement')->name('roleManagement');
+    });
+
+});
+
+Route::middleware(['permission:Manage Sellers', config('jetstream.auth_session'), 'verified',])->group(function () {
+
+    Route::controller(SellerController::class)->group(function () {
+        Route::get('/seller-registrations', 'indexView')->name('sellerRegistrations');
+        Route::get('/active-sellers', 'activeSellersView')->name('activeSellers');
+        Route::get('/active-sellers/{seller}/profile', 'profileView')->name('sellerProfile');
     });
 
 });

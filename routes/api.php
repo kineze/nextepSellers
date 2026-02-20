@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SellerController;
 use App\Http\Controllers\RolePermissionController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
@@ -24,4 +25,17 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::delete('/users/{user}', [UserController::class, 'destroy']);
     Route::post('/users/{user}/role', [UserController::class, 'assignRole']);
     Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword']);
+    Route::post('/users/{user}/block', [UserController::class, 'block']);
+    Route::post('/users/{user}/unblock', [UserController::class, 'unblock']);
+});
+
+Route::middleware(['auth:sanctum', 'permission:Manage Sellers'])->group(function () {
+    Route::get('/sellers', [SellerController::class, 'index']);
+    Route::get('/sellers/{seller}', [SellerController::class, 'show']);
+    Route::post('/sellers/{seller}/block', [SellerController::class, 'block']);
+    Route::get('/active-sellers', [SellerController::class, 'activeIndex']);
+    Route::post('/active-sellers/{seller}/block', [SellerController::class, 'blockActiveSeller']);
+    Route::post('/sellers/{seller}/unblock', [SellerController::class, 'unblock']);
+    Route::post('/sellers/{seller}/approve', [SellerController::class, 'approve']);
+    Route::post('/sellers/{seller}/reject', [SellerController::class, 'reject']);
 });

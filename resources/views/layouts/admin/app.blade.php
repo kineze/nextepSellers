@@ -5,7 +5,7 @@
 
 @livewireStyles
 
-<body class="m-0 font-sans antialiased font-normal text-left  dark:bg-slate-950  text-slate-500 dark:text-white">
+<body class="m-0 bg-slate-50 font-sans font-normal antialiased text-left text-slate-500 dark:bg-slate-950 dark:text-white">
 
     @auth
         <script>
@@ -21,7 +21,7 @@
         @include('dashboards.marketer.includes.sidebar')
     @endrole
        
-    <main  id="mainContent" class="content-gradient relative h-full duration-200 ease-soft-in-out z-50 rounded-xl">
+    <main id="mainContent" class="content-gradient relative z-50 min-h-screen rounded-xl duration-200 ease-soft-in-out">
 
         <div id="app">
         @include('dashboards.admin.includes.nav')

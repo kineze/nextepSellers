@@ -96,6 +96,32 @@
         </div>
         @endcan
 
+        @can('Manage Levels')
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Levels"
+            data-links='[
+              {"label":"Level Manager","href":"{{ url('/levels') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-cyan-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-layer-group" aria-hidden="true"></i>
+              <span class="sr-only">Levels</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-cyan-700 dark:text-white text-left">
+              Levels
+            </span>
+            <i class="fas fa-chevron-down text-xs text-cyan-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ url('/levels') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Level Manager
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage Settings')
         <!-- Users -->
         <div class="relative sidebar-dropdown"

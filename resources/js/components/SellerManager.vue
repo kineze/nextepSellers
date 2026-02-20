@@ -109,6 +109,22 @@
                 >
                   <i class="fas fa-eye"></i>
                 </button>
+                <button
+                  v-if="seller.status === 'approved'"
+                  @click="openBlockFromRow(seller)"
+                  class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-rose-500 transition hover:bg-rose-100 hover:text-rose-700 dark:hover:bg-rose-900/30"
+                  title="Block"
+                >
+                  <i class="fas fa-user-slash"></i>
+                </button>
+                <button
+                  v-if="seller.status === 'blocked'"
+                  @click="openUnblockFromRow(seller)"
+                  class="ml-2 inline-flex h-8 w-8 items-center justify-center rounded-lg text-emerald-500 transition hover:bg-emerald-100 hover:text-emerald-700 dark:hover:bg-emerald-900/30"
+                  title="Unblock"
+                >
+                  <i class="fas fa-user-check"></i>
+                </button>
               </td>
             </tr>
           </tbody>
@@ -194,6 +210,8 @@
                 <div><span class="text-slate-500">Phone Verified:</span> <span class="text-slate-900 dark:text-white">{{ selectedSeller.phone_verified ? 'Yes' : 'No' }}</span></div>
                 <div><span class="text-slate-500">Agreement Accepted:</span> <span class="text-slate-900 dark:text-white">{{ selectedSeller.agreement_accepted ? 'Yes' : 'No' }}</span></div>
                 <div><span class="text-slate-500">Linked User ID:</span> <span class="text-slate-900 dark:text-white">{{ selectedSeller.user_id || '-' }}</span></div>
+                <div><span class="text-slate-500">Starting Level:</span> <span class="text-slate-900 dark:text-white">{{ selectedSeller.level?.level_name || '-' }}</span></div>
+                <div><span class="text-slate-500">Points:</span> <span class="text-slate-900 dark:text-white">{{ selectedSeller.points ?? 0 }}</span></div>
               </div>
             </div>
 
@@ -250,7 +268,7 @@
             <div class="flex items-center justify-end gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
               <button
                 v-if="selectedSeller.status === 'pending'"
-                @click="openApproveConfirm"
+                @click="openApproveModal"
                 class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
               >
                 Approve
@@ -280,6 +298,59 @@
                 Unblock
               </button>
             </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
+      <div
+        v-if="showApproveModal"
+        class="fixed inset-0 z-[1500] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+      >
+        <div class="w-full max-w-md rounded-2xl border border-slate-200/70 bg-white/95 p-6 shadow-2xl dark:border-slate-800/70 dark:bg-slate-900/95">
+          <h3 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Approve Seller</h3>
+          <p class="mb-3 text-sm text-slate-600 dark:text-slate-300">Set the starting level and points.</p>
+
+          <div class="space-y-4">
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Starting Level</label>
+              <select
+                v-model="approvalForm.seller_level_id"
+                @change="onApproveLevelChange"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="" disabled>Select level</option>
+                <option v-for="level in approvalLevels" :key="level.id" :value="String(level.id)">
+                  {{ level.level_name }} (Level {{ level.level_no }})
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Points</label>
+              <input
+                v-model="approvalForm.points"
+                type="number"
+                min="0"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              />
+            </div>
+          </div>
+
+          <div class="mt-5 flex justify-end gap-3">
+            <button
+              @click="showApproveModal = false"
+              class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+            >
+              Cancel
+            </button>
+            <button
+              @click="confirmApproveDetails"
+              class="rounded-xl bg-emerald-600 px-4 py-2 text-white hover:bg-emerald-700"
+            >
+              Continue
+            </button>
           </div>
         </div>
       </div>
@@ -401,6 +472,12 @@ const showStatusDropdown = ref(false)
 const showSellerDrawer = ref(false)
 const selectedSeller = ref(null)
 const loadingSellerDetail = ref(false)
+const showApproveModal = ref(false)
+const approvalLevels = ref([])
+const approvalForm = ref({
+  seller_level_id: '',
+  points: '',
+})
 
 const showRejectModal = ref(false)
 const rejectReason = ref('')
@@ -471,6 +548,21 @@ const fetchSellerDetail = async (sellerId) => {
   }
 }
 
+const fetchApprovalOptions = async () => {
+  try {
+    const res = await axios.get('/api/sellers/approval-options')
+    approvalLevels.value = res.data.levels || []
+
+    if (res.data.default_level_id) {
+      approvalForm.value.seller_level_id = String(res.data.default_level_id)
+      const defaultLevel = approvalLevels.value.find((level) => level.id === res.data.default_level_id)
+      approvalForm.value.points = defaultLevel ? String(defaultLevel.points) : '0'
+    }
+  } catch {
+    toast.error('Failed to load level options for approval')
+  }
+}
+
 const openSellerDrawer = async (sellerId) => {
   showSellerDrawer.value = true
   await fetchSellerDetail(sellerId)
@@ -481,12 +573,49 @@ const closeSellerDrawer = () => {
   selectedSeller.value = null
   rejectReason.value = ''
   blockReason.value = ''
+  showApproveModal.value = false
   showBlockModal.value = false
 }
 
-const openApproveConfirm = () => {
+const openApproveModal = () => {
+  if (!approvalLevels.value.length) {
+    toast.error('No levels found. Please create levels and set a default one first.')
+    return
+  }
+
+  if (!approvalForm.value.seller_level_id) {
+    const defaultLevel = approvalLevels.value.find((level) => level.is_default)
+    if (defaultLevel) {
+      approvalForm.value.seller_level_id = String(defaultLevel.id)
+      approvalForm.value.points = String(defaultLevel.points ?? 0)
+    }
+  }
+
+  showApproveModal.value = true
+}
+
+const onApproveLevelChange = () => {
+  const selectedId = Number(approvalForm.value.seller_level_id)
+  const selectedLevel = approvalLevels.value.find((level) => level.id === selectedId)
+  if (selectedLevel) {
+    approvalForm.value.points = String(selectedLevel.points ?? 0)
+  }
+}
+
+const confirmApproveDetails = () => {
+  if (!approvalForm.value.seller_level_id) {
+    toast.error('Starting level is required')
+    return
+  }
+
+  if (approvalForm.value.points === '' || Number(approvalForm.value.points) < 0) {
+    toast.error('Points must be zero or greater')
+    return
+  }
+
+  showApproveModal.value = false
   confirmAction.value = 'approve'
-  confirmMessage.value = 'Are you sure you want to approve this seller? A seller user account will be created and login details will be emailed.'
+  confirmMessage.value = 'Are you sure you want to approve this seller with the selected level and points?'
   showConfirmModal.value = true
 }
 
@@ -504,6 +633,16 @@ const openUnblockConfirm = () => {
   confirmAction.value = 'unblock'
   confirmMessage.value = 'Are you sure you want to unblock this seller?'
   showConfirmModal.value = true
+}
+
+const openBlockFromRow = (seller) => {
+  selectedSeller.value = seller
+  openBlockReasonModal()
+}
+
+const openUnblockFromRow = (seller) => {
+  selectedSeller.value = seller
+  openUnblockConfirm()
 }
 
 const confirmRejectReason = () => {
@@ -537,7 +676,10 @@ const executeConfirmedAction = async () => {
     actionLoading.value = true
 
     if (confirmAction.value === 'approve') {
-      const res = await axios.post(`/api/sellers/${selectedSeller.value.id}/approve`)
+      const res = await axios.post(`/api/sellers/${selectedSeller.value.id}/approve`, {
+        seller_level_id: Number(approvalForm.value.seller_level_id),
+        points: Number(approvalForm.value.points),
+      })
       toast.success(res.data.message || 'Seller approved successfully')
     }
 
@@ -562,7 +704,9 @@ const executeConfirmedAction = async () => {
 
     showConfirmModal.value = false
     await fetchSellers(pagination.value.current_page)
-    await fetchSellerDetail(selectedSeller.value.id)
+    if (showSellerDrawer.value) {
+      await fetchSellerDetail(selectedSeller.value.id)
+    }
   } catch (err) {
     const message = err.response?.data?.message || 'Unable to process seller action'
     toast.error(message)
@@ -625,6 +769,7 @@ const handleClickOutside = (e) => {
 }
 
 onMounted(() => {
+  fetchApprovalOptions()
   fetchSellers(1)
   document.addEventListener('click', handleClickOutside)
 })

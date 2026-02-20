@@ -16,5 +16,6 @@ class RoleSeeder extends Seeder
         $admin->givePermissionTo('Access Admin Dashboard');
         $admin->givePermissionTo('Manage Settings');
         $admin->givePermissionTo('Manage Sellers');
+        $admin->givePermissionTo('Manage Levels');
     }
 }

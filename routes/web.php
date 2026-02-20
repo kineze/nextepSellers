@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
@@ -56,6 +57,14 @@ Route::middleware(['permission:Manage Sellers', config('jetstream.auth_session')
         Route::get('/seller-registrations', 'indexView')->name('sellerRegistrations');
         Route::get('/active-sellers', 'activeSellersView')->name('activeSellers');
         Route::get('/active-sellers/{seller}/profile', 'profileView')->name('sellerProfile');
+    });
+
+});
+
+Route::middleware(['permission:Manage Levels', config('jetstream.auth_session'), 'verified',])->group(function () {
+
+    Route::controller(LevelController::class)->group(function () {
+        Route::get('/levels', 'indexView')->name('levels');
     });
 
 });

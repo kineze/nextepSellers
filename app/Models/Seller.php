@@ -20,6 +20,8 @@ class Seller extends Model
         'status',
         'rejection_reason',
         'user_id',
+        'seller_level_id',
+        'points',
         'email_verified',
         'phone_verified',
         'agreement_accepted',
@@ -29,6 +31,7 @@ class Seller extends Model
         'email_verified' => 'boolean',
         'phone_verified' => 'boolean',
         'agreement_accepted' => 'boolean',
+        'points' => 'integer',
     ];
 
     public function user()
@@ -39,6 +42,11 @@ class Seller extends Model
     public function businessInformation()
     {
         return $this->hasOne(BusinessInformation::class);
+    }
+
+    public function level()
+    {
+        return $this->belongsTo(Level::class, 'seller_level_id');
     }
 
 }

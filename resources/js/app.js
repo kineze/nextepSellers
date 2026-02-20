@@ -14,6 +14,7 @@ import SellerRegistrationForm from './components/SellerRegistrationForm.vue';
 import SellerManager from './components/SellerManager.vue';
 import ActiveSellerManager from './components/ActiveSellerManager.vue';
 import SellerProfile from './components/SellerProfile.vue';
+import LevelManager from './components/LevelManager.vue';
 
 const app = createApp({})
 
@@ -33,5 +34,6 @@ app.use(Toast, {
 .component('seller-manager', SellerManager)
 .component('active-seller-manager', ActiveSellerManager)
 .component('seller-profile', SellerProfile)
+.component('level-manager', LevelManager)
 
 .mount('#app')

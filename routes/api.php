@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\RolePermissionController;
 
@@ -31,11 +32,21 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'permission:Manage Sellers'])->group(function () {
     Route::get('/sellers', [SellerController::class, 'index']);
+    Route::get('/sellers/approval-options', [SellerController::class, 'approvalOptions']);
     Route::get('/sellers/{seller}', [SellerController::class, 'show']);
+    Route::post('/sellers/{seller}/image', [SellerController::class, 'uploadImage']);
     Route::post('/sellers/{seller}/block', [SellerController::class, 'block']);
     Route::get('/active-sellers', [SellerController::class, 'activeIndex']);
     Route::post('/active-sellers/{seller}/block', [SellerController::class, 'blockActiveSeller']);
     Route::post('/sellers/{seller}/unblock', [SellerController::class, 'unblock']);
     Route::post('/sellers/{seller}/approve', [SellerController::class, 'approve']);
     Route::post('/sellers/{seller}/reject', [SellerController::class, 'reject']);
+});
+
+Route::middleware(['auth:sanctum', 'permission:Manage Levels'])->group(function () {
+    Route::get('/levels', [LevelController::class, 'index']);
+    Route::post('/levels', [LevelController::class, 'store']);
+    Route::put('/levels/{level}', [LevelController::class, 'update']);
+    Route::delete('/levels/{level}', [LevelController::class, 'destroy']);
+    Route::post('/levels/{level}/toggle-default', [LevelController::class, 'toggleDefault']);
 });

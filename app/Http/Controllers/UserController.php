@@ -32,7 +32,8 @@ class UserController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         $perPage = max(1, min($perPage, 100));
 
-        $query = User::with('roles');
+        $query = User::with('roles')
+            ->whereDoesntHave('roles', fn($q) => $q->where('name', 'Seller'));
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -57,7 +58,7 @@ class UserController extends Controller
                 'from' => $users->firstItem(),
                 'to' => $users->lastItem(),
             ],
-            'roles' => Role::all(['id', 'name']),
+            'roles' => Role::where('name', '!=', 'Seller')->get(['id', 'name']),
         ]);
     }
 
@@ -168,6 +169,13 @@ class UserController extends Controller
             'is_blocked' => false,
             'blocked_reason' => null,
         ]);
+
+        $sent = $this->mailer->sendUserUnblockedEmail($user->email, $user->name);
+        if (!$sent) {
+            return response()->json([
+                'message' => 'User unblocked, but failed to send unblock notification email.',
+            ], 500);
+        }
 
         return response()->json(['message' => 'User unblocked successfully.']);
     }

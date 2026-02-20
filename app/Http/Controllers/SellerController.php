@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Level;
 use App\Models\Seller;
 use App\Models\User;
 use RuntimeException;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 use App\Services\BrevoMailer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 class SellerController extends Controller
@@ -75,9 +77,46 @@ class SellerController extends Controller
 
     public function show(Seller $seller)
     {
-        $seller->load('businessInformation');
+        $seller->load(['businessInformation', 'level']);
 
         return response()->json($seller);
+    }
+
+    public function uploadImage(Request $request, Seller $seller)
+    {
+        $validated = $request->validate([
+            'seller_image' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+
+        $newImagePath = $request->file('seller_image')->store('seller-documents/profile', 'public');
+
+        if ($seller->seller_image) {
+            Storage::disk('public')->delete($seller->seller_image);
+        }
+
+        $seller->update([
+            'seller_image' => $newImagePath,
+        ]);
+
+        $seller->load(['businessInformation', 'level']);
+
+        return response()->json([
+            'message' => 'Seller image uploaded successfully.',
+            'seller' => $seller,
+        ]);
+    }
+
+    public function approvalOptions()
+    {
+        $levels = Level::orderBy('level_no')
+            ->get(['id', 'level_no', 'level_name', 'points', 'is_default']);
+
+        $defaultLevel = $levels->firstWhere('is_default', true);
+
+        return response()->json([
+            'levels' => $levels,
+            'default_level_id' => $defaultLevel?->id,
+        ]);
     }
 
     public function activeIndex(Request $request)
@@ -164,11 +203,22 @@ class SellerController extends Controller
             'rejection_reason' => null,
         ]);
 
+        $unblockedUser = null;
         if ($seller->user_id) {
             User::where('id', $seller->user_id)->update([
                 'is_blocked' => false,
                 'blocked_reason' => null,
             ]);
+            $unblockedUser = User::find($seller->user_id);
+        }
+
+        if ($unblockedUser) {
+            $sent = $this->mailer->sendUserUnblockedEmail($unblockedUser->email, $unblockedUser->name);
+            if (!$sent) {
+                return response()->json([
+                    'message' => 'Seller unblocked, but failed to send unblock notification email.',
+                ], 500);
+            }
         }
 
         return response()->json([
@@ -176,13 +226,35 @@ class SellerController extends Controller
         ]);
     }
 
-    public function approve(Seller $seller)
+    public function approve(Request $request, Seller $seller)
     {
         if ($seller->status === 'approved' && $seller->user_id) {
             return response()->json([
                 'message' => 'Seller is already approved.',
             ], 422);
         }
+
+        $validated = $request->validate([
+            'seller_level_id' => ['nullable', 'integer', 'exists:levels,id'],
+            'points' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $selectedLevel = null;
+        if (!empty($validated['seller_level_id'])) {
+            $selectedLevel = Level::find($validated['seller_level_id']);
+        } else {
+            $selectedLevel = Level::where('is_default', true)->first();
+        }
+
+        if (!$selectedLevel) {
+            return response()->json([
+                'message' => 'No default level found. Please set a default level or choose one explicitly.',
+            ], 422);
+        }
+
+        $assignedPoints = array_key_exists('points', $validated) && $validated['points'] !== null
+            ? (int) $validated['points']
+            : (int) $selectedLevel->points;
 
         if (User::where('email', $seller->email)->exists() && !$seller->user_id) {
             return response()->json([
@@ -193,7 +265,7 @@ class SellerController extends Controller
         $password = Str::random(10);
 
         try {
-            DB::transaction(function () use ($seller, $password) {
+            DB::transaction(function () use ($seller, $password, $selectedLevel, $assignedPoints) {
             $sellerRole = Role::firstOrCreate([
                 'name' => 'Seller',
                 'guard_name' => 'web',
@@ -218,11 +290,19 @@ class SellerController extends Controller
 
             $seller->update([
                 'user_id' => $user->id,
+                'seller_level_id' => $selectedLevel->id,
+                'points' => $assignedPoints,
                 'status' => 'approved',
                 'rejection_reason' => null,
             ]);
 
-            $sent = $this->mailer->sendSellerOnboardingEmail($user->email, $user->name, $password);
+            $sent = $this->mailer->sendSellerOnboardingEmail(
+                $user->email,
+                $user->name,
+                $password,
+                $selectedLevel->level_name,
+                $assignedPoints
+            );
             if (!$sent) {
                 throw new RuntimeException('Unable to send login details email right now.');
             }

@@ -1,23 +1,30 @@
-@component('mail::message')
-{{ __('You have been invited to join the :team team!', ['team' => $invitation->team->name]) }}
+<div style="font-family: Arial, sans-serif; background: #f1f5f9; padding: 28px;">
+  <div style="max-width: 640px; margin: auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0;">
+    <div style="background: linear-gradient(135deg, #0f172a, #1e293b); padding: 22px 26px;">
+      <p style="margin: 0; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: #cbd5e1;">Nextep Team</p>
+      <h2 style="margin: 8px 0 0; color: #ffffff;">You're invited to join {{ $invitation->team->name }}</h2>
+    </div>
 
-@if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
-{{ __('If you do not have an account, you may create one by clicking the button below. After creating an account, you may click the invitation acceptance button in this email to accept the team invitation:') }}
+    <div style="padding: 26px;">
+      @if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
+      <p style="margin-top: 0; color: #334155;">If you do not have an account yet, create one first and then accept the invitation.</p>
 
-@component('mail::button', ['url' => route('register')])
-{{ __('Create Account') }}
-@endcomponent
+      <div style="margin: 18px 0; text-align: center;">
+        <a href="{{ route('register') }}" style="display: inline-block; background: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 700;">
+          Create Account
+        </a>
+      </div>
+      @endif
 
-{{ __('If you already have an account, you may accept this invitation by clicking the button below:') }}
+      <p style="color: #334155;">Accept the invitation using the button below:</p>
 
-@else
-{{ __('You may accept this invitation by clicking the button below:') }}
-@endif
+      <div style="margin: 18px 0; text-align: center;">
+        <a href="{{ $acceptUrl }}" style="display: inline-block; background: #0f172a; color: #ffffff; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 700;">
+          Accept Invitation
+        </a>
+      </div>
 
-
-@component('mail::button', ['url' => $acceptUrl])
-{{ __('Accept Invitation') }}
-@endcomponent
-
-{{ __('If you did not expect to receive an invitation to this team, you may discard this email.') }}
-@endcomponent
+      <p style="margin: 0; color: #64748b; font-size: 13px;">If you did not expect this invitation, you may ignore this email.</p>
+    </div>
+  </div>
+</div>

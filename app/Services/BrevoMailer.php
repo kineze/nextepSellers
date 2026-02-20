@@ -88,7 +88,13 @@ class BrevoMailer
         ])->successful();
     }
 
-    public function sendSellerOnboardingEmail(string $toEmail, string $toName, string $password): bool
+    public function sendSellerOnboardingEmail(
+        string $toEmail,
+        string $toName,
+        string $password,
+        string $levelName,
+        int $points
+    ): bool
     {
         return Http::withHeaders([
             'api-key' => $this->apiKey,
@@ -107,6 +113,8 @@ class BrevoMailer
                 'name' => $toName,
                 'email' => $toEmail,
                 'password' => $password,
+                'level_name' => $levelName,
+                'points' => $points,
             ])->render(),
         ])->successful();
     }
@@ -131,6 +139,30 @@ class BrevoMailer
             'htmlContent' => view('emails.user-blocked', [
                 'name' => $toName,
                 'reason' => $reason,
+                'supportEmail' => $supportEmail,
+            ])->render(),
+        ])->successful();
+    }
+
+    public function sendUserUnblockedEmail(string $toEmail, string $toName): bool
+    {
+        $supportEmail = config('mail.from.address', 'support@nextep.com');
+
+        return Http::withHeaders([
+            'api-key' => $this->apiKey,
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
+            'sender' => [
+                'name' => 'Nextep Support',
+                'email' => 'helliumgk@gmail.com',
+            ],
+            'to' => [
+                ['email' => $toEmail, 'name' => $toName],
+            ],
+            'subject' => 'Your Nextep account has been unblocked',
+            'htmlContent' => view('emails.user-unblocked', [
+                'name' => $toName,
                 'supportEmail' => $supportEmail,
             ])->render(),
         ])->successful();

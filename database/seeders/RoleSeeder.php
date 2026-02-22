@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
         $admin->syncPermissions([
             'Access Admin Dashboard',
             'Manage Settings',
+            'Manage System Configuration',
             'Manage Sellers',
             'Manage Levels',
             'Manage Inventory',

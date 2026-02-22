@@ -6,6 +6,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerRegistrationController;
@@ -52,6 +54,12 @@ Route::middleware(['permission:Manage Settings', config('jetstream.auth_session'
 
 });
 
+Route::middleware(['permission:Manage System Configuration', config('jetstream.auth_session'), 'verified',])->group(function () {
+    Route::controller(AttributeController::class)->group(function () {
+        Route::get('/attributes', 'indexView')->name('attributes');
+    });
+});
+
 Route::middleware(['permission:Manage Sellers', config('jetstream.auth_session'), 'verified',])->group(function () {
 
     Route::controller(SellerController::class)->group(function () {
@@ -71,6 +79,11 @@ Route::middleware(['permission:Manage Levels', config('jetstream.auth_session'),
 });
 
 Route::middleware(['permission:Manage Inventory', config('jetstream.auth_session'), 'verified',])->group(function () {
+
+    Route::controller(ProductController::class)->group(function () {
+        Route::get('/products', 'indexView')->name('products');
+        Route::get('/products/create', 'createView')->name('products.create');
+    });
 
     Route::controller(CategoryController::class)->group(function () {
         Route::get('/categories', 'indexView')->name('categories');

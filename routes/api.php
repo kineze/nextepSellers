@@ -6,6 +6,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolePermissionController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
@@ -52,7 +54,18 @@ Route::middleware(['auth:sanctum', 'permission:Manage Levels'])->group(function 
     Route::post('/levels/{level}/toggle-default', [LevelController::class, 'toggleDefault']);
 });
 
+Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->group(function () {
+    Route::get('/attributes', [AttributeController::class, 'index']);
+    Route::post('/attributes', [AttributeController::class, 'store']);
+    Route::put('/attributes/{attribute}', [AttributeController::class, 'update']);
+    Route::delete('/attributes/{attribute}', [AttributeController::class, 'destroy']);
+});
+
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::get('/products/create-options', [ProductController::class, 'createOptions']);
+    Route::post('/products/upload-image', [ProductController::class, 'uploadImage']);
+    Route::post('/products', [ProductController::class, 'store']);
     Route::get('/categories/tree', [CategoryController::class, 'tree']);
     Route::get('/categories/options', [CategoryController::class, 'options']);
     Route::post('/categories', [CategoryController::class, 'store']);

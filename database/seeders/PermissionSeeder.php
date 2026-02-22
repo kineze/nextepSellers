@@ -16,6 +16,7 @@ class PermissionSeeder extends Seeder
     {
         $permissions = [
             'Manage Settings',
+            'Manage System Configuration',
             'Manage Sellers',
             'Manage Levels',
             'Access Admin Dashboard',

@@ -38,7 +38,7 @@
         <div class="relative sidebar-dropdown"
             data-subtitle="Inventory"
             data-links='[
-              {"label":"Products","href":"{{ url('admin/product-list') }}"},
+              {"label":"Product Manager","href":"{{ url('/products') }}"},
               {"label":"Suppliers","href":"{{ url('admin/supplier-list') }}"},
               {"label":"Category Manager","href":"{{ url('/categories') }}"}
             ]'>
@@ -55,8 +55,8 @@
           </button>
 
           <div class="expanded-only hidden py-1 ml-4 space-y-1">
-            <a href="{{ url('admin/product-list') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
-              Products
+            <a href="{{ url('/products') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
+              Product Manager
             </a>
             <a href="{{ url('admin/supplier-list') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
               Suppliers
@@ -125,8 +125,35 @@
         </div>
         @endcan
 
+        @can('Manage System Configuration')
+        <!-- System Configuration -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="System Configuration"
+            data-links='[
+              {"label":"Attribute Manager","href":"{{ url('/attributes') }}"}
+            ]'>
+
+          <button class="dropdown-toggle  dark:border-amber-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-sliders" aria-hidden="true"></i>
+              <span class="sr-only">System Configuration</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-amber-700 dark:text-white text-left">
+              System Configuration
+            </span>
+            <i class="fas fa-chevron-down text-xs text-amber-500 sidebar-label"></i>
+          </button>
+
+        <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ url('/attributes') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
+              Attribute Manager
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage Settings')
-        <!-- Users -->
+        <!-- Settings -->
         <div class="relative sidebar-dropdown"
             data-subtitle="Settings"
             data-links='[

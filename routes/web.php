@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerRegistrationController;
@@ -65,6 +66,14 @@ Route::middleware(['permission:Manage Levels', config('jetstream.auth_session'),
 
     Route::controller(LevelController::class)->group(function () {
         Route::get('/levels', 'indexView')->name('levels');
+    });
+
+});
+
+Route::middleware(['permission:Manage Inventory', config('jetstream.auth_session'), 'verified',])->group(function () {
+
+    Route::controller(CategoryController::class)->group(function () {
+        Route::get('/categories', 'indexView')->name('categories');
     });
 
 });

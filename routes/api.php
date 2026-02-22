@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\RolePermissionController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
@@ -49,4 +50,12 @@ Route::middleware(['auth:sanctum', 'permission:Manage Levels'])->group(function 
     Route::put('/levels/{level}', [LevelController::class, 'update']);
     Route::delete('/levels/{level}', [LevelController::class, 'destroy']);
     Route::post('/levels/{level}/toggle-default', [LevelController::class, 'toggleDefault']);
+});
+
+Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {
+    Route::get('/categories/tree', [CategoryController::class, 'tree']);
+    Route::get('/categories/options', [CategoryController::class, 'options']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 });

@@ -15,6 +15,7 @@ import SellerManager from './components/SellerManager.vue';
 import ActiveSellerManager from './components/ActiveSellerManager.vue';
 import SellerProfile from './components/SellerProfile.vue';
 import LevelManager from './components/LevelManager.vue';
+import CategoryManager from './components/CategoryManager.vue';
 
 const app = createApp({})
 
@@ -35,5 +36,6 @@ app.use(Toast, {
 .component('active-seller-manager', ActiveSellerManager)
 .component('seller-profile', SellerProfile)
 .component('level-manager', LevelManager)
+.component('category-manager', CategoryManager)
 
 .mount('#app')

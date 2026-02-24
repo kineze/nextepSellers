@@ -1,5 +1,5 @@
 <footer class="relative border-t border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/70">
-    <div class="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12 md:grid-cols-2 lg:grid-cols-4">
+    <div class="mx-auto grid w-full max-w-screen-2xl gap-10 px-6 py-12 md:grid-cols-2 lg:grid-cols-4">
         <div>
             <a href="{{ url('/') }}" class="inline-flex items-center gap-3">
                 <img src="{{ asset('assets/img/nextep-icon.webp') }}" alt="Nextep" class="h-8 w-8">
@@ -56,7 +56,7 @@
     </div>
 
     <div class="border-t border-slate-200/70 dark:border-slate-800/70">
-        <div class="mx-auto flex w-full max-w-6xl flex-col gap-2 px-6 py-5 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mx-auto flex w-full max-w-screen-2xl flex-col gap-2 px-6 py-5 text-xs text-slate-500 dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
             <span>© {{ date('Y') }} nextepSellers. All rights reserved.</span>
             <span>Built for modern sellers.</span>
         </div>

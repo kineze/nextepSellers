@@ -6,7 +6,7 @@
     <div class="pointer-events-none absolute -right-12 top-1/2 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20"></div>
     <div class="pointer-events-none absolute left-1/2 top-24 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-500/10"></div>
 
-    <div class="mx-auto w-full max-w-6xl px-6">
+    <div class="mx-auto w-full max-w-screen-2xl px-6">
         <div class="reveal text-center">
             <div class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
                 <span class="relative flex h-2 w-2">
@@ -178,7 +178,7 @@
 </section>
 
 <section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden bg-gradient-to-r from-sky-600 to-cyan-500 py-20">
-    <div class="mx-auto w-full max-w-6xl px-6">
+    <div class="mx-auto w-full max-w-screen-2xl px-6">
         <div class="reveal relative overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/10 p-10 text-center text-white backdrop-blur-sm sm:p-14">
             <h2 class="text-3xl font-extrabold sm:text-4xl">Ready to Take the Next Step?</h2>
             <p class="mx-auto mt-4 max-w-xl text-sm text-sky-100 sm:text-base">Join a growing community of high-performing sellers and start scaling your business today.</p>

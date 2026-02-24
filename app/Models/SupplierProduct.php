@@ -2,29 +2,34 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
-class Varient extends Model
+class SupplierProduct extends Model
 {
     protected $fillable = [
+        'supplier_id',
         'product_id',
-        'sku',
-        'attributes',
-        'price',
-        'stock_quantity',
-        'reorder_level',
+        'supplier_product_code',
+        'cost',
+        'lead_days',
+        'moq',
+        'notes',
         'is_active',
     ];
 
     protected $casts = [
-        'attributes' => 'array',
-        'price' => 'decimal:2',
-        'stock_quantity' => 'integer',
-        'reorder_level' => 'integer',
+        'cost' => 'decimal:2',
+        'lead_days' => 'integer',
+        'moq' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
     public function product(): BelongsTo
     {

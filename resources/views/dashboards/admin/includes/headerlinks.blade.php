@@ -7,6 +7,33 @@
 
      <title>Nextep</title>
 
+    <style>
+      html.theme-preload-dark,
+      html.theme-preload-dark body {
+        background-color: #020617;
+        color: #e2e8f0;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          var savedTheme = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark = savedTheme === 'dark' || (!savedTheme && prefersDark);
+          var root = document.documentElement;
+
+          root.classList.remove('theme-preload-dark');
+          if (isDark) {
+            root.classList.add('dark', 'theme-preload-dark');
+          } else {
+            root.classList.remove('dark');
+          }
+        } catch (e) {
+          // ignore theme preload errors
+        }
+      })();
+    </script>
+
     <link href="{{asset('/assets/css/theme.css')}}" rel="stylesheet" />
     
     <!--     Fonts and icons     -->

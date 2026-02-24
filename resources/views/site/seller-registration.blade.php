@@ -2,7 +2,7 @@
 
 @section('content')
 <section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen bg-slate-50 py-14 dark:bg-slate-950">
-    <div class="mx-auto w-full max-w-6xl px-6">
+    <div class="mx-auto w-full max-w-screen-2xl px-6">
         <div class="reveal mb-6">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Why Become a Seller</p>
             <h2 class="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">Build Consistent Growth With Lower Operational Stress</h2>
@@ -47,7 +47,7 @@
 </section>
 
 <section class="relative left-1/2 right-1/2 mb-12 -mx-[50vw] w-screen bg-white dark:bg-black">
-    <div class="mx-auto w-full max-w-6xl px-6">
+    <div class="mx-auto w-full max-w-screen-2xl px-6">
         <seller-registration-form
             submit-url="{{ route('sellerRegistration.store') }}"
             email-otp-send-url="{{ route('sellerRegistration.emailOtp.send') }}"

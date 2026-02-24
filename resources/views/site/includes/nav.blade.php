@@ -3,7 +3,7 @@
 @endphp
 
 <nav class="{{ $isLanding ? 'sticky top-0 z-50 w-full border-b border-white/30 bg-white/35 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/35' : 'sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/70' }}">
-    <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+    <div class="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-6 py-4">
         <a href="{{ url('/') }}" class="flex items-center gap-3">
             <img src="{{ asset('assets/img/nextep-icon.webp') }}" alt="Nextep" class="h-8 w-8">
             <span class="text-sm font-semibold uppercase tracking-[0.25em] text-slate-900 dark:text-white">Nextep</span>
@@ -166,6 +166,7 @@
 
             const applyTheme = (theme) => {
                 document.documentElement.classList.remove('dark');
+                document.documentElement.classList.remove('theme-preload-dark', 'theme-preload-comfort');
                 document.body.classList.remove('theme-light', 'theme-dark', 'theme-comfort');
 
                 if (theme === 'dark') {

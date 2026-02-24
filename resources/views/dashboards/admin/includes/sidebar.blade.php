@@ -39,7 +39,7 @@
             data-subtitle="Inventory"
             data-links='[
               {"label":"Product Manager","href":"{{ url('/products') }}"},
-              {"label":"Suppliers","href":"{{ url('admin/supplier-list') }}"},
+              {"label":"Supplier Manager","href":"{{ url('/suppliers') }}"},
               {"label":"Category Manager","href":"{{ url('/categories') }}"}
             ]'>
 
@@ -58,8 +58,8 @@
             <a href="{{ url('/products') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
               Product Manager
             </a>
-            <a href="{{ url('admin/supplier-list') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
-              Suppliers
+            <a href="{{ url('/suppliers') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
+              Supplier Manager
             </a>
             <a href="{{ url('/categories') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
               Category Manager

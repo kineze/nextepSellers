@@ -7,10 +7,10 @@
     @php
         $isLanding = request()->routeIs('index');
     @endphp
-    <div id="app" class="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div id="app" class="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
         @include('site.includes.nav')
 
-        <main class="mx-auto w-full max-w-6xl px-6">
+        <main class="mx-auto w-full max-w-screen-2xl flex-1 px-6">
             @yield('content')
         </main>
 

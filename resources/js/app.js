@@ -17,8 +17,11 @@ import SellerProfile from './components/SellerProfile.vue';
 import LevelManager from './components/LevelManager.vue';
 import CategoryManager from './components/CategoryManager.vue';
 import ProductManager from './components/ProductManager.vue';
+import SupplierManager from './components/SupplierManager.vue';
 import AttributeManager from './components/AttributeManager.vue';
 import ProductCreateManager from './components/ProductCreateManager.vue';
+import SellerProductVariantSelector from './components/SellerProductVariantSelector.vue';
+import SellerProductShow from './components/SellerProductShow.vue';
 
 const app = createApp({})
 
@@ -41,7 +44,10 @@ app.use(Toast, {
 .component('level-manager', LevelManager)
 .component('category-manager', CategoryManager)
 .component('product-manager', ProductManager)
+.component('supplier-manager', SupplierManager)
 .component('attribute-manager', AttributeManager)
 .component('product-create-manager', ProductCreateManager)
+.component('seller-product-variant-selector', SellerProductVariantSelector)
+.component('seller-product-show', SellerProductShow)
 
 .mount('#app')

@@ -1,5 +1,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
+  document.documentElement.classList.remove('theme-preload-dark');
+
   /* ------------------ Element Refs ------------------ */
   const sidebar          = document.getElementById('sidebar');
   const toggleBtn        = document.getElementById('toggleSidebar');   // external button

@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\ProductController;
@@ -39,6 +40,17 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/dashboard', 'getAdminDashboard')->name('adminDashboard');
     });
  
+});
+
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',])->group(function () {
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/seller/dashboard', 'getSellerDashboard')->name('sellerDashboard');
+        Route::get('/seller/products', 'getSellerProducts')->name('sellerProducts');
+        Route::get('/seller/products/{product}', 'getSellerProductShow')->name('sellerProducts.show');
+        Route::get('/seller/products/{product}/data', 'getSellerProductData')->name('sellerProducts.data');
+        Route::get('/seller/inventory', 'getSellerInventory')->name('sellerInventory');
+        Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
+    });
 });
 
 
@@ -83,6 +95,11 @@ Route::middleware(['permission:Manage Inventory', config('jetstream.auth_session
     Route::controller(ProductController::class)->group(function () {
         Route::get('/products', 'indexView')->name('products');
         Route::get('/products/create', 'createView')->name('products.create');
+        Route::get('/products/{product}/edit', 'editView')->name('products.edit');
+    });
+
+    Route::controller(SupplierController::class)->group(function () {
+        Route::get('/suppliers', 'indexView')->name('suppliers');
     });
 
     Route::controller(CategoryController::class)->group(function () {

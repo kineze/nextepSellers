@@ -2,7 +2,7 @@
 
 @section('content')
 <section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden bg-gradient-to-b from-sky-50 to-white py-16 dark:from-slate-950 dark:to-slate-950">
-    <div class="mx-auto w-full max-w-6xl px-6">
+    <div class="mx-auto w-full max-w-screen-2xl px-6">
         <div class="reveal max-w-3xl">
             <p class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Learn More</p>
             <h1 class="mt-3 text-4xl font-extrabold text-slate-900 dark:text-white sm:text-5xl">How nextepSellers Helps You Grow</h1>

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\SellerController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\ProductController;
@@ -64,8 +65,21 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/create-options', [ProductController::class, 'createOptions']);
+    Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::post('/products/upload-image', [ProductController::class, 'uploadImage']);
     Route::post('/products', [ProductController::class, 'store']);
+    Route::put('/products/{product}', [ProductController::class, 'update']);
+    Route::post('/products/{product}/toggle-active', [ProductController::class, 'toggleActive']);
+
+    Route::get('/suppliers', [SupplierController::class, 'index']);
+    Route::get('/suppliers/product-options', [SupplierController::class, 'productOptions']);
+    Route::get('/suppliers/{supplier}', [SupplierController::class, 'show']);
+    Route::post('/suppliers', [SupplierController::class, 'store']);
+    Route::put('/suppliers/{supplier}', [SupplierController::class, 'update']);
+    Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy']);
+    Route::post('/suppliers/{supplier}/link-product', [SupplierController::class, 'linkProduct']);
+    Route::delete('/suppliers/{supplier}/linked-products/{supplierProduct}', [SupplierController::class, 'unlinkProduct']);
+
     Route::get('/categories/tree', [CategoryController::class, 'tree']);
     Route::get('/categories/options', [CategoryController::class, 'options']);
     Route::post('/categories', [CategoryController::class, 'store']);

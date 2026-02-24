@@ -45,8 +45,12 @@ class GenaralController extends Controller
                             return redirect()->route('blocked');
                     }
                     return redirect()->route('marketerDashboard');
-                } else{
+                } elseif ($user->hasRole('Admin')) {
                     return redirect()->route('adminDashboard');
+                } elseif ($user->hasRole('Seller')) {
+                    return redirect()->route('sellerDashboard');
+                } else {
+                    return redirect()->route('setDashboard');
                 }
         } else {
             return view('site.home');
@@ -64,6 +68,10 @@ class GenaralController extends Controller
 
         if ($user->hasRole('Admin')) {
             return redirect()->route('adminDashboard');
+        }
+
+        if ($user->hasRole('Seller')) {
+            return redirect()->route('sellerDashboard');
         }
 
         return redirect('/');

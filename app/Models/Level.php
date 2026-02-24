@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Level extends Model
 {
@@ -17,4 +18,9 @@ class Level extends Model
     protected $casts = [
         'is_default' => 'boolean',
     ];
+
+    public function productLevels(): HasMany
+    {
+        return $this->hasMany(ProductLevel::class);
+    }
 }

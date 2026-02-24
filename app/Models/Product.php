@@ -37,4 +37,19 @@ class Product extends Model
     {
         return $this->hasMany(Varient::class);
     }
+
+    public function productLevels(): HasMany
+    {
+        return $this->hasMany(ProductLevel::class);
+    }
+
+    public function commissions(): HasMany
+    {
+        return $this->productLevels();
+    }
+
+    public function supplierProducts(): HasMany
+    {
+        return $this->hasMany(SupplierProduct::class);
+    }
 }

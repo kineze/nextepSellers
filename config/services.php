@@ -38,4 +38,9 @@ return [
         'key' => env('BREVO_API_KEY'),
     ],
 
+    'royal_express' => [
+        'base_url' => env('ROYAL_EXPRESS_BASE_URL'),
+        'tenant' => env('ROYAL_EXPRESS_TENANT'),
+    ],
+
 ];

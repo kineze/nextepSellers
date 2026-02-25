@@ -31,17 +31,13 @@
 
     <p v-else class="text-sm text-slate-500 dark:text-slate-400">This product has no variant selections.</p>
 
-    <form method="GET" :action="orderUrl" class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
-      <input type="hidden" name="product_id" :value="productId">
-      <input type="hidden" name="variant_id" :value="selectedVariant?.id || ''">
-
+    <div class="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900/60">
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Quantity</p>
           <div class="mt-1 inline-flex items-center rounded-xl border border-slate-300 dark:border-slate-700">
             <button type="button" class="px-3 py-1.5 text-sm font-bold text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800" @click="decreaseQty">-</button>
             <input
-              name="quantity"
               type="number"
               min="1"
               :value="qty"
@@ -53,27 +49,35 @@
         </div>
 
         <button
-          type="submit"
+          type="button"
           class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="hasVariants && !selectedVariant"
+          @click="addToCart"
         >
           <i class="fas fa-cart-plus"></i>
-          Place Order
+          Add to Cart
         </button>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useToast } from 'vue-toastification'
+import { useSellerCart } from '../composables/useSellerCart'
 
 const props = defineProps({
   productId: { type: Number, required: true },
+  productTitle: { type: String, required: true },
+  productCode: { type: String, default: '' },
+  productImage: { type: String, default: '' },
   hasVariants: { type: Boolean, default: false },
   variants: { type: Array, default: () => [] },
-  orderUrl: { type: String, required: true },
 })
+
+const toast = useToast()
+const { addItem } = useSellerCart()
 
 const qty = ref(1)
 
@@ -97,10 +101,13 @@ const attributeOptions = computed(() => {
 const attributeKeys = computed(() => Object.keys(attributeOptions.value))
 
 const selected = reactive({})
-for (const key of attributeKeys.value) {
-  const first = attributeOptions.value[key]?.[0]?.value || ''
-  selected[key] = first
-}
+watch(attributeKeys, (keys) => {
+  for (const key of keys) {
+    if (!selected[key]) {
+      selected[key] = attributeOptions.value[key]?.[0]?.value || ''
+    }
+  }
+}, { immediate: true })
 
 const isColorAttribute = (key) => {
   const options = attributeOptions.value[key] || []
@@ -139,5 +146,28 @@ const onQtyInput = (event) => {
   const value = Number(event.target.value || 1)
   qty.value = Number.isFinite(value) && value >= 1 ? value : 1
   event.target.value = String(qty.value)
+}
+
+const addToCart = () => {
+  if (props.hasVariants && !selectedVariant.value) {
+    toast.error('Please select a valid variant.')
+    return
+  }
+
+  const variant = selectedVariant.value || (!props.hasVariants ? props.variants[0] : null)
+
+  addItem({
+    productId: props.productId,
+    variantId: variant?.id || null,
+    title: props.productTitle,
+    productCode: props.productCode,
+    image: props.productImage,
+    sku: variant?.sku || '',
+    attributes: variant?.attributes || {},
+    price: variant?.price ?? null,
+    qty: qty.value,
+  })
+
+  toast.success('Added to cart.')
 }
 </script>

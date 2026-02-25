@@ -80,4 +80,9 @@ class DashboardController extends Controller
     {
         return view('dashboards.seller.orders');
     }
+
+    public function getRoyalExpress()
+    {
+        return view('dashboards.admin.settings.royalExpress');
+    }
 }

@@ -62,9 +62,11 @@
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Variant Selection</h2>
             <seller-product-variant-selector
               :product-id="product.id"
+              :product-title="product.title"
+              :product-code="product.product_code"
+              :product-image="selectedImage"
               :has-variants="hasVariantOptions"
               :variants="normalizedVariants"
-              :order-url="orderUrl"
             />
           </div>
 
@@ -141,7 +143,6 @@ const props = defineProps({
   productId: { type: Number, required: true },
   productDataUrl: { type: String, required: true },
   productsUrl: { type: String, required: true },
-  orderUrl: { type: String, required: true },
 })
 
 const loading = ref(true)

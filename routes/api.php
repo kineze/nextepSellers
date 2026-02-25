@@ -10,6 +10,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolePermissionController;
+use App\Http\Controllers\RoyalExpressLoginController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -85,4 +86,32 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::get('/royal-express/logins', [RoyalExpressLoginController::class, 'index']);
+    Route::post('/royal-express/logins', [RoyalExpressLoginController::class, 'store']);
+    Route::delete('/royal-express/logins/{id}', [RoyalExpressLoginController::class, 'destroy']);
+    Route::put('/royal-express/logins/{login}/location', [RoyalExpressLoginController::class, 'updateLocation']);
+
+    Route::post('/royal-express/login', [RoyalExpressLoginController::class, 'loginAndSave']);
+    Route::get('/royal-express/businesses', [RoyalExpressLoginController::class, 'businesses']);
+    Route::post('/royal-express/fetch-cities-states', [RoyalExpressLoginController::class, 'fetchCitiesStates']);
+
+    Route::get('/districts', [RoyalExpressLoginController::class, 'districtsIndex']);
+    Route::get('/system-cities', [RoyalExpressLoginController::class, 'systemCities']);
+
+    Route::get('/curfox-states/preview', [RoyalExpressLoginController::class, 'statesPreview']);
+    Route::post('/curfox-states/sync-matched', [RoyalExpressLoginController::class, 'statesSyncMatched']);
+    Route::post('/curfox-states/manual-match', [RoyalExpressLoginController::class, 'statesManualMatch']);
+    Route::post('/curfox-states/create-and-match', [RoyalExpressLoginController::class, 'statesCreateAndMatch']);
+
+    Route::get('/curfox-cities/stats', [RoyalExpressLoginController::class, 'cityStats']);
+    Route::get('/curfox-cities/preview', [RoyalExpressLoginController::class, 'cityPreview']);
+    Route::post('/curfox-cities/sync-matched', [RoyalExpressLoginController::class, 'citySyncMatched']);
+    Route::post('/curfox-cities/manual-match', [RoyalExpressLoginController::class, 'cityManualMatch']);
+    Route::post('/curfox-cities/create-and-match', [RoyalExpressLoginController::class, 'cityCreateAndMatch']);
+    Route::post('/curfox-cities/auto-create-sync', [RoyalExpressLoginController::class, 'cityAutoCreateSync']);
+    Route::get('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityOrphans']);
+    Route::delete('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityDeleteOrphans']);
 });

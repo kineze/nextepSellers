@@ -17,6 +17,7 @@
       </div>
     </main>
 
+    <seller-floating-cart :orders-url='@json(route("sellerOrders"))'></seller-floating-cart>
   </div>
 
   @include('site.includes.footerlinks')

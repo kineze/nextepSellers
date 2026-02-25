@@ -25,5 +25,7 @@
       <i class="fas fa-cart-shopping w-4"></i>
       My Orders
     </a>
+
+    <seller-cart-nav-link :href='@json(route("sellerOrders"))'></seller-cart-nav-link>
   </nav>
 </div>

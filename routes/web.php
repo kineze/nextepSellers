@@ -70,6 +70,10 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
     Route::controller(AttributeController::class)->group(function () {
         Route::get('/attributes', 'indexView')->name('attributes');
     });
+
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/royal-express', 'getRoyalExpress')->name('royalExpress');
+    });
 });
 
 Route::middleware(['permission:Manage Sellers', config('jetstream.auth_session'), 'verified',])->group(function () {

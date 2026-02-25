@@ -22,6 +22,11 @@ import AttributeManager from './components/AttributeManager.vue';
 import ProductCreateManager from './components/ProductCreateManager.vue';
 import SellerProductVariantSelector from './components/SellerProductVariantSelector.vue';
 import SellerProductShow from './components/SellerProductShow.vue';
+import SellerCartNavLink from './components/SellerCartNavLink.vue';
+import SellerFloatingCart from './components/SellerFloatingCart.vue';
+import CurfoxLogin from './components/CurfoxLogin.vue';
+import CitySync from './components/CitySync.vue';
+import StateMatcher from './components/StateMatcher.vue';
 
 const app = createApp({})
 
@@ -49,5 +54,10 @@ app.use(Toast, {
 .component('product-create-manager', ProductCreateManager)
 .component('seller-product-variant-selector', SellerProductVariantSelector)
 .component('seller-product-show', SellerProductShow)
+.component('seller-cart-nav-link', SellerCartNavLink)
+.component('seller-floating-cart', SellerFloatingCart)
+.component('curfox-login', CurfoxLogin)
+.component('city-sync', CitySync)
+.component('state-matcher', StateMatcher)
 
 .mount('#app')

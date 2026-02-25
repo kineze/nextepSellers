@@ -9,8 +9,11 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\GrnController;
+use App\Http\Controllers\LotController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoyalExpressLoginController;
+use App\Http\Controllers\SellerOrderController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -86,6 +89,21 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
+
+    Route::get('/grns/options', [GrnController::class, 'options']);
+    Route::get('/grns', [GrnController::class, 'index']);
+    Route::post('/grns', [GrnController::class, 'store']);
+    Route::get('/grns/{grn}', [GrnController::class, 'show']);
+    Route::put('/grns/{grn}', [GrnController::class, 'update']);
+    Route::delete('/grns/{grn}', [GrnController::class, 'destroy']);
+    Route::post('/grns/{grn}/post', [GrnController::class, 'post']);
+    Route::post('/grns/{grn}/unpost', [GrnController::class, 'unpost']);
+
+    Route::get('/lots/filter', [LotController::class, 'filterLots']);
+    Route::get('/lots/{lot}/items', [LotController::class, 'items']);
+    Route::post('/lot-items/{lotItem}/mark-damaged', [LotController::class, 'markDamaged']);
+    Route::post('/lots/{lot}/add-items', [LotController::class, 'addItems']);
+    Route::post('/lots/{lot}/adjust', [LotController::class, 'adjust']);
 });
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
@@ -114,4 +132,15 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::post('/curfox-cities/auto-create-sync', [RoyalExpressLoginController::class, 'cityAutoCreateSync']);
     Route::get('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityOrphans']);
     Route::delete('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityDeleteOrphans']);
+
+    Route::get('/admin/orders/draft', [SellerOrderController::class, 'adminDraftOrders']);
+    Route::get('/admin/orders/filter-options', [SellerOrderController::class, 'adminOrderFilterOptions']);
+    Route::post('/admin/orders/{order}/approve', [SellerOrderController::class, 'adminApprove']);
+    Route::post('/admin/orders/bulk-approve', [SellerOrderController::class, 'adminBulkApprove']);
+});
+
+Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
+    Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
+    Route::get('/seller/orders', [SellerOrderController::class, 'index']);
+    Route::post('/seller/orders', [SellerOrderController::class, 'store']);
 });

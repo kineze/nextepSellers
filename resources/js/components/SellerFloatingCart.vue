@@ -86,7 +86,7 @@
               :href="ordersUrl"
               class="flex-1 rounded-xl bg-blue-600 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700"
             >
-              Go to Orders
+              Go to Checkout
             </a>
           </div>
         </div>

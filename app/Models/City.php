@@ -26,4 +26,14 @@ class City extends Model
     {
         return $this->hasMany(CurfoxCity::class, 'system_city_id');
     }
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

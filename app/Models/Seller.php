@@ -49,4 +49,14 @@ class Seller extends Model
         return $this->belongsTo(Level::class, 'seller_level_id');
     }
 
+    public function customers()
+    {
+        return $this->hasMany(Customer::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
 }

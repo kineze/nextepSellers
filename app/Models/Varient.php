@@ -35,4 +35,19 @@ class Varient extends Model
     {
         return $this->hasMany(SupplierProductVarient::class);
     }
+
+    public function lots(): HasMany
+    {
+        return $this->hasMany(Lot::class, 'variant_id');
+    }
+
+    public function lotItems(): HasMany
+    {
+        return $this->hasMany(LotItem::class, 'variant_id');
+    }
+
+    public function grnItems(): HasMany
+    {
+        return $this->hasMany(GrnItem::class, 'variant_id');
+    }
 }

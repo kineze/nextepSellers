@@ -81,8 +81,28 @@ class DashboardController extends Controller
         return view('dashboards.seller.orders');
     }
 
+    public function getSellerCheckout()
+    {
+        return view('dashboards.seller.checkout');
+    }
+
     public function getRoyalExpress()
     {
         return view('dashboards.admin.settings.royalExpress');
+    }
+
+    public function getAdminDraftOrders()
+    {
+        return view('dashboards.admin.orders.draftOrders');
+    }
+
+    public function getGrns()
+    {
+        return view('dashboards.admin.settings.grns');
+    }
+
+    public function getLots()
+    {
+        return view('dashboards.admin.settings.lots');
     }
 }

@@ -40,7 +40,9 @@
             data-links='[
               {"label":"Product Manager","href":"{{ url('/products') }}"},
               {"label":"Supplier Manager","href":"{{ url('/suppliers') }}"},
-              {"label":"Category Manager","href":"{{ url('/categories') }}"}
+              {"label":"Category Manager","href":"{{ url('/categories') }}"},
+              {"label":"GRN Manager","href":"{{ route('grns') }}"},
+              {"label":"Lot Manager","href":"{{ route('lots') }}"}
             ]'>
 
           <button class="dropdown-toggle  dark:border-zinc-600 w-full flex items-center gap-3 p-2 dark:hover:bg-zinc-950 transition-all">
@@ -63,6 +65,39 @@
             </a>
             <a href="{{ url('/categories') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
               Category Manager
+            </a>
+            <a href="{{ route('grns') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
+              GRN Manager
+            </a>
+            <a href="{{ route('lots') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
+              Lot Manager
+            </a>
+          </div>
+        </div>
+        @endcan
+
+        @can('Access Admin Dashboard')
+        <!-- Orders -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Orders"
+            data-links='[
+              {"label":"Draft Orders","href":"{{ route('adminDraftOrders') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-blue-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-cart-shopping" aria-hidden="true"></i>
+              <span class="sr-only">Orders</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-blue-700 dark:text-white text-left">
+              Orders
+            </span>
+            <i class="fas fa-chevron-down text-xs text-blue-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('adminDraftOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Draft Orders
             </a>
           </div>
         </div>

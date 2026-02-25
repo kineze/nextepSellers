@@ -27,6 +27,12 @@ import SellerFloatingCart from './components/SellerFloatingCart.vue';
 import CurfoxLogin from './components/CurfoxLogin.vue';
 import CitySync from './components/CitySync.vue';
 import StateMatcher from './components/StateMatcher.vue';
+import SellerOrderSubmit from './components/SellerOrderSubmit.vue';
+import SellerMyOrders from './components/SellerMyOrders.vue';
+import AdminDraftOrders from './components/AdminDraftOrders.vue';
+import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
+import GrnManager from './components/GrnManager.vue';
+import LotManager from './components/LotManager.vue';
 
 const app = createApp({})
 
@@ -59,5 +65,11 @@ app.use(Toast, {
 .component('curfox-login', CurfoxLogin)
 .component('city-sync', CitySync)
 .component('state-matcher', StateMatcher)
+.component('seller-order-submit', SellerOrderSubmit)
+.component('seller-my-orders', SellerMyOrders)
+.component('admin-draft-orders', AdminDraftOrders)
+.component('admin-global-filter-bar', AdminGlobalFilterBar)
+.component('grn-manager', GrnManager)
+.component('lot-manager', LotManager)
 
 .mount('#app')

@@ -38,6 +38,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
     
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'getAdminDashboard')->name('adminDashboard');
+        Route::get('/orders/draft', 'getAdminDraftOrders')->name('adminDraftOrders');
     });
  
 });
@@ -49,6 +50,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/seller/products/{product}', 'getSellerProductShow')->name('sellerProducts.show');
         Route::get('/seller/products/{product}/data', 'getSellerProductData')->name('sellerProducts.data');
         Route::get('/seller/inventory', 'getSellerInventory')->name('sellerInventory');
+        Route::get('/seller/checkout', 'getSellerCheckout')->name('sellerCheckout');
         Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
     });
 });
@@ -108,6 +110,11 @@ Route::middleware(['permission:Manage Inventory', config('jetstream.auth_session
 
     Route::controller(CategoryController::class)->group(function () {
         Route::get('/categories', 'indexView')->name('categories');
+    });
+
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/grns', 'getGrns')->name('grns');
+        Route::get('/lots', 'getLots')->name('lots');
     });
 
 });

@@ -14,9 +14,31 @@
     </p>
   </div>
 
+  @if(($categories ?? collect())->count() > 0)
+    <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div class="flex flex-wrap items-center gap-2">
+        <a
+          href="{{ route('sellerProducts') }}"
+          class="rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition {{ empty($selectedCategoryId) ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' }}"
+        >
+          All
+        </a>
+
+        @foreach(($categories ?? collect()) as $category)
+          <a
+            href="{{ route('sellerProducts', ['category_id' => $category->id]) }}"
+            class="rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition {{ (int) ($selectedCategoryId ?? 0) === (int) $category->id ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' }}"
+          >
+            {{ $category->name }}
+          </a>
+        @endforeach
+      </div>
+    </div>
+  @endif
+
   @if ($products->count() === 0)
     <div class="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
-      No active products available right now.
+      {{ !empty($selectedCategoryId) ? 'No active products found in this category.' : 'No active products available right now.' }}
     </div>
   @else
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">

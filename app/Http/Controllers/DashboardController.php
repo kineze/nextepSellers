@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Level;
+use App\Models\Category;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -72,21 +73,45 @@ class DashboardController extends Controller
         ]);
     }
 
-    public function getSellerProducts()
+    public function getSellerProducts(Request $request)
     {
-        $products = Product::query()
+        $validated = $request->validate([
+            'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
+
+        $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+
+        $productQuery = Product::query()
             ->with([
                 'category:id,name',
                 'images:id,product_id,path,is_primary',
                 'varients:id,product_id,price,is_active',
                 'productLevels:id,product_id,level_id,type,value',
             ])
-            ->where('is_active', true)
+            ->where('is_active', true);
+
+        if ($categoryId) {
+            $productQuery->where('category_id', $categoryId);
+        }
+
+        $products = $productQuery
             ->latest()
-            ->paginate(12);
+            ->paginate(12)
+            ->withQueryString();
+
+        $categories = Category::query()
+            ->select('categories.id', 'categories.name')
+            ->join('products', 'products.category_id', '=', 'categories.id')
+            ->where('categories.is_active', true)
+            ->where('products.is_active', true)
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('categories.name')
+            ->get();
 
         return view('dashboards.seller.products', [
             'products' => $products,
+            'categories' => $categories,
+            'selectedCategoryId' => $categoryId,
         ]);
     }
 

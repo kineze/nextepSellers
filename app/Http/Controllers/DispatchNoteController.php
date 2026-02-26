@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\DispatchNote;
 use App\Models\DispatchNoteItem;
+use App\Models\Lot;
 use App\Models\LotItem;
 use App\Models\Order;
 use App\Models\Seller;
+use App\Models\Varient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -545,6 +547,9 @@ class DispatchNoteController extends Controller
             });
 
         DB::transaction(function () use ($dispatchNote, $orderId, $variantPayload) {
+            $touchedLotIds = collect();
+            $touchedVariantIds = collect();
+
             $belongsToNote = DispatchNoteItem::query()
                 ->where('dispatch_note_id', $dispatchNote->id)
                 ->where('order_id', $orderId)
@@ -600,13 +605,17 @@ class DispatchNoteController extends Controller
                 ->where('order_id', $orderId)
                 ->where('status', 'reserved')
                 ->lockForUpdate()
-                ->get(['id', 'barcode']);
+                ->get(['id', 'barcode', 'lot_id', 'variant_id']);
 
             $toReleaseIds = $currentReserved
                 ->filter(fn ($row) => !$allBarcodes->contains($row->barcode))
                 ->pluck('id');
 
             if ($toReleaseIds->isNotEmpty()) {
+                $releasedRows = $currentReserved->whereIn('id', $toReleaseIds->all());
+                $touchedLotIds = $touchedLotIds->merge($releasedRows->pluck('lot_id'));
+                $touchedVariantIds = $touchedVariantIds->merge($releasedRows->pluck('variant_id'));
+
                 LotItem::query()->whereIn('id', $toReleaseIds)->update([
                     'order_id' => null,
                     'status' => 'available',
@@ -654,13 +663,47 @@ class DispatchNoteController extends Controller
                             $lotItem->save();
                         }
                     }
+
+                    $touchedLotIds->push((int) $lotItem->lot_id);
+                    $touchedVariantIds->push((int) $lotItem->variant_id);
                 }
             }
+
+            $this->recomputeInventoryFromLotItems(
+                $touchedLotIds->filter()->unique()->values()->all(),
+                $touchedVariantIds->filter()->unique()->values()->all()
+            );
         });
 
         return response()->json([
             'message' => 'Lot items linked to order successfully.',
         ]);
+    }
+
+    private function recomputeInventoryFromLotItems(array $lotIds, array $variantIds): void
+    {
+        foreach ($lotIds as $lotId) {
+            $availableLotQty = LotItem::query()
+                ->where('lot_id', (int) $lotId)
+                ->where('status', 'available')
+                ->count();
+
+            Lot::query()->where('id', (int) $lotId)->update([
+                'quantity' => $availableLotQty,
+                'is_active' => $availableLotQty > 0,
+            ]);
+        }
+
+        foreach ($variantIds as $variantId) {
+            $availableVariantQty = LotItem::query()
+                ->where('variant_id', (int) $variantId)
+                ->where('status', 'available')
+                ->count();
+
+            Varient::query()->where('id', (int) $variantId)->update([
+                'stock_quantity' => $availableVariantQty,
+            ]);
+        }
     }
 
     public function adminPackedOrders(Request $request)

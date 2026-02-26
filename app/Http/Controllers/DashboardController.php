@@ -135,6 +135,18 @@ class DashboardController extends Controller
         return view('dashboards.seller.orders');
     }
 
+    public function getSellerOrderShow(Order $order)
+    {
+        $seller = auth()->user()?->seller;
+        if (!$seller || (int) $order->seller_id !== (int) $seller->id) {
+            abort(404);
+        }
+
+        return view('dashboards.seller.order-show', [
+            'orderId' => $order->id,
+        ]);
+    }
+
     public function getSellerCheckout()
     {
         return view('dashboards.seller.checkout');

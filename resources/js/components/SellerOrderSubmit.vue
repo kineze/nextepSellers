@@ -248,7 +248,7 @@
             type="button"
             class="mt-4 w-full rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="submitting"
-            @click="submitOrder"
+            @click="openSubmitConfirmation"
           >
             <span v-if="submitting">Submitting...</span>
             <span v-else>Submit Order</span>
@@ -267,6 +267,43 @@
           </p>
         </div>
       </aside>
+    </div>
+
+    <div v-if="showSubmitModal" class="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/50" @click="closeSubmitConfirmation"></div>
+      <div class="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Confirm Order Submission</h3>
+        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">
+          Please confirm before submitting this order.
+        </p>
+
+        <div class="mt-4 space-y-1 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="flex items-center justify-between"><span>Items</span><span class="font-semibold">{{ totalItems }}</span></p>
+          <p class="flex items-center justify-between"><span>Customer</span><span class="font-semibold">{{ form.customer_name || '-' }}</span></p>
+          <p class="flex items-center justify-between"><span>Phone</span><span class="font-semibold">{{ form.phone || '-' }}</span></p>
+          <p class="flex items-center justify-between border-t border-slate-200 pt-2 dark:border-slate-700"><span>Total</span><span class="font-bold">LKR {{ toMoney(grandTotal) }}</span></p>
+        </div>
+
+        <div class="mt-5 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            :disabled="submitting"
+            @click="closeSubmitConfirmation"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700 disabled:opacity-50"
+            :disabled="submitting"
+            @click="submitOrder"
+          >
+            <span v-if="submitting">Submitting...</span>
+            <span v-else>Confirm Submit</span>
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -311,6 +348,7 @@ const recentDropdownWrapper = ref(null)
 const recentOpenUpward = ref(false)
 
 const submitting = ref(false)
+const showSubmitModal = ref(false)
 const discount = ref(0)
 const RECENT_CUSTOMERS_KEY = 'nextep-seller-recent-customers'
 const citySearch = ref('')
@@ -531,7 +569,7 @@ const updateCityDropdownDirection = () => {
   cityOpenUpward.value = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
 }
 
-const submitOrder = async () => {
+const openSubmitConfirmation = () => {
   if (!items.value.length) {
     toast.error('Cart is empty.')
     return
@@ -543,6 +581,16 @@ const submitOrder = async () => {
     return
   }
 
+  showSubmitModal.value = true
+}
+
+const closeSubmitConfirmation = () => {
+  if (submitting.value) return
+  showSubmitModal.value = false
+}
+
+const submitOrder = async () => {
+  showSubmitModal.value = false
   submitting.value = true
 
   try {

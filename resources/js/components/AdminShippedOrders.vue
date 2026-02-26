@@ -13,7 +13,7 @@
     </div>
 
     <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
-      <p class="text-xs text-slate-500 dark:text-slate-400">Total {{ meta.total }} shipped/completed orders</p>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Total {{ meta.total }} shipped orders</p>
       <div class="flex items-center gap-2">
         <select
           v-model="filters.date_basis"
@@ -59,11 +59,7 @@
           <tr v-for="order in orders" :key="order.id" class="bg-white dark:bg-slate-900/40">
             <td class="px-3 py-3 align-top font-semibold text-slate-900 dark:text-white">
               <p>#{{ order.id }}</p>
-              <span class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                :class="String(order.status).toLowerCase() === 'completed'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
-                  : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'"
-              >
+              <span class="mt-1 inline-flex rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
                 {{ order.status }}
               </span>
             </td>

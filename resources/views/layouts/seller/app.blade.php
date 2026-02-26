@@ -57,7 +57,7 @@
 
     <main class="mx-auto w-full max-w-screen-2xl flex-1 px-6 py-8">
       <div class="flex gap-6">
-        <aside id="sellerDesktopSidebar" class="hidden shrink-0 transition-all duration-300 lg:block lg:w-72">
+        <aside id="sellerDesktopSidebar" class="hidden shrink-0 transition-all duration-300 lg:sticky lg:top-20 lg:block lg:w-72 lg:self-start">
           <div id="sellerDesktopSidebarShell">
             @include('dashboards.seller.includes.sidebar', ['mode' => 'desktop'])
           </div>

@@ -142,6 +142,9 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
     Route::get('/admin/orders/draft', [SellerOrderController::class, 'adminDraftOrders']);
     Route::get('/admin/orders/{order}', [SellerOrderController::class, 'adminShow'])->whereNumber('order');
+    Route::get('/admin/orders/{order}/logs/{logId}', [SellerOrderController::class, 'adminOrderLogShow'])
+        ->whereNumber('order')
+        ->whereNumber('logId');
     Route::get('/admin/orders/{order}/delivery-timeline', [SellerOrderController::class, 'adminDeliveryTimeline'])->whereNumber('order');
     Route::get('/admin/orders/filter-options', [SellerOrderController::class, 'adminOrderFilterOptions']);
     Route::post('/admin/orders/{order}/approve', [SellerOrderController::class, 'adminApprove']);
@@ -164,5 +167,10 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
     Route::get('/seller/orders', [SellerOrderController::class, 'index']);
+    Route::get('/seller/orders/{order}', [SellerOrderController::class, 'sellerShow'])->whereNumber('order');
+    Route::get('/seller/orders/{order}/delivery-timeline', [SellerOrderController::class, 'sellerDeliveryTimeline'])->whereNumber('order');
+    Route::get('/seller/orders/{order}/logs/{logId}', [SellerOrderController::class, 'sellerOrderLogShow'])
+        ->whereNumber('order')
+        ->whereNumber('logId');
     Route::post('/seller/orders', [SellerOrderController::class, 'store']);
 });

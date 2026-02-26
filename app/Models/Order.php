@@ -9,6 +9,26 @@ class Order extends Model
 {
     use HasFactory;
 
+    private static array $logSnapshots = [];
+    private const LOGGABLE_FIELDS = [
+        'order_datetime',
+        'status',
+        'is_draft',
+        'waybill_no',
+        'net_total',
+        'total_collectable_amount',
+        'delivery_charge',
+        'total_discount',
+        'commission_amount',
+        'delivery_status',
+        'payment_status',
+        'is_damaged',
+        'packed_at',
+        'shipped_at',
+        'completed_at',
+        'cancelled_at',
+    ];
+
     protected $fillable = [
         'order_datetime',
         'status',
@@ -73,5 +93,125 @@ class Order extends Model
     public function dispatchNoteItems()
     {
         return $this->hasMany(DispatchNoteItem::class);
+    }
+
+    public function logs()
+    {
+        return $this->hasMany(OrderLog::class)->latest('id');
+    }
+
+    protected static function booted(): void
+    {
+        static::created(function (Order $order) {
+            $meaningful = $order->extractMeaningfulValues($order->getAttributes());
+            $changes = $order->buildChangePairs([], $meaningful);
+
+            if (empty($changes)) {
+                return;
+            }
+
+            $order->writeOrderLog(
+                eventType: 'created',
+                fromStatus: null,
+                toStatus: $order->status,
+                changes: $changes,
+                note: 'Order created'
+            );
+        });
+
+        static::updating(function (Order $order) {
+            self::$logSnapshots[spl_object_id($order)] = [
+                'original' => $order->getOriginal(),
+                'dirty' => $order->getDirty(),
+            ];
+        });
+
+        static::updated(function (Order $order) {
+            $key = spl_object_id($order);
+            $snapshot = self::$logSnapshots[$key] ?? null;
+            unset(self::$logSnapshots[$key]);
+
+            if (!$snapshot) {
+                return;
+            }
+
+            $dirty = collect($snapshot['dirty'] ?? [])
+                ->except(['updated_at'])
+                ->only(self::LOGGABLE_FIELDS)
+                ->toArray();
+
+            if (empty($dirty)) {
+                return;
+            }
+
+            $original = $snapshot['original'] ?? [];
+            $fromStatus = array_key_exists('status', $original) ? $original['status'] : null;
+            $toStatus = $order->status;
+            $statusChanged = array_key_exists('status', $dirty) && $fromStatus !== $toStatus;
+
+            $changes = $order->buildChangePairs($original, $dirty);
+
+            if (empty($changes)) {
+                return;
+            }
+
+            $order->writeOrderLog(
+                eventType: $statusChanged ? 'status_changed' : 'updated',
+                fromStatus: $statusChanged ? $fromStatus : null,
+                toStatus: $statusChanged ? $toStatus : null,
+                changes: $changes,
+                note: $statusChanged ? 'Order status changed' : 'Order updated'
+            );
+        });
+    }
+
+    private function writeOrderLog(
+        string $eventType,
+        ?string $fromStatus,
+        ?string $toStatus,
+        ?array $changes,
+        ?string $note
+    ): void {
+        try {
+            $this->logs()->create([
+                'user_id' => auth()->id(),
+                'event_type' => $eventType,
+                'from_status' => $fromStatus,
+                'to_status' => $toStatus,
+                'changes' => $changes,
+                'note' => $note,
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function extractMeaningfulValues(array $attributes): array
+    {
+        return collect($attributes)
+            ->only(self::LOGGABLE_FIELDS)
+            ->toArray();
+    }
+
+    private function buildChangePairs(array $original, array $current): array
+    {
+        $changes = [];
+        foreach ($current as $field => $newValue) {
+            if (!in_array($field, self::LOGGABLE_FIELDS, true)) {
+                continue;
+            }
+
+            $oldValue = $original[$field] ?? null;
+            if ($oldValue == $newValue && array_key_exists($field, $original)) {
+                continue;
+            }
+
+            $changes[$field] = [
+                'old' => $oldValue,
+                'new' => $newValue,
+            ];
+        }
+
+        return $changes;
     }
 }

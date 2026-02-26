@@ -2,11 +2,11 @@
   $mode = $mode ?? 'desktop';
   $wrapperClass = $mode === 'drawer'
       ? 'h-full overflow-y-auto rounded-none border-0 bg-white/95 p-4 shadow-none backdrop-blur dark:bg-slate-900/95'
-      : 'sticky top-24 rounded-3xl border border-slate-200/70 bg-gradient-to-b from-white via-slate-50 to-white p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900';
+      : 'max-h-[calc(100vh-6rem)] overflow-y-auto rounded-3xl border border-slate-200/70 bg-gradient-to-b from-white via-slate-50 to-white p-4 shadow-sm backdrop-blur dark:border-slate-800/70 dark:from-slate-900 dark:via-slate-900 dark:to-slate-900';
 @endphp
 
 <div class="seller-sidebar-shell {{ $wrapperClass }}">
-  <div class="flex items-center justify-between px-2">
+  <div class="flex items-center justify-between">
     <p class="seller-sidebar-label text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blue-600 dark:text-blue-300">Seller Panel</p>
 
     @if($mode === 'desktop')

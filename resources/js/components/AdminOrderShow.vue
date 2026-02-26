@@ -1,5 +1,5 @@
 <template>
-  <section class="mx-3 mt-3 mb-8 space-y-4">
+  <section class="mx-3 mt-3 pb-8 space-y-4">
     <div class="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/90">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -176,6 +176,75 @@
             </div>
           </div>
 
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div class="flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-slate-900 dark:text-white">Order Activity Log</h2>
+              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                Latest on top
+              </span>
+            </div>
+
+            <div class="mt-4">
+              <ul v-if="orderLogs.length" class="space-y-3">
+                <li
+                  v-for="log in orderLogs"
+                  :key="log.id"
+                  class="relative rounded-xl border border-slate-200 bg-slate-50/80 p-3 pl-4 dark:border-slate-700 dark:bg-slate-800/50"
+                >
+                  <span class="absolute left-0 top-3 h-8 w-1 rounded-r-full bg-sky-500/70"></span>
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ logEventTitle(log) }}</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ formatDate(log.created_at) }}</p>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">By {{ logActor(log) }}</p>
+                  <p v-if="log.note" class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ log.note }}</p>
+                  <p v-if="logSummary(log)" class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ logSummary(log) }}</p>
+                  <div class="mt-2">
+                    <button
+                      type="button"
+                      class="rounded-lg border border-slate-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+                      @click="toggleLog(log)"
+                    >
+                      {{ isLogExpanded(log.id) ? 'Hide Changes' : 'View Changes' }}
+                    </button>
+
+                    <div
+                      v-if="isLogExpanded(log.id)"
+                      class="mt-2 overflow-x-auto rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/70"
+                    >
+                      <div v-if="isLogLoading(log.id)" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                        Loading changes...
+                      </div>
+                      <div v-else-if="logFetchError(log.id)" class="px-3 py-2 text-xs text-rose-600 dark:text-rose-300">
+                        {{ logFetchError(log.id) }}
+                      </div>
+                      <table class="min-w-full divide-y divide-slate-200 text-xs dark:divide-slate-700">
+                        <thead class="bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                          <tr>
+                            <th class="px-2 py-2 text-left">Field</th>
+                            <th class="px-2 py-2 text-left">Old</th>
+                            <th class="px-2 py-2 text-left">New</th>
+                          </tr>
+                        </thead>
+                        <tbody v-if="!isLogLoading(log.id) && !logFetchError(log.id)" class="divide-y divide-slate-200 dark:divide-slate-700">
+                          <tr v-for="row in logChangeRows(log)" :key="`${log.id}-${row.field}`">
+                            <td class="px-2 py-1.5 font-semibold text-slate-700 dark:text-slate-200">{{ row.field }}</td>
+                            <td class="px-2 py-1.5 text-slate-600 dark:text-slate-300">{{ formatChangeValue(row.oldValue) }}</td>
+                            <td class="px-2 py-1.5 text-slate-600 dark:text-slate-300">{{ formatChangeValue(row.newValue) }}</td>
+                          </tr>
+                          <tr v-if="!logChangeRows(log).length">
+                            <td colspan="3" class="px-2 py-2 text-center text-slate-500 dark:text-slate-400">No changed fields captured.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+              <p v-else class="text-sm text-slate-500 dark:text-slate-400">No order activity logs yet.</p>
+            </div>
+          </div>
+
           
         </div>
       </div>
@@ -199,6 +268,10 @@ const timelineLoading = ref(false)
 const timelineMessage = ref('')
 const order = ref(null)
 const timeline = ref([])
+const expandedLogId = ref(null)
+const logDetails = ref({})
+const logLoading = ref({})
+const logErrors = ref({})
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
 const waybillToShow = computed(() => {
@@ -270,11 +343,128 @@ const latestDispatchId = computed(() => {
   return latest?.dispatch_note?.id || latest?.dispatch_note_id || null
 })
 
+const orderLogs = computed(() => {
+  const rows = Array.isArray(order.value?.logs) ? [...order.value.logs] : []
+  return rows.sort((a, b) => {
+    const aTs = a?.created_at ? new Date(a.created_at).getTime() : 0
+    const bTs = b?.created_at ? new Date(b.created_at).getTime() : 0
+    return bTs - aTs
+  })
+})
+
+const logEventTitle = (log) => {
+  const type = String(log?.event_type || '').toLowerCase()
+  if (type === 'status_changed') {
+    const from = log?.from_status || 'unknown'
+    const to = log?.to_status || 'unknown'
+    return `Status changed: ${from} -> ${to}`
+  }
+  if (type === 'created') return 'Order created'
+  if (type === 'updated') return 'Order updated'
+  return log?.event_type || 'Order event'
+}
+
+const logActor = (log) => {
+  return log?.user?.name || log?.user?.email || 'System'
+}
+
+const logSummary = (log) => {
+  const changes = logDetails.value[log?.id]?.changes
+  if (!changes || typeof changes !== 'object') return ''
+
+  const keys = Object.keys(changes).filter((k) => k !== 'updated_at')
+  if (!keys.length) return ''
+
+  if (keys.length <= 4) return `Changed: ${keys.join(', ')}`
+  return `Changed: ${keys.slice(0, 4).join(', ')} +${keys.length - 4} more`
+}
+
+const toggleLog = async (log) => {
+  const logId = Number(log?.id || 0)
+  if (!logId) return
+
+  if (expandedLogId.value === logId) {
+    expandedLogId.value = null
+    return
+  }
+
+  expandedLogId.value = logId
+  if (!logDetails.value[logId]) {
+    await fetchLogChanges(logId)
+  }
+}
+
+const isLogExpanded = (logId) => expandedLogId.value === logId
+const isLogLoading = (logId) => Boolean(logLoading.value[logId])
+const logFetchError = (logId) => logErrors.value[logId] || ''
+
+const fetchLogChanges = async (logId) => {
+  logLoading.value = { ...logLoading.value, [logId]: true }
+  logErrors.value = { ...logErrors.value, [logId]: '' }
+
+  try {
+    const { data } = await axios.get(`/api/admin/orders/${props.orderId}/logs/${logId}`)
+    const log = data?.log || null
+    if (!log) {
+      throw new Error('Order log not found.')
+    }
+
+    logDetails.value = {
+      ...logDetails.value,
+      [logId]: log,
+    }
+  } catch (error) {
+    const message = error?.response?.data?.message || 'Failed to load log changes.'
+    logErrors.value = { ...logErrors.value, [logId]: message }
+  } finally {
+    logLoading.value = { ...logLoading.value, [logId]: false }
+  }
+}
+
+const logChangeRows = (log) => {
+  const changes = logDetails.value[log?.id]?.changes
+  if (!changes || typeof changes !== 'object') return []
+
+  return Object.entries(changes)
+    .filter(([field]) => field !== 'updated_at')
+    .map(([field, value]) => {
+      if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'old') && Object.prototype.hasOwnProperty.call(value, 'new')) {
+        return {
+          field,
+          oldValue: value.old,
+          newValue: value.new,
+        }
+      }
+
+      return {
+        field,
+        oldValue: null,
+        newValue: value,
+      }
+    })
+}
+
+const formatChangeValue = (value) => {
+  if (value === null || value === undefined || value === '') return '-'
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value)
+    } catch {
+      return String(value)
+    }
+  }
+  return String(value)
+}
+
 const fetchOrder = async () => {
   loading.value = true
   try {
     const { data } = await axios.get(`/api/admin/orders/${props.orderId}`)
     order.value = data?.order || null
+    expandedLogId.value = null
+    logDetails.value = {}
+    logLoading.value = {}
+    logErrors.value = {}
   } catch (error) {
     toast.error(error?.response?.data?.message || 'Failed to load order.')
   } finally {

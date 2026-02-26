@@ -70,13 +70,12 @@
             <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
               {{ itemCount(order) }} item{{ itemCount(order) === 1 ? '' : 's' }}
             </span>
-            <button
-              type="button"
+            <a
+              :href="`/seller/orders/${order.id}`"
               class="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white hover:bg-blue-700"
-              @click="openDrawer(order)"
             >
               View
-            </button>
+            </a>
           </div>
         </div>
 
@@ -110,91 +109,6 @@
         Next
       </button>
     </div>
-
-    <div v-if="drawerOpen" class="fixed inset-0 z-50">
-      <div class="absolute inset-0 bg-black/35" @click="closeDrawer"></div>
-      <aside class="absolute right-0 top-0 h-full w-full max-w-2xl overflow-y-auto border-l border-slate-200 bg-white p-5 shadow-2xl dark:border-slate-800 dark:bg-slate-950">
-        <div class="flex items-start justify-between gap-3">
-          <div>
-            <p class="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Order Details</p>
-            <h3 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">Order #{{ selectedOrder?.id }}</h3>
-            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ formatDate(selectedOrder?.order_datetime) }}</p>
-          </div>
-
-          <button
-            type="button"
-            class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-            @click="closeDrawer"
-          >
-            Close
-          </button>
-        </div>
-
-        <div v-if="selectedOrder" class="mt-4 space-y-4">
-          <section class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-            <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Customer</h4>
-            <div class="mt-2 grid gap-2 text-sm text-slate-700 dark:text-slate-200">
-              <p><span class="font-semibold">Name:</span> {{ selectedOrder.customer_name || '-' }}</p>
-              <p><span class="font-semibold">Phone:</span> {{ selectedOrder.phone || '-' }}</p>
-              <p><span class="font-semibold">Additional Phone:</span> {{ selectedOrder.additional_phone || '-' }}</p>
-              <p><span class="font-semibold">City:</span> {{ selectedOrder.city?.name_en || '-' }}</p>
-              <p><span class="font-semibold">Address:</span> {{ selectedOrder.address || '-' }}</p>
-              <p><span class="font-semibold">Notes:</span> {{ selectedOrder.customer?.notes || '-' }}</p>
-            </div>
-          </section>
-
-          <section class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-            <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Order Info</h4>
-            <div class="mt-2 grid gap-2 text-sm text-slate-700 dark:text-slate-200 sm:grid-cols-2">
-              <p><span class="font-semibold">Status:</span> {{ selectedOrder.status }}</p>
-              <p><span class="font-semibold">Waybill:</span> {{ selectedOrder.waybill_no || '-' }}</p>
-              <p><span class="font-semibold">Delivery Status:</span> {{ selectedOrder.delivery_status || '-' }}</p>
-              <p><span class="font-semibold">Payment Status:</span> {{ selectedOrder.payment_status || '-' }}</p>
-              <p><span class="font-semibold">Is Draft:</span> {{ selectedOrder.is_draft ? 'Yes' : 'No' }}</p>
-              <p><span class="font-semibold">Damaged:</span> {{ selectedOrder.is_damaged ? 'Yes' : 'No' }}</p>
-              <p><span class="font-semibold">Packed At:</span> {{ formatDate(selectedOrder.packed_at) }}</p>
-              <p><span class="font-semibold">Shipped At:</span> {{ formatDate(selectedOrder.shipped_at) }}</p>
-              <p><span class="font-semibold">Completed At:</span> {{ formatDate(selectedOrder.completed_at) }}</p>
-              <p><span class="font-semibold">Cancelled At:</span> {{ formatDate(selectedOrder.cancelled_at) }}</p>
-            </div>
-          </section>
-
-          <section class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-            <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Items</h4>
-            <div class="mt-3 space-y-2">
-              <article
-                v-for="item in selectedOrder.items || []"
-                :key="item.id"
-                class="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700"
-              >
-                <p class="font-semibold text-slate-900 dark:text-white">{{ item.product?.title || 'Product' }}</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                  Product ID: {{ item.product_id }} · Variant: {{ item.variant?.sku || item.product_variant_id || '-' }}
-                </p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" v-if="item.variant?.attributes">
-                  {{ attributeText(item.variant.attributes) }}
-                </p>
-                <div class="mt-2 grid gap-2 text-xs text-slate-700 dark:text-slate-200 sm:grid-cols-3">
-                  <p><span class="font-semibold">Qty:</span> {{ item.quantity }}</p>
-                  <p><span class="font-semibold">Price:</span> LKR {{ toMoney(item.price) }}</p>
-                  <p><span class="font-semibold">Line Total:</span> LKR {{ toMoney(Number(item.quantity || 0) * Number(item.price || 0)) }}</p>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <section class="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-            <h4 class="text-sm font-semibold text-slate-900 dark:text-white">Totals</h4>
-            <div class="mt-2 grid gap-2 text-sm text-slate-700 dark:text-slate-200 sm:grid-cols-2">
-              <p><span class="font-semibold">Net:</span> LKR {{ toMoney(selectedOrder.net_total) }}</p>
-              <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(selectedOrder.delivery_charge) }}</p>
-              <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(selectedOrder)) }}</p>
-              <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(selectedOrder) }}</p>
-            </div>
-          </section>
-        </div>
-      </aside>
-    </div>
   </div>
 </template>
 
@@ -207,8 +121,6 @@ const toast = useToast()
 
 const loading = ref(false)
 const orders = ref([])
-const drawerOpen = ref(false)
-const selectedOrder = ref(null)
 
 const filters = reactive({
   status: 'all',
@@ -243,18 +155,6 @@ const commissionAmount = (order) => {
 
 const pointsEarned = (order) => {
   return Number(order?.computed_points_earned ?? 0)
-}
-
-const attributeText = (attributes) => {
-  if (!attributes || typeof attributes !== 'object') return ''
-
-  return Object.entries(attributes)
-    .map(([key, meta]) => {
-      const label = String(meta?.label || meta?.value || '').trim()
-      return label ? `${key}: ${label}` : ''
-    })
-    .filter(Boolean)
-    .join(', ')
 }
 
 const statusClass = (status) => {
@@ -298,16 +198,6 @@ const onFilterChanged = () => {
 const changePage = (page) => {
   filters.page = page
   fetchOrders()
-}
-
-const openDrawer = (order) => {
-  selectedOrder.value = order
-  drawerOpen.value = true
-}
-
-const closeDrawer = () => {
-  drawerOpen.value = false
-  selectedOrder.value = null
 }
 
 const onOrderCreated = () => {

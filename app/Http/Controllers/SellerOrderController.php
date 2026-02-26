@@ -93,11 +93,9 @@ class SellerOrderController extends Controller
         }
 
         $orders = $query->paginate($perPage);
-        $orderRows = collect($orders->items());
-        $this->attachComputedMetrics($orderRows, (int) ($seller->seller_level_id ?? 0));
 
         return response()->json([
-            'orders' => $orderRows->values(),
+            'orders' => $orders->items(),
             'meta' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),
@@ -119,10 +117,31 @@ class SellerOrderController extends Controller
             'items.variant:id,sku,attributes,price',
             'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks,created_at',
             'dispatchNoteItems.dispatchNote:id,ref_no,dispatch_date,dispatch_time,status',
+            'logs:id,order_id,user_id,event_type,from_status,to_status,note,created_at',
+            'logs.user:id,name,email',
         ]);
 
         return response()->json([
             'order' => $order,
+        ]);
+    }
+
+    public function adminOrderLogShow(Order $order, int $logId)
+    {
+        $log = $order->logs()
+            ->select('id', 'order_id', 'user_id', 'event_type', 'from_status', 'to_status', 'changes', 'note', 'created_at')
+            ->with('user:id,name,email')
+            ->where('id', $logId)
+            ->first();
+
+        if (!$log) {
+            return response()->json([
+                'message' => 'Order log not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'log' => $log,
         ]);
     }
 
@@ -133,7 +152,34 @@ class SellerOrderController extends Controller
         ]);
 
         $refresh = (bool) ($validated['refresh'] ?? true);
+        return response()->json($this->buildDeliveryTimelinePayload($order, $refresh));
+    }
 
+    public function sellerDeliveryTimeline(Request $request, Order $order)
+    {
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        if ((int) $order->seller_id !== (int) $seller->id) {
+            return response()->json([
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'refresh' => ['nullable', 'boolean'],
+        ]);
+
+        $refresh = (bool) ($validated['refresh'] ?? true);
+        return response()->json($this->buildDeliveryTimelinePayload($order, $refresh));
+    }
+
+    private function buildDeliveryTimelinePayload(Order $order, bool $refresh = true): array
+    {
         $timeline = collect();
         $latestStatus = null;
         $waybill = trim((string) ($order->waybill_no ?? ''));
@@ -189,11 +235,9 @@ class SellerOrderController extends Controller
                 $bTs = !empty($b['sort_at']) ? strtotime((string) $b['sort_at']) : PHP_INT_MIN;
 
                 if ($aTs === $bTs) {
-                    // Preserve insertion order when timestamps are equal/missing.
                     return ($a['sequence'] ?? 0) <=> ($b['sequence'] ?? 0);
                 }
 
-                // Latest first.
                 return $bTs <=> $aTs;
             })
             ->values()
@@ -202,13 +246,13 @@ class SellerOrderController extends Controller
                 return $event;
             });
 
-        return response()->json([
+        return [
             'order_id' => $order->id,
             'current_status' => $order->status,
             'delivery_status' => $latestStatus ?: $order->delivery_status,
             'timeline' => $sorted,
             'courier_message' => $courierMessage,
-        ]);
+        ];
     }
 
     public function index(Request $request)
@@ -238,6 +282,8 @@ class SellerOrderController extends Controller
                 'items:id,order_id,product_id,product_variant_id,quantity,price',
                 'items.product:id,title,product_code',
                 'items.variant:id,sku,attributes',
+                'logs:id,order_id,user_id,event_type,from_status,to_status,note,created_at',
+                'logs.user:id,name,email',
             ])
             ->latest('order_datetime')
             ->latest('id');
@@ -256,15 +302,84 @@ class SellerOrderController extends Controller
         }
 
         $orders = $query->paginate($perPage);
+        $orderRows = collect($orders->items());
+        $this->attachComputedMetrics($orderRows, (int) ($seller->seller_level_id ?? 0));
 
         return response()->json([
-            'orders' => $orders->items(),
+            'orders' => $orderRows->values(),
             'meta' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
             ],
+        ]);
+    }
+
+    public function sellerShow(Request $request, Order $order)
+    {
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        if ((int) $order->seller_id !== (int) $seller->id) {
+            return response()->json([
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $order->load([
+            'city:id,name_en,district_id',
+            'city.district:id,name_en',
+            'customer:id,default_name,primary_phone,additional_phone,email,notes',
+            'items:id,order_id,product_id,product_variant_id,quantity,price',
+            'items.product:id,title,product_code',
+            'items.variant:id,sku,attributes,price',
+            'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks,created_at',
+            'dispatchNoteItems.dispatchNote:id,ref_no,dispatch_date,dispatch_time,status',
+            'logs:id,order_id,user_id,event_type,from_status,to_status,note,created_at',
+            'logs.user:id,name,email',
+        ]);
+
+        $this->attachComputedMetrics(collect([$order]), (int) ($seller->seller_level_id ?? 0));
+
+        return response()->json([
+            'order' => $order,
+        ]);
+    }
+
+    public function sellerOrderLogShow(Request $request, Order $order, int $logId)
+    {
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        if ((int) $order->seller_id !== (int) $seller->id) {
+            return response()->json([
+                'message' => 'Order not found.',
+            ], 404);
+        }
+
+        $log = $order->logs()
+            ->select('id', 'order_id', 'user_id', 'event_type', 'from_status', 'to_status', 'changes', 'note', 'created_at')
+            ->with('user:id,name,email')
+            ->where('id', $logId)
+            ->first();
+
+        if (!$log) {
+            return response()->json([
+                'message' => 'Order log not found.',
+            ], 404);
+        }
+
+        return response()->json([
+            'log' => $log,
         ]);
     }
 
@@ -852,7 +967,7 @@ class SellerOrderController extends Controller
                 'status' => $response->status(),
                 'raw' => $response->json(),
             ], $response->status())];
-        }
+        } 
 
         $waybillData = $response->json('data');
         $waybill = is_array($waybillData) ? ($waybillData[0] ?? null) : null;

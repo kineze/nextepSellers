@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/seller/inventory', 'getSellerInventory')->name('sellerInventory');
         Route::get('/seller/checkout', 'getSellerCheckout')->name('sellerCheckout');
         Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
+        Route::get('/seller/orders/{order}', 'getSellerOrderShow')->whereNumber('order')->name('sellerOrderShow');
     });
 });
 

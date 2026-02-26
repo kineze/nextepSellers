@@ -778,7 +778,7 @@ class DispatchNoteController extends Controller
                 'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks',
                 'dispatchNoteItems.dispatchNote:id,ref_no,dispatch_date,dispatch_time,status',
             ])
-            ->whereIn('status', ['shipped', 'completed'])
+            ->where('status', 'shipped')
             ->where('is_draft', false)
             ->latest('shipped_at')
             ->latest('id');
@@ -1236,13 +1236,13 @@ class DispatchNoteController extends Controller
 
             DispatchNoteItem::insert($rows);
 
-            Order::query()
-                ->whereIn('id', $orders->pluck('id'))
-                ->update([
+            foreach ($orders as $order) {
+                $order->update([
                     'status' => 'packed',
                     'packed_at' => now(),
                     'is_draft' => false,
                 ]);
+            }
 
             return $note;
         });

@@ -29,6 +29,7 @@ import CitySync from './components/CitySync.vue';
 import StateMatcher from './components/StateMatcher.vue';
 import SellerOrderSubmit from './components/SellerOrderSubmit.vue';
 import SellerMyOrders from './components/SellerMyOrders.vue';
+import SellerOrderShow from './components/SellerOrderShow.vue';
 import AdminDraftOrders from './components/AdminDraftOrders.vue';
 import AdminApprovedOrders from './components/AdminApprovedOrders.vue';
 import AdminPackedOrders from './components/AdminPackedOrders.vue';
@@ -76,6 +77,7 @@ app.use(Toast, {
 .component('state-matcher', StateMatcher)
 .component('seller-order-submit', SellerOrderSubmit)
 .component('seller-my-orders', SellerMyOrders)
+.component('seller-order-show', SellerOrderShow)
 .component('admin-draft-orders', AdminDraftOrders)
 .component('admin-approved-orders', AdminApprovedOrders)
 .component('admin-packed-orders', AdminPackedOrders)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Order;
+use App\Models\Level;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -16,7 +17,59 @@ class DashboardController extends Controller
 
     public function getSellerDashboard()
     {
-        return view('dashboards.seller.dashboard');
+        $seller = auth()->user()?->seller?->loadMissing('level');
+
+        $currentPoints = (int) ($seller?->points ?? 0);
+        $level = $seller?->level;
+        $nextLevel = null;
+
+        if ($level) {
+            $nextLevel = Level::query()
+                ->where('points', '>', (int) ($level->points ?? 0))
+                ->orderBy('points')
+                ->first(['id', 'level_no', 'level_name', 'points']);
+        } else {
+            $nextLevel = Level::query()
+                ->orderBy('points')
+                ->first(['id', 'level_no', 'level_name', 'points']);
+        }
+
+        $lkrPerPoint = (float) config('seller.lkr_per_point', 100);
+        if ($lkrPerPoint <= 0) {
+            $lkrPerPoint = 100;
+        }
+
+        $pendingBaseAmount = 0.0;
+        if ($seller) {
+            $pendingBaseAmount = (float) Order::query()
+                ->where('seller_id', $seller->id)
+                ->whereIn('status', ['draft', 'approved', 'confirmed', 'packed', 'shipped'])
+                ->selectRaw('COALESCE(SUM(GREATEST(net_total - total_discount, 0)), 0) as pending_amount')
+                ->value('pending_amount');
+        }
+
+        $pendingPoints = (int) floor($pendingBaseAmount / $lkrPerPoint);
+        $projectedPoints = $currentPoints + $pendingPoints;
+
+        $pointsToNextLevel = null;
+        if ($nextLevel) {
+            $pointsToNextLevel = max(0, (int) $nextLevel->points - $projectedPoints);
+        }
+
+        return view('dashboards.seller.dashboard', [
+            'sellerStats' => [
+                'level_name' => $level?->level_name,
+                'level_no' => $level?->level_no,
+                'current_points' => $currentPoints,
+                'pending_points' => $pendingPoints,
+                'projected_points' => $projectedPoints,
+                'next_level_name' => $nextLevel?->level_name,
+                'next_level_no' => $nextLevel?->level_no,
+                'next_level_points' => $nextLevel?->points,
+                'points_to_next_level' => $pointsToNextLevel,
+                'lkr_per_point' => $lkrPerPoint,
+            ],
+        ]);
     }
 
     public function getSellerProducts()
@@ -90,6 +143,11 @@ class DashboardController extends Controller
     public function getRoyalExpress()
     {
         return view('dashboards.admin.settings.royalExpress');
+    }
+
+    public function getDeliveryFees()
+    {
+        return view('dashboards.admin.settings.deliveryFees');
     }
 
     public function getAdminDraftOrders()

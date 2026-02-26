@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Attribute;
+use App\Models\DeliveryFee;
 use App\Models\Level;
 use App\Models\Varient;
 use Illuminate\Http\Request;
@@ -78,10 +79,19 @@ class ProductController extends Controller
             ->orderBy('level_no')
             ->get(['id', 'level_no', 'level_name']);
 
+        $deliveryFees = DeliveryFee::query()
+            ->orderByDesc('is_default')
+            ->orderBy('fee')
+            ->get(['id', 'fee', 'is_default']);
+
+        $defaultDeliveryFee = $deliveryFees->firstWhere('is_default', true);
+
         return response()->json([
             'categories' => $categories,
             'attributes' => $attributes,
             'levels' => $levels,
+            'delivery_fees' => $deliveryFees,
+            'default_delivery_fee_id' => $defaultDeliveryFee?->id,
         ]);
     }
 
@@ -120,6 +130,8 @@ class ProductController extends Controller
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
             'is_active' => ['nullable', 'boolean'],
             'has_varients' => ['required', 'boolean'],
+            'delivery_fee_id' => ['nullable', 'integer', 'exists:delivery_fees,id'],
+            'is_free_shipping' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array'],
             'images.*.path' => ['required_with:images', 'string', 'max:1000'],
             'images.*.is_primary' => ['nullable', 'boolean'],
@@ -150,6 +162,12 @@ class ProductController extends Controller
         }
 
         $product = DB::transaction(function () use ($validated) {
+            $isFreeShipping = (bool) ($validated['is_free_shipping'] ?? false);
+            $resolvedDeliveryFee = $this->resolveDeliveryFeeAmount(
+                $validated['delivery_fee_id'] ?? null,
+                $isFreeShipping
+            );
+
             $product = Product::create([
                 'title' => $validated['title'],
                 'small_description' => $validated['small_description'],
@@ -160,6 +178,8 @@ class ProductController extends Controller
                     ? (bool) $validated['is_active']
                     : true,
                 'has_varients' => (bool) $validated['has_varients'],
+                'delivery_fee' => $resolvedDeliveryFee,
+                'is_free_shipping' => $isFreeShipping,
             ]);
 
             $images = collect($validated['images'] ?? [])
@@ -234,6 +254,8 @@ class ProductController extends Controller
             'product_code' => ['required', 'string', 'max:255', Rule::unique('products', 'product_code')->ignore($product->id)],
             'is_active' => ['nullable', 'boolean'],
             'has_varients' => ['required', 'boolean'],
+            'delivery_fee_id' => ['nullable', 'integer', 'exists:delivery_fees,id'],
+            'is_free_shipping' => ['nullable', 'boolean'],
             'images' => ['nullable', 'array'],
             'images.*.path' => ['required_with:images', 'string', 'max:1000'],
             'images.*.is_primary' => ['nullable', 'boolean'],
@@ -244,6 +266,7 @@ class ProductController extends Controller
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
 
             'varients' => ['nullable', 'array'],
+            'varients.*.id' => ['nullable', 'integer', 'exists:varients,id'],
             'varients.*.sku' => ['required_if:has_varients,1', 'string', 'max:255', 'distinct'],
             'varients.*.attributes' => ['required_with:varients', 'array', 'min:1'],
             'varients.*.price' => ['required_if:has_varients,1', 'numeric', 'min:0'],
@@ -261,6 +284,26 @@ class ProductController extends Controller
             return response()->json([
                 'message' => 'Please generate at least one variant when variants are enabled.',
             ], 422);
+        }
+
+        $submittedVariantIds = collect($validated['varients'] ?? [])
+            ->pluck('id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if ($submittedVariantIds->isNotEmpty()) {
+            $ownedCount = Varient::query()
+                ->where('product_id', $product->id)
+                ->whereIn('id', $submittedVariantIds->all())
+                ->count();
+
+            if ($ownedCount !== $submittedVariantIds->count()) {
+                return response()->json([
+                    'message' => 'One or more submitted variants do not belong to this product.',
+                ], 422);
+            }
         }
 
         $submittedSkus = collect($validated['varients'] ?? [])
@@ -284,6 +327,12 @@ class ProductController extends Controller
         }
 
         DB::transaction(function () use ($validated, $product) {
+            $isFreeShipping = (bool) ($validated['is_free_shipping'] ?? false);
+            $resolvedDeliveryFee = $this->resolveDeliveryFeeAmount(
+                $validated['delivery_fee_id'] ?? null,
+                $isFreeShipping
+            );
+
             $product->update([
                 'title' => $validated['title'],
                 'small_description' => $validated['small_description'],
@@ -294,6 +343,8 @@ class ProductController extends Controller
                     ? (bool) $validated['is_active']
                     : true,
                 'has_varients' => (bool) $validated['has_varients'],
+                'delivery_fee' => $resolvedDeliveryFee,
+                'is_free_shipping' => $isFreeShipping,
             ]);
 
             $images = collect($validated['images'] ?? [])
@@ -312,10 +363,12 @@ class ProductController extends Controller
                 $product->images()->createMany($images->all());
             }
 
-            $product->varients()->delete();
             if ((bool) $validated['has_varients']) {
-                $rows = collect($validated['varients'] ?? [])->map(function ($row) {
-                    return [
+                $existing = $product->varients()->get()->keyBy('id');
+                $keptIds = [];
+
+                foreach (($validated['varients'] ?? []) as $row) {
+                    $payload = [
                         'sku' => $row['sku'],
                         'attributes' => $row['attributes'],
                         'price' => $row['price'],
@@ -325,18 +378,45 @@ class ProductController extends Controller
                             ? (bool) $row['is_active']
                             : true,
                     ];
-                })->all();
 
-                $product->varients()->createMany($rows);
+                    $target = null;
+                    if (!empty($row['id']) && $existing->has((int) $row['id'])) {
+                        $target = $existing->get((int) $row['id']);
+                    } else {
+                        $target = $existing->first(function ($variant) use ($row, $keptIds) {
+                            return $variant->sku === $row['sku'] && !in_array($variant->id, $keptIds, true);
+                        });
+                    }
+
+                    if ($target) {
+                        $target->update($payload);
+                        $keptIds[] = (int) $target->id;
+                    } else {
+                        $created = $product->varients()->create($payload);
+                        $keptIds[] = (int) $created->id;
+                    }
+                }
+
+                if (!empty($keptIds)) {
+                    $product->varients()->whereNotIn('id', $keptIds)->delete();
+                }
             } else {
-                $product->varients()->create([
+                $payload = [
                     'sku' => $validated['sku'],
                     'attributes' => [],
                     'price' => $validated['price'],
                     'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                     'reorder_level' => (int) ($validated['reorder_level'] ?? 0),
                     'is_active' => true,
-                ]);
+                ];
+
+                $existingBase = $product->varients()->orderBy('id')->first();
+                if ($existingBase) {
+                    $existingBase->update($payload);
+                    $product->varients()->where('id', '!=', $existingBase->id)->delete();
+                } else {
+                    $product->varients()->create($payload);
+                }
             }
 
             $product->productLevels()->delete();
@@ -375,5 +455,26 @@ class ProductController extends Controller
             'product_id' => $product->id,
             'is_active' => (bool) $product->is_active,
         ]);
+    }
+
+    private function resolveDeliveryFeeAmount(?int $deliveryFeeId, bool $isFreeShipping): float
+    {
+        if ($isFreeShipping) {
+            return 0;
+        }
+
+        if ($deliveryFeeId) {
+            $selected = DeliveryFee::query()->find($deliveryFeeId);
+            if ($selected) {
+                return (float) $selected->fee;
+            }
+        }
+
+        $default = DeliveryFee::query()
+            ->where('is_default', true)
+            ->orderByDesc('id')
+            ->first();
+
+        return $default ? (float) $default->fee : 0;
     }
 }

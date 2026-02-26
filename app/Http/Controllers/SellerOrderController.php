@@ -7,10 +7,13 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\RoyalExpressLogin;
 use App\Models\Seller;
+use App\Models\Product;
+use App\Models\ProductLevel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Collection;
 
 class SellerOrderController extends Controller
 {
@@ -90,9 +93,11 @@ class SellerOrderController extends Controller
         }
 
         $orders = $query->paginate($perPage);
+        $orderRows = collect($orders->items());
+        $this->attachComputedMetrics($orderRows, (int) ($seller->seller_level_id ?? 0));
 
         return response()->json([
-            'orders' => $orders->items(),
+            'orders' => $orderRows->values(),
             'meta' => [
                 'current_page' => $orders->currentPage(),
                 'last_page' => $orders->lastPage(),
@@ -328,9 +333,26 @@ class SellerOrderController extends Controller
 
         $items = collect($validated['items']);
         $netTotal = $items->sum(fn ($item) => (float) $item['price'] * (int) $item['quantity']);
-        $deliveryCharge = (float) ($validated['delivery_charge'] ?? 0);
+        $productIds = $items
+            ->pluck('product_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $deliveryCharge = 0.0;
+        if ($productIds->isNotEmpty()) {
+            $deliveryCharge = (float) Product::query()
+                ->whereIn('id', $productIds->all())
+                ->selectRaw('MAX(CASE WHEN is_free_shipping = 1 THEN 0 ELSE COALESCE(delivery_fee, 0) END) as max_delivery_fee')
+                ->value('max_delivery_fee');
+        }
+
         $totalDiscount = (float) ($validated['total_discount'] ?? 0);
-        $commissionAmount = (float) ($validated['commission_amount'] ?? 0);
+        $commissionAmount = $this->calculateCommissionForItems(
+            $items,
+            (int) ($seller->seller_level_id ?? 0)
+        );
         $collectable = $netTotal + $deliveryCharge - $totalDiscount;
 
         $order = DB::transaction(function () use (
@@ -604,6 +626,86 @@ class SellerOrderController extends Controller
     private function isDraftOrder(Order $order): bool
     {
         return $order->status === 'draft' || (bool) $order->is_draft;
+    }
+
+    private function attachComputedMetrics(Collection $orders, int $sellerLevelId): void
+    {
+        if ($orders->isEmpty()) {
+            return;
+        }
+
+        foreach ($orders as $order) {
+            $computed = $this->calculateCommissionForItems(
+                collect($order->items ?? []),
+                $sellerLevelId
+            );
+
+            $order->setAttribute('computed_commission_amount', $computed);
+            $order->setAttribute('computed_points_earned', $this->calculatePointsForOrder($order));
+        }
+    }
+
+    private function calculateCommissionForItems(Collection $items, int $sellerLevelId): float
+    {
+        if ($sellerLevelId <= 0 || $items->isEmpty()) {
+            return 0.0;
+        }
+
+        $productIds = $items
+            ->map(fn ($item) => (int) data_get($item, 'product_id'))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($productIds->isEmpty()) {
+            return 0.0;
+        }
+
+        $levelRules = ProductLevel::query()
+            ->where('level_id', $sellerLevelId)
+            ->whereIn('product_id', $productIds->all())
+            ->get(['product_id', 'type', 'value'])
+            ->keyBy('product_id');
+
+        if ($levelRules->isEmpty()) {
+            return 0.0;
+        }
+
+        $total = 0.0;
+        foreach ($items as $item) {
+            $productId = (int) data_get($item, 'product_id');
+            $qty = max(0, (int) data_get($item, 'quantity', 0));
+            $price = (float) data_get($item, 'price', 0);
+
+            if ($productId <= 0 || $qty <= 0 || $price < 0) {
+                continue;
+            }
+
+            $rule = $levelRules->get($productId);
+            if (!$rule) {
+                continue;
+            }
+
+            if ($rule->type === 'percentage') {
+                $total += ($price * ((float) $rule->value / 100)) * $qty;
+            } else {
+                $total += ((float) $rule->value) * $qty;
+            }
+        }
+
+        return round($total, 2);
+    }
+
+    private function calculatePointsForOrder($order): int
+    {
+        $lkrPerPoint = (float) config('seller.lkr_per_point', 100);
+        if ($lkrPerPoint <= 0) {
+            $lkrPerPoint = 100;
+        }
+
+        $baseAmount = max(0, (float) ($order->net_total ?? 0) - (float) ($order->total_discount ?? 0));
+
+        return (int) floor($baseAmount / $lkrPerPoint);
     }
 
     private function fetchRoyalExpressTracking(string $waybill): array

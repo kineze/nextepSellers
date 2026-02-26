@@ -65,15 +65,39 @@
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Customer Details</h2>
             <div v-if="recentCustomers.length" class="sm:w-72">
               <label class="mb-1 block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Recent Customers</label>
-              <select
-                class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-                @change="applyRecentCustomer($event.target.value)"
-              >
-                <option value="">Select recent customer</option>
-                <option v-for="(item, idx) in recentCustomers" :key="`recent-${idx}`" :value="idx">
-                  {{ item.customer_name }} - {{ item.phone }}
-                </option>
-              </select>
+              <div ref="recentDropdownWrapper" class="relative">
+                <input
+                  v-model.trim="recentCustomerSearch"
+                  type="text"
+                  placeholder="Search by phone or name"
+                  autocomplete="off"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  @focus="openRecentDropdown"
+                  @input="showRecentDropdown = true"
+                  @blur="closeRecentDropdownWithDelay"
+                />
+
+                <div
+                  v-if="showRecentDropdown"
+                  class="absolute z-20 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                  :class="recentOpenUpward ? 'bottom-full mb-1' : 'mt-1'"
+                >
+                  <ul class="max-h-56 overflow-y-auto py-1">
+                    <li
+                      v-for="(item, idx) in filteredRecentCustomers"
+                      :key="`recent-${idx}`"
+                      class="cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
+                      @mousedown.prevent="applyRecentCustomer(item)"
+                    >
+                      <p class="font-semibold">{{ item.customer_name || 'Customer' }}</p>
+                      <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ item.phone || '-' }}</p>
+                    </li>
+                    <li v-if="!filteredRecentCustomers.length" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                      No recent customer found
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -281,9 +305,12 @@ const form = reactive({
 const errors = reactive({})
 const recentCustomers = ref([])
 const saveCustomerForReuse = ref(true)
+const recentCustomerSearch = ref('')
+const showRecentDropdown = ref(false)
+const recentDropdownWrapper = ref(null)
+const recentOpenUpward = ref(false)
 
 const submitting = ref(false)
-const deliveryCharge = ref(0)
 const discount = ref(0)
 const RECENT_CUSTOMERS_KEY = 'nextep-seller-recent-customers'
 const citySearch = ref('')
@@ -293,6 +320,15 @@ const showCityDropdown = ref(false)
 const cityDropdownWrapper = ref(null)
 const cityOpenUpward = ref(false)
 let citySearchTimeout = null
+
+const deliveryCharge = computed(() => {
+  return items.value.reduce((maxFee, item) => {
+    if (item?.isFreeShipping) return maxFee
+    const fee = Number(item?.deliveryFee || 0)
+    if (!Number.isFinite(fee)) return maxFee
+    return Math.max(maxFee, fee)
+  }, 0)
+})
 
 const grandTotal = computed(() => {
   return Number(subtotal.value || 0) + Number(deliveryCharge.value || 0) - Number(discount.value || 0)
@@ -351,6 +387,17 @@ const validateForm = () => {
   return !errors.customer_name && !errors.phone && !errors.additional_phone && !errors.email && !errors.address
 }
 
+const filteredRecentCustomers = computed(() => {
+  const term = recentCustomerSearch.value.trim().toLowerCase()
+  if (!term) return recentCustomers.value
+
+  return recentCustomers.value.filter((row) => {
+    const phone = String(row?.phone || '').toLowerCase()
+    const name = String(row?.customer_name || '').toLowerCase()
+    return phone.includes(term) || name.includes(term)
+  })
+})
+
 const loadRecentCustomers = () => {
   try {
     const rows = JSON.parse(window.localStorage.getItem(RECENT_CUSTOMERS_KEY) || '[]')
@@ -360,9 +407,7 @@ const loadRecentCustomers = () => {
   }
 }
 
-const applyRecentCustomer = (idx) => {
-  if (idx === '') return
-  const customer = recentCustomers.value[Number(idx)]
+const applyRecentCustomer = (customer) => {
   if (!customer) return
 
   form.customer_name = customer.customer_name || ''
@@ -374,7 +419,33 @@ const applyRecentCustomer = (idx) => {
   form.city = customer.city || ''
   citySearch.value = customer.city || ''
   form.notes = customer.notes || ''
+  recentCustomerSearch.value = `${customer.customer_name || 'Customer'} - ${customer.phone || ''}`
+  showRecentDropdown.value = false
   ;['customer_name', 'phone', 'additional_phone', 'email', 'address'].forEach(validateField)
+}
+
+const updateRecentDropdownDirection = () => {
+  const wrapper = recentDropdownWrapper.value
+  if (!wrapper) return
+
+  const rect = wrapper.getBoundingClientRect()
+  const estimatedDropdownHeight = 240
+  const spaceBelow = window.innerHeight - rect.bottom
+  const spaceAbove = rect.top
+
+  recentOpenUpward.value = spaceBelow < estimatedDropdownHeight && spaceAbove > spaceBelow
+}
+
+const openRecentDropdown = () => {
+  updateRecentDropdownDirection()
+  showRecentDropdown.value = true
+  nextTick(updateRecentDropdownDirection)
+}
+
+const closeRecentDropdownWithDelay = () => {
+  setTimeout(() => {
+    showRecentDropdown.value = false
+  }, 120)
 }
 
 const persistRecentCustomer = () => {
@@ -529,13 +600,20 @@ const submitOrder = async () => {
 
 onMounted(() => {
   loadRecentCustomers()
+  if (recentCustomers.value.length > 0) {
+    recentCustomerSearch.value = ''
+  }
   window.addEventListener('resize', updateCityDropdownDirection)
   window.addEventListener('scroll', updateCityDropdownDirection, true)
+  window.addEventListener('resize', updateRecentDropdownDirection)
+  window.addEventListener('scroll', updateRecentDropdownDirection, true)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', updateCityDropdownDirection)
   window.removeEventListener('scroll', updateCityDropdownDirection, true)
+  window.removeEventListener('resize', updateRecentDropdownDirection)
+  window.removeEventListener('scroll', updateRecentDropdownDirection, true)
   clearTimeout(citySearchTimeout)
 })
 </script>

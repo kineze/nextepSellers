@@ -83,6 +83,7 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
 
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/royal-express', 'getRoyalExpress')->name('royalExpress');
+        Route::get('/delivery-fees', 'getDeliveryFees')->name('deliveryFees');
     });
 });
 

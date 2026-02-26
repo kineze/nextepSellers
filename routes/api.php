@@ -15,6 +15,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoyalExpressLoginController;
 use App\Http\Controllers\SellerOrderController;
 use App\Http\Controllers\DispatchNoteController;
+use App\Http\Controllers\DeliveryFeeController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -65,6 +66,11 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::post('/attributes', [AttributeController::class, 'store']);
     Route::put('/attributes/{attribute}', [AttributeController::class, 'update']);
     Route::delete('/attributes/{attribute}', [AttributeController::class, 'destroy']);
+
+    Route::get('/delivery-fees', [DeliveryFeeController::class, 'index']);
+    Route::post('/delivery-fees', [DeliveryFeeController::class, 'store']);
+    Route::put('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'update']);
+    Route::delete('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {

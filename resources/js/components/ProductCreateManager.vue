@@ -36,6 +36,25 @@
             </select>
           </div>
           <div>
+            <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Delivery Fee</label>
+            <select
+              v-model="form.delivery_fee_id"
+              :disabled="form.is_free_shipping"
+              class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-slate-500 dark:focus:ring-slate-500/20"
+            >
+              <option :value="null">Use default delivery fee</option>
+              <option v-for="fee in deliveryFees" :key="fee.id" :value="fee.id">
+                LKR {{ Number(fee.fee || 0).toFixed(2) }}{{ fee.is_default ? ' (Default)' : '' }}
+              </option>
+            </select>
+          </div>
+          <div class="md:col-span-2">
+            <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300">
+              <input type="checkbox" v-model="form.is_free_shipping" class="rounded border-slate-300 accent-slate-700 dark:border-slate-700 dark:accent-slate-300" />
+              Free Shipping
+            </label>
+          </div>
+          <div>
             <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">SKU (for no variants)</label>
             <input v-model="form.sku" :disabled="form.hasVariants === 'yes'" type="text" placeholder="e.g. SKU-001" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-slate-500 dark:focus:ring-slate-500/20" />
           </div>
@@ -327,6 +346,8 @@ const isEditing = computed(() => productId.value !== null)
 const categories = ref([])
 const attributes = ref([])
 const levels = ref([])
+const deliveryFees = ref([])
+const defaultDeliveryFeeId = ref(null)
 const imageInputRef = ref(null)
 const quillEditorRef = ref(null)
 const quillInstance = ref(null)
@@ -346,6 +367,8 @@ const form = ref({
   product_code: '',
   sku: '',
   category_id: null,
+  delivery_fee_id: null,
+  is_free_shipping: false,
   small_description: '',
   long_description: '',
   hasVariants: 'no',
@@ -366,6 +389,11 @@ const loadOptions = async () => {
     categories.value = data.categories || []
     attributes.value = data.attributes || []
     levels.value = data.levels || []
+    deliveryFees.value = data.delivery_fees || []
+    defaultDeliveryFeeId.value = data.default_delivery_fee_id || null
+    if (!form.value.delivery_fee_id && defaultDeliveryFeeId.value) {
+      form.value.delivery_fee_id = defaultDeliveryFeeId.value
+    }
     initializeLevelRows()
   } catch {
     toast.error('Failed to load categories, attributes, and levels.')
@@ -644,6 +672,10 @@ const saveProduct = async () => {
     product_code: form.value.product_code,
     is_active: form.value.is_active ? 1 : 0,
     has_varients: form.value.hasVariants === 'yes' ? 1 : 0,
+    delivery_fee_id: form.value.is_free_shipping
+      ? null
+      : (form.value.delivery_fee_id || defaultDeliveryFeeId.value || null),
+    is_free_shipping: form.value.is_free_shipping ? 1 : 0,
     sku: form.value.hasVariants === 'no' ? form.value.sku : null,
     price: form.value.hasVariants === 'no' ? form.value.price : null,
     stock_quantity: form.value.hasVariants === 'no' ? form.value.stock_quantity : null,
@@ -656,6 +688,7 @@ const saveProduct = async () => {
     })),
     varients: form.value.hasVariants === 'yes'
       ? variants.value.map((v) => ({
+          id: v.id || null,
           sku: v.sku,
           attributes: v.attributes,
           price: v.price,
@@ -698,6 +731,7 @@ const loadProduct = async () => {
     form.value.product_code = data.product_code || ''
     form.value.sku = data.has_varients ? '' : (data.varients?.[0]?.sku || '')
     form.value.category_id = data.category_id ?? null
+    form.value.is_free_shipping = !!data.is_free_shipping
     form.value.small_description = data.small_description || ''
     form.value.long_description = data.long_description || ''
     form.value.hasVariants = data.has_varients ? 'yes' : 'no'
@@ -721,6 +755,7 @@ const loadProduct = async () => {
       form.value.stock_quantity = 0
       form.value.reorder_level = 0
       variants.value = (data.varients || []).map((variant) => ({
+        id: variant.id || null,
         key: JSON.stringify(variant.attributes || {}),
         attributes: variant.attributes || {},
         sku: variant.sku || '',
@@ -730,6 +765,10 @@ const loadProduct = async () => {
         is_active: variant.is_active !== false,
       }))
     }
+
+    const productDeliveryFee = Number(data.delivery_fee || 0)
+    const matchedFee = deliveryFees.value.find((fee) => Number(fee.fee || 0) === productDeliveryFee)
+    form.value.delivery_fee_id = matchedFee?.id || defaultDeliveryFeeId.value || null
 
     const productLevels = data.product_levels || []
     if (productLevels.length) {

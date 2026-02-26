@@ -41,6 +41,7 @@ import AdminOrderShow from './components/AdminOrderShow.vue';
 import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
 import GrnManager from './components/GrnManager.vue';
 import LotManager from './components/LotManager.vue';
+import DeliveryFeeManager from './components/DeliveryFeeManager.vue';
 
 const app = createApp({})
 
@@ -87,5 +88,6 @@ app.use(Toast, {
 .component('admin-global-filter-bar', AdminGlobalFilterBar)
 .component('grn-manager', GrnManager)
 .component('lot-manager', LotManager)
+.component('delivery-fee-manager', DeliveryFeeManager)
 
 .mount('#app')

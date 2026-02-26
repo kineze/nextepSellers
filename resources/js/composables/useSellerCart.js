@@ -36,6 +36,8 @@ const hydrate = () => {
         sku: String(item.sku || ''),
         attributes: item.attributes && typeof item.attributes === 'object' ? item.attributes : {},
         price: toNumber(item.price),
+        deliveryFee: Number(item.deliveryFee || 0),
+        isFreeShipping: !!item.isFreeShipping,
         qty: Math.max(1, Number(item.qty || 1)),
       }))
       .filter((item) => item.productId > 0)
@@ -73,6 +75,8 @@ export function useSellerCart() {
       sku: String(payload.sku || ''),
       attributes: payload.attributes && typeof payload.attributes === 'object' ? payload.attributes : {},
       price: toNumber(payload.price),
+      deliveryFee: Number(payload.deliveryFee || 0),
+      isFreeShipping: !!payload.isFreeShipping,
       qty,
     }
 

@@ -65,6 +65,8 @@
               :product-title="product.title"
               :product-code="product.product_code"
               :product-image="selectedImage"
+              :product-delivery-fee="Number(product.delivery_fee || 0)"
+              :product-is-free-shipping="!!product.is_free_shipping"
               :has-variants="hasVariantOptions"
               :variants="normalizedVariants"
             />

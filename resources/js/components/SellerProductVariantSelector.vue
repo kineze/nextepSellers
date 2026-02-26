@@ -74,6 +74,8 @@ const props = defineProps({
   productImage: { type: String, default: '' },
   hasVariants: { type: Boolean, default: false },
   variants: { type: Array, default: () => [] },
+  productDeliveryFee: { type: Number, default: 0 },
+  productIsFreeShipping: { type: Boolean, default: false },
 })
 
 const toast = useToast()
@@ -165,6 +167,8 @@ const addToCart = () => {
     sku: variant?.sku || '',
     attributes: variant?.attributes || {},
     price: variant?.price ?? null,
+    deliveryFee: Number(props.productDeliveryFee || 0),
+    isFreeShipping: !!props.productIsFreeShipping,
     qty: qty.value,
   })
 

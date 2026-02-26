@@ -16,11 +16,15 @@ class Product extends Model
         'product_code',
         'is_active',
         'has_varients',
+        'delivery_fee',
+        'is_free_shipping',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'has_varients' => 'boolean',
+        'delivery_fee' => 'decimal:2',
+        'is_free_shipping' => 'boolean',
     ];
 
     public function category(): BelongsTo

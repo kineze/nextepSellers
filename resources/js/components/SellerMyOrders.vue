@@ -83,8 +83,8 @@
         <div class="mt-3 grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-4">
           <p><span class="font-semibold">Net:</span> LKR {{ toMoney(order.net_total) }}</p>
           <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(order.delivery_charge) }}</p>
-          <p><span class="font-semibold">Discount:</span> LKR {{ toMoney(order.total_discount) }}</p>
-          <p><span class="font-semibold">Collectable:</span> LKR {{ toMoney(order.total_collectable_amount) }}</p>
+          <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(order)) }}</p>
+          <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(order) }}</p>
         </div>
       </article>
     </div>
@@ -188,11 +188,8 @@
             <div class="mt-2 grid gap-2 text-sm text-slate-700 dark:text-slate-200 sm:grid-cols-2">
               <p><span class="font-semibold">Net:</span> LKR {{ toMoney(selectedOrder.net_total) }}</p>
               <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(selectedOrder.delivery_charge) }}</p>
-              <p><span class="font-semibold">Discount:</span> LKR {{ toMoney(selectedOrder.total_discount) }}</p>
-              <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(selectedOrder.commission_amount) }}</p>
-              <p class="sm:col-span-2 text-base font-bold text-slate-900 dark:text-white">
-                Collectable: LKR {{ toMoney(selectedOrder.total_collectable_amount) }}
-              </p>
+              <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(selectedOrder)) }}</p>
+              <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(selectedOrder) }}</p>
             </div>
           </section>
         </div>
@@ -238,6 +235,14 @@ const formatDate = (value) => {
 
 const itemCount = (order) => {
   return (order?.items || []).reduce((sum, row) => sum + Number(row.quantity || 0), 0)
+}
+
+const commissionAmount = (order) => {
+  return Number(order?.computed_commission_amount ?? order?.commission_amount ?? 0)
+}
+
+const pointsEarned = (order) => {
+  return Number(order?.computed_points_earned ?? 0)
 }
 
 const attributeText = (attributes) => {

@@ -14,6 +14,7 @@ use App\Http\Controllers\LotController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoyalExpressLoginController;
 use App\Http\Controllers\SellerOrderController;
+use App\Http\Controllers\DispatchNoteController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -134,9 +135,24 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::delete('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityDeleteOrphans']);
 
     Route::get('/admin/orders/draft', [SellerOrderController::class, 'adminDraftOrders']);
+    Route::get('/admin/orders/{order}', [SellerOrderController::class, 'adminShow'])->whereNumber('order');
+    Route::get('/admin/orders/{order}/delivery-timeline', [SellerOrderController::class, 'adminDeliveryTimeline'])->whereNumber('order');
     Route::get('/admin/orders/filter-options', [SellerOrderController::class, 'adminOrderFilterOptions']);
     Route::post('/admin/orders/{order}/approve', [SellerOrderController::class, 'adminApprove']);
     Route::post('/admin/orders/bulk-approve', [SellerOrderController::class, 'adminBulkApprove']);
+    Route::get('/admin/orders/approved', [DispatchNoteController::class, 'adminApprovedOrders']);
+    Route::get('/admin/orders/packed', [DispatchNoteController::class, 'adminPackedOrders']);
+    Route::get('/admin/orders/shipped', [DispatchNoteController::class, 'adminShippedOrders']);
+    Route::get('/admin/orders/completed', [DispatchNoteController::class, 'adminCompletedOrders']);
+    Route::get('/admin/orders/cancelled', [DispatchNoteController::class, 'adminCancelledOrders']);
+    Route::post('/admin/dispatch-notes/from-approved', [DispatchNoteController::class, 'createFromApproved'])->middleware('permission:Manage Dispatch Management');
+    Route::get('/admin/dispatch-notes', [DispatchNoteController::class, 'adminDispatchNotes'])->middleware('permission:Manage Dispatch Management');
+    Route::post('/admin/shipping/scan-waybill', [DispatchNoteController::class, 'scanWaybillForShipping'])->middleware('permission:Manage Dispatch Management');
+    Route::get('/admin/dispatch-notes/{dispatchNote}', [DispatchNoteController::class, 'adminDispatchNoteShow'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
+    Route::post('/admin/dispatch-notes/{dispatchNote}/validate-lot-barcode', [DispatchNoteController::class, 'validateLotBarcode'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
+    Route::post('/admin/dispatch-notes/{dispatchNote}/link-lot-items', [DispatchNoteController::class, 'linkLotItems'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
+    Route::post('/admin/dispatch-notes/{dispatchNote}/ship', [DispatchNoteController::class, 'ship'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
+    Route::get('/admin/dispatch-notes/seller-options', [DispatchNoteController::class, 'sellerOptions'])->middleware('permission:Manage Dispatch Management');
 });
 
 Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {

@@ -30,6 +30,14 @@ import StateMatcher from './components/StateMatcher.vue';
 import SellerOrderSubmit from './components/SellerOrderSubmit.vue';
 import SellerMyOrders from './components/SellerMyOrders.vue';
 import AdminDraftOrders from './components/AdminDraftOrders.vue';
+import AdminApprovedOrders from './components/AdminApprovedOrders.vue';
+import AdminPackedOrders from './components/AdminPackedOrders.vue';
+import AdminShippedOrders from './components/AdminShippedOrders.vue';
+import AdminCompletedOrders from './components/AdminCompletedOrders.vue';
+import AdminCancelledOrders from './components/AdminCancelledOrders.vue';
+import AdminDispatchNotes from './components/AdminDispatchNotes.vue';
+import AdminDispatchNoteShow from './components/AdminDispatchNoteShow.vue';
+import AdminOrderShow from './components/AdminOrderShow.vue';
 import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
 import GrnManager from './components/GrnManager.vue';
 import LotManager from './components/LotManager.vue';
@@ -68,6 +76,14 @@ app.use(Toast, {
 .component('seller-order-submit', SellerOrderSubmit)
 .component('seller-my-orders', SellerMyOrders)
 .component('admin-draft-orders', AdminDraftOrders)
+.component('admin-approved-orders', AdminApprovedOrders)
+.component('admin-packed-orders', AdminPackedOrders)
+.component('admin-shipped-orders', AdminShippedOrders)
+.component('admin-completed-orders', AdminCompletedOrders)
+.component('admin-cancelled-orders', AdminCancelledOrders)
+.component('admin-dispatch-notes', AdminDispatchNotes)
+.component('admin-dispatch-note-show', AdminDispatchNoteShow)
+.component('admin-order-show', AdminOrderShow)
 .component('admin-global-filter-bar', AdminGlobalFilterBar)
 .component('grn-manager', GrnManager)
 .component('lot-manager', LotManager)

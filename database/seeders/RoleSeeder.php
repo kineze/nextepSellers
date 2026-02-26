@@ -21,6 +21,7 @@ class RoleSeeder extends Seeder
             'Manage Sellers',
             'Manage Levels',
             'Manage Inventory',
+            'Manage Dispatch Management',
         ]);
     }
 }

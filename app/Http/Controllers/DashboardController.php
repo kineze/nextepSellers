@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Order;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
@@ -94,6 +95,50 @@ class DashboardController extends Controller
     public function getAdminDraftOrders()
     {
         return view('dashboards.admin.orders.draftOrders');
+    }
+
+    public function getAdminApprovedOrders()
+    {
+        return view('dashboards.admin.orders.approvedOrders');
+    }
+
+    public function getAdminPackedOrders()
+    {
+        return view('dashboards.admin.orders.packedOrders');
+    }
+
+    public function getAdminShippedOrders()
+    {
+        return view('dashboards.admin.orders.shippedOrders');
+    }
+
+    public function getAdminCompletedOrders()
+    {
+        return view('dashboards.admin.orders.completedOrders');
+    }
+
+    public function getAdminCancelledOrders()
+    {
+        return view('dashboards.admin.orders.cancelledOrders');
+    }
+
+    public function getAdminDispatchNotes()
+    {
+        return view('dashboards.admin.orders.dispatchNotes');
+    }
+
+    public function getAdminDispatchNoteShow($dispatchNote)
+    {
+        return view('dashboards.admin.orders.dispatchNoteShow', [
+            'dispatchNoteId' => (int) $dispatchNote,
+        ]);
+    }
+
+    public function getAdminOrderShow(Order $order)
+    {
+        return view('dashboards.admin.orders.showOrder', [
+            'orderId' => $order->id,
+        ]);
     }
 
     public function getGrns()

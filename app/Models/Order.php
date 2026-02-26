@@ -69,4 +69,9 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    public function dispatchNoteItems()
+    {
+        return $this->hasMany(DispatchNoteItem::class);
+    }
 }

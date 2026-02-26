@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\RoyalExpressLogin;
 use App\Models\Seller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -98,6 +99,110 @@ class SellerOrderController extends Controller
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
             ],
+        ]);
+    }
+
+    public function adminShow(Order $order)
+    {
+        $order->load([
+            'seller:id,first_name,last_name,email,phone',
+            'city:id,name_en,district_id',
+            'city.district:id,name_en',
+            'customer:id,default_name,primary_phone,additional_phone,email,notes',
+            'items:id,order_id,product_id,product_variant_id,quantity,price',
+            'items.product:id,title,product_code',
+            'items.variant:id,sku,attributes,price',
+            'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks,created_at',
+            'dispatchNoteItems.dispatchNote:id,ref_no,dispatch_date,dispatch_time,status',
+        ]);
+
+        return response()->json([
+            'order' => $order,
+        ]);
+    }
+
+    public function adminDeliveryTimeline(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'refresh' => ['nullable', 'boolean'],
+        ]);
+
+        $refresh = (bool) ($validated['refresh'] ?? true);
+
+        $timeline = collect();
+        $latestStatus = null;
+        $waybill = trim((string) ($order->waybill_no ?? ''));
+
+        $courierMessage = null;
+        if ($waybill === '') {
+            $courierMessage = 'Waybill is not assigned for this order yet.';
+        } elseif ($refresh) {
+            [$trackingRows, $trackingError] = $this->fetchRoyalExpressTracking($waybill);
+            if ($trackingError) {
+                $courierMessage = $trackingError;
+            } else {
+                foreach (collect($trackingRows)->values() as $index => $row) {
+                    $statusName = data_get($row, 'status.name')
+                        ?? data_get($row, 'status')
+                        ?? data_get($row, 'delivery_status')
+                        ?? 'Tracking update';
+
+                    $location = data_get($row, 'city.name')
+                        ?? data_get($row, 'city')
+                        ?? data_get($row, 'location')
+                        ?? data_get($row, 'hub_name');
+
+                    $remark = data_get($row, 'remark') ?? data_get($row, 'remarks') ?? data_get($row, 'message');
+                    $details = collect([$location, $remark])->filter()->implode(' | ');
+
+                    $eventAt = data_get($row, 'updated_at')
+                        ?? data_get($row, 'created_at')
+                        ?? data_get($row, 'event_at')
+                        ?? data_get($row, 'event_time')
+                        ?? data_get($row, 'scanned_at');
+
+                    $timestamp = $this->toIsoDateTime($eventAt);
+                    $timeline->push([
+                        'title' => (string) $statusName,
+                        'source' => 'courier',
+                        'details' => $details !== '' ? $details : null,
+                        'at' => $timestamp,
+                        'sort_at' => $timestamp,
+                        'sequence' => $index,
+                    ]);
+                }
+
+                $latestStatus = data_get($trackingRows, '0.status.name')
+                    ?? data_get($trackingRows, '0.status')
+                    ?? data_get($trackingRows, '0.delivery_status');
+            }
+        }
+
+        $sorted = $timeline
+            ->sort(function ($a, $b) {
+                $aTs = !empty($a['sort_at']) ? strtotime((string) $a['sort_at']) : PHP_INT_MIN;
+                $bTs = !empty($b['sort_at']) ? strtotime((string) $b['sort_at']) : PHP_INT_MIN;
+
+                if ($aTs === $bTs) {
+                    // Preserve insertion order when timestamps are equal/missing.
+                    return ($a['sequence'] ?? 0) <=> ($b['sequence'] ?? 0);
+                }
+
+                // Latest first.
+                return $bTs <=> $aTs;
+            })
+            ->values()
+            ->map(function ($event) {
+                unset($event['sort_at'], $event['sequence']);
+                return $event;
+            });
+
+        return response()->json([
+            'order_id' => $order->id,
+            'current_status' => $order->status,
+            'delivery_status' => $latestStatus ?: $order->delivery_status,
+            'timeline' => $sorted,
+            'courier_message' => $courierMessage,
         ]);
     }
 
@@ -453,6 +558,43 @@ class SellerOrderController extends Controller
         return preg_replace('/\s+/', '', trim($value)) ?? trim($value);
     }
 
+    private function toIsoDateTime($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value)->toIso8601String();
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    private function buildDispatchDateTime($dispatchDate, $dispatchTime, $fallback = null)
+    {
+        try {
+            if (!empty($dispatchDate) && !empty($dispatchTime)) {
+                $datePart = Carbon::parse($dispatchDate)->toDateString();
+                $timePart = Carbon::parse($dispatchTime)->format('H:i:s');
+
+                return Carbon::parse($datePart . ' ' . $timePart);
+            }
+
+            if (!empty($dispatchDate)) {
+                return Carbon::parse($dispatchDate);
+            }
+
+            if (!empty($dispatchTime)) {
+                return Carbon::parse($dispatchTime);
+            }
+        } catch (\Throwable $e) {
+            // Fallback below if either piece has unexpected shape.
+        }
+
+        return $fallback;
+    }
+
     private function nullableString($value): ?string
     {
         $str = trim((string) ($value ?? ''));
@@ -462,6 +604,54 @@ class SellerOrderController extends Controller
     private function isDraftOrder(Order $order): bool
     {
         return $order->status === 'draft' || (bool) $order->is_draft;
+    }
+
+    private function fetchRoyalExpressTracking(string $waybill): array
+    {
+        $baseUrl = rtrim((string) config('services.royal_express.base_url'), '/');
+        $tenant = (string) config('services.royal_express.tenant');
+
+        if ($baseUrl === '' || $tenant === '') {
+            return [[], 'Royal Express configuration is missing.'];
+        }
+
+        $login = RoyalExpressLogin::query()
+            ->where('is_active', true)
+            ->whereNotNull('token')
+            ->latest('id')
+            ->first();
+
+        if (!$login) {
+            return [[], 'No active Royal Express login found.'];
+        }
+
+        if ($login->token_expiry && now()->greaterThan($login->token_expiry)) {
+            return [[], 'Royal Express token expired. Please login again.'];
+        }
+
+        try {
+            $response = Http::withHeaders([
+                'Accept' => 'application/json',
+                'Authorization' => 'Bearer ' . $login->token,
+                'Content-Type' => 'application/json',
+                'X-tenant' => $tenant,
+            ])->retry(1, 200)->get($baseUrl . '/api/public/merchant/order/tracking-info', [
+                'waybill_number' => $waybill,
+            ]);
+
+            if (!$response->successful()) {
+                return [[], $response->json('message') ?? 'Failed to fetch courier tracking.'];
+            }
+
+            $rows = $response->json('data');
+            if (!is_array($rows)) {
+                return [[], 'Courier tracking response did not contain timeline data.'];
+            }
+
+            return [$rows, null];
+        } catch (\Throwable $e) {
+            return [[], 'Courier tracking request failed.'];
+        }
     }
 
     private function requestRoyalExpressWaybill(Order $order): array

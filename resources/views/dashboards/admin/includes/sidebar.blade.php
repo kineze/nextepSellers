@@ -81,7 +81,12 @@
         <div class="relative sidebar-dropdown"
             data-subtitle="Orders"
             data-links='[
-              {"label":"Draft Orders","href":"{{ route('adminDraftOrders') }}"}
+              {"label":"Draft Orders","href":"{{ route('adminDraftOrders') }}"},
+              {"label":"Approved Orders","href":"{{ route('adminApprovedOrders') }}"},
+              {"label":"Packed Orders","href":"{{ route('adminPackedOrders') }}"},
+              {"label":"Shipped Orders","href":"{{ route('adminShippedOrders') }}"},
+              {"label":"Completed Orders","href":"{{ route('adminCompletedOrders') }}"},
+              {"label":"Cancelled Orders","href":"{{ route('adminCancelledOrders') }}"}
             ]'>
 
           <button class="dropdown-toggle dark:border-blue-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
@@ -98,6 +103,48 @@
           <div class="expanded-only hidden py-1 ml-4 space-y-1">
             <a href="{{ route('adminDraftOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
               Draft Orders
+            </a>
+            <a href="{{ route('adminApprovedOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Approved Orders
+            </a>
+            <a href="{{ route('adminPackedOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Packed Orders
+            </a>
+            <a href="{{ route('adminShippedOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Shipped Orders
+            </a>
+            <a href="{{ route('adminCompletedOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Completed Orders
+            </a>
+            <a href="{{ route('adminCancelledOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Cancelled Orders
+            </a>
+          </div>
+        </div>
+        @endcan
+
+        @can('Manage Dispatch Management')
+        <!-- Dispatch Management -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Dispatch Management"
+            data-links='[
+              {"label":"Dispatch Notes","href":"{{ route('adminDispatchNotes') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-emerald-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-truck-fast" aria-hidden="true"></i>
+              <span class="sr-only">Dispatch Management</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-emerald-700 dark:text-white text-left">
+              Dispatch Management
+            </span>
+            <i class="fas fa-chevron-down text-xs text-emerald-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('adminDispatchNotes') }}" class="block px-4 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-slate-700 rounded-md">
+              Dispatch Notes
             </a>
           </div>
         </div>

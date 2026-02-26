@@ -39,6 +39,14 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'getAdminDashboard')->name('adminDashboard');
         Route::get('/orders/draft', 'getAdminDraftOrders')->name('adminDraftOrders');
+        Route::get('/orders/approved', 'getAdminApprovedOrders')->name('adminApprovedOrders');
+        Route::get('/orders/packed', 'getAdminPackedOrders')->name('adminPackedOrders');
+        Route::get('/orders/shipped', 'getAdminShippedOrders')->name('adminShippedOrders');
+        Route::get('/orders/completed', 'getAdminCompletedOrders')->name('adminCompletedOrders');
+        Route::get('/orders/cancelled', 'getAdminCancelledOrders')->name('adminCancelledOrders');
+        Route::get('/orders/dispatch-notes', 'getAdminDispatchNotes')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNotes');
+        Route::get('/orders/dispatch-notes/{dispatchNote}', 'getAdminDispatchNoteShow')->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNoteShow');
+        Route::get('/orders/{order}', 'getAdminOrderShow')->name('adminOrderShow');
     });
  
 });

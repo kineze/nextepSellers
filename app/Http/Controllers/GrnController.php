@@ -102,16 +102,7 @@ class GrnController extends Controller
             ->orderByDesc('id');
 
         if ($supplierId) {
-            $mappedVariantIds = SupplierProductVarient::query()
-                ->select('supplier_product_varients.varient_id')
-                ->join('supplier_products', 'supplier_products.id', '=', 'supplier_product_varients.supplier_product_id')
-                ->where('supplier_products.supplier_id', (int) $supplierId)
-                ->where('supplier_products.is_active', true)
-                ->where('supplier_product_varients.is_active', true)
-                ->pluck('supplier_product_varients.varient_id')
-                ->unique()
-                ->values()
-                ->all();
+            $mappedVariantIds = $this->allowedVariantIdsForSupplier((int) $supplierId)->all();
 
             if (empty($mappedVariantIds)) {
                 return response()->json([
@@ -307,15 +298,7 @@ class GrnController extends Controller
             ->unique()
             ->values();
 
-        $allowedVariantIds = SupplierProductVarient::query()
-            ->select('supplier_product_varients.varient_id')
-            ->join('supplier_products', 'supplier_products.id', '=', 'supplier_product_varients.supplier_product_id')
-            ->where('supplier_products.supplier_id', $supplierId)
-            ->where('supplier_products.is_active', true)
-            ->where('supplier_product_varients.is_active', true)
-            ->pluck('supplier_product_varients.varient_id')
-            ->map(fn ($id) => (int) $id)
-            ->unique();
+        $allowedVariantIds = $this->allowedVariantIdsForSupplier($supplierId);
 
         $invalidVariants = $itemVariantIds->diff($allowedVariantIds)->values();
         if ($invalidVariants->isNotEmpty()) {
@@ -343,5 +326,39 @@ class GrnController extends Controller
 
             return 'GRN-' . str_pad((string) ($lastInt + 1), 6, '0', STR_PAD_LEFT);
         });
+    }
+
+    private function allowedVariantIdsForSupplier(int $supplierId)
+    {
+        $mappedVariantIds = SupplierProductVarient::query()
+            ->select('supplier_product_varients.varient_id')
+            ->join('supplier_products', 'supplier_products.id', '=', 'supplier_product_varients.supplier_product_id')
+            ->where('supplier_products.supplier_id', $supplierId)
+            ->where('supplier_products.is_active', true)
+            ->where('supplier_product_varients.is_active', true)
+            ->pluck('supplier_product_varients.varient_id')
+            ->map(fn ($id) => (int) $id);
+
+        $singleVariantProductIds = DB::table('supplier_products')
+            ->join('products', 'products.id', '=', 'supplier_products.product_id')
+            ->where('supplier_products.supplier_id', $supplierId)
+            ->where('supplier_products.is_active', true)
+            ->where('products.has_varients', false)
+            ->pluck('supplier_products.product_id')
+            ->map(fn ($id) => (int) $id);
+
+        $singleVariantIds = collect();
+        if ($singleVariantProductIds->isNotEmpty()) {
+            $singleVariantIds = Varient::query()
+                ->whereIn('product_id', $singleVariantProductIds->all())
+                ->where('is_active', true)
+                ->pluck('id')
+                ->map(fn ($id) => (int) $id);
+        }
+
+        return $mappedVariantIds
+            ->merge($singleVariantIds)
+            ->unique()
+            ->values();
     }
 }

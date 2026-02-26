@@ -100,3 +100,41 @@ body.theme-comfort .reg-cta {
     border-color: #cdbf9f !important;
     background-image: linear-gradient(to right, #efe5cb, #e3d6b6) !important;
 }
+
+/* Global system checkbox styling */
+@layer base {
+    input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        border: 1px solid #94a3b8;
+        border-radius: 0.125rem;
+        background-color: #f8fafc;
+        cursor: pointer;
+        accent-color: #2563eb;
+    }
+
+    input[type="checkbox"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(191, 219, 254, 0.9);
+    }
+
+    .dark input[type="checkbox"] {
+        border-color: #64748b;
+        background-color: #1e293b;
+    }
+}
+
+/* Override admin content gradient to avoid white strip at the bottom */
+.content-gradient {
+    background:
+        radial-gradient(900px 450px at 10% 0%, rgba(59, 130, 246, 0.1), transparent 60%),
+        radial-gradient(800px 500px at 90% 20%, rgba(56, 189, 248, 0.1), transparent 55%),
+        linear-gradient(180deg, rgba(248, 250, 252, 0.9), rgba(248, 250, 252, 0.98));
+}
+
+.dark .content-gradient {
+    background:
+        radial-gradient(900px 450px at 10% 0%, rgba(56, 189, 248, 0.16), transparent 60%),
+        radial-gradient(800px 500px at 90% 20%, rgba(14, 116, 144, 0.16), transparent 55%),
+        linear-gradient(180deg, rgba(2, 6, 23, 0.95), rgba(2, 6, 23, 0.98));
+}

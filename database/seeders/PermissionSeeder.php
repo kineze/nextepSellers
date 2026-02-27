@@ -22,6 +22,8 @@ class PermissionSeeder extends Seeder
             'Access Admin Dashboard',
             'Manage Inventory',
             'Manage Dispatch Management',
+            'Manage Finance',
+            'Manage Learning',
             'View Reports'
         ];
 

@@ -17,6 +17,9 @@
           <a href="{{ route('sellerDashboard') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide md:inline-flex {{ request()->routeIs('sellerDashboard') ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800' }}">
             Dashboard
           </a>
+          <a href="{{ route('learningMaterials') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
+            Learning
+          </a>
           <a href="{{ url('/') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
             Go to Site
           </a>

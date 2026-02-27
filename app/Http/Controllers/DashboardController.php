@@ -6,7 +6,11 @@ use App\Models\Product;
 use App\Models\Order;
 use App\Models\Level;
 use App\Models\Category;
+use App\Models\Invoice;
+use App\Models\Seller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -14,6 +18,102 @@ class DashboardController extends Controller
 
 
         return view('dashboards.admin.dashboard');
+    }
+
+    public function adminAnalytics()
+    {
+        $today = Carbon::today();
+        $from = (clone $today)->subDays(13)->startOfDay();
+        $to = (clone $today)->endOfDay();
+
+        $ordersBase = Order::query();
+        $totals = [
+            'orders_total' => (int) (clone $ordersBase)->count(),
+            'completed_orders' => (int) (clone $ordersBase)->where('status', 'completed')->count(),
+            'shipped_orders' => (int) (clone $ordersBase)->where('status', 'shipped')->count(),
+            'cancelled_orders' => (int) (clone $ordersBase)->where('status', 'cancelled')->count(),
+            'net_sales_total' => round((float) (clone $ordersBase)
+                ->selectRaw('COALESCE(SUM(GREATEST(net_total - total_discount, 0)), 0) as total')
+                ->value('total'), 2),
+            'commission_total' => round((float) (clone $ordersBase)->sum('commission_amount'), 2),
+        ];
+
+        $payments = [
+            'pending_commission' => round((float) Order::query()->where('payment_status', 'pending')->sum('commission_amount'), 2),
+            'available_commission' => round((float) Order::query()->where('payment_status', 'available')->sum('commission_amount'), 2),
+            'paid_commission' => round((float) Order::query()->where('payment_status', 'paid')->sum('commission_amount'), 2),
+        ];
+
+        $sellers = [
+            'total' => (int) Seller::query()->count(),
+            'approved' => (int) Seller::query()->where('status', 'approved')->count(),
+            'pending' => (int) Seller::query()->where('status', 'pending')->count(),
+            'blocked' => (int) Seller::query()->where('status', 'blocked')->count(),
+            'rejected' => (int) Seller::query()->where('status', 'rejected')->count(),
+        ];
+
+        $invoices = [
+            'total' => (int) Invoice::query()->count(),
+            'draft' => (int) Invoice::query()->where('status', 'draft')->count(),
+            'paid' => (int) Invoice::query()->where('status', 'paid')->count(),
+            'cancelled' => (int) Invoice::query()->where('status', 'cancelled')->count(),
+            'total_commission' => round((float) Invoice::query()->sum('total_commission_value'), 2),
+        ];
+
+        $trendRows = Order::query()
+            ->selectRaw('DATE(order_datetime) as order_date')
+            ->selectRaw('COUNT(*) as orders_count')
+            ->selectRaw("SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count")
+            ->selectRaw('COALESCE(SUM(GREATEST(net_total - total_discount, 0)), 0) as net_sales')
+            ->selectRaw('COALESCE(SUM(commission_amount), 0) as commission')
+            ->whereBetween('order_datetime', [$from, $to])
+            ->groupBy(DB::raw('DATE(order_datetime)'))
+            ->orderBy('order_date')
+            ->get()
+            ->keyBy('order_date');
+
+        $trend = collect(range(0, 13))->map(function ($index) use ($today, $trendRows) {
+            $date = (clone $today)->subDays(13 - $index)->toDateString();
+            $row = $trendRows->get($date);
+
+            return [
+                'date' => $date,
+                'orders_count' => (int) ($row->orders_count ?? 0),
+                'completed_count' => (int) ($row->completed_count ?? 0),
+                'net_sales' => round((float) ($row->net_sales ?? 0), 2),
+                'commission' => round((float) ($row->commission ?? 0), 2),
+            ];
+        })->values();
+
+        $topSellers = Seller::query()
+            ->select('id', 'first_name', 'last_name', 'email')
+            ->withCount([
+                'orders as completed_orders_count' => fn ($q) => $q->where('status', 'completed'),
+            ])
+            ->withSum('orders as total_commission_value', 'commission_amount')
+            ->orderByDesc('total_commission_value')
+            ->limit(8)
+            ->get()
+            ->map(function (Seller $seller) {
+                return [
+                    'id' => (int) $seller->id,
+                    'first_name' => $seller->first_name,
+                    'last_name' => $seller->last_name,
+                    'email' => $seller->email,
+                    'completed_orders_count' => (int) ($seller->completed_orders_count ?? 0),
+                    'total_commission_value' => round((float) ($seller->total_commission_value ?? 0), 2),
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'totals' => $totals,
+            'payments' => $payments,
+            'sellers' => $sellers,
+            'invoices' => $invoices,
+            'trend' => $trend,
+            'top_sellers' => $topSellers,
+        ]);
     }
 
     public function getSellerDashboard()
@@ -160,6 +260,16 @@ class DashboardController extends Controller
         return view('dashboards.seller.orders');
     }
 
+    public function getSellerPayments()
+    {
+        return view('dashboards.seller.payments');
+    }
+
+    public function getSellerProfileManager()
+    {
+        return view('dashboards.seller.profile');
+    }
+
     public function getSellerOrderShow(Order $order)
     {
         $seller = auth()->user()?->seller;
@@ -227,6 +337,26 @@ class DashboardController extends Controller
         return view('dashboards.admin.orders.dispatchNoteShow', [
             'dispatchNoteId' => (int) $dispatchNote,
         ]);
+    }
+
+    public function getAdminFinancePendingPayments()
+    {
+        return view('dashboards.admin.finance.pendingPayments');
+    }
+
+    public function getAdminFinanceAvailablePayments()
+    {
+        return view('dashboards.admin.finance.availablePayments');
+    }
+
+    public function getAdminFinanceInvoices()
+    {
+        return view('dashboards.admin.finance.invoices');
+    }
+
+    public function getAdminFinancePaymentManager()
+    {
+        return view('dashboards.admin.finance.paymentManager');
     }
 
     public function getAdminOrderShow(Order $order)

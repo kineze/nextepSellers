@@ -1,12 +1,12 @@
 @extends('layouts.site.app')
 
 @section('content')
-<section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen overflow-hidden bg-gradient-to-b from-sky-50 via-cyan-50 to-white pt-16 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 sm:pt-20">
+<section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen -mt-20  overflow-hidden bg-gradient-to-b from-sky-50 via-cyan-50 to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 sm:pt-20">
     <div class="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/20"></div>
     <div class="pointer-events-none absolute -right-12 top-1/2 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20"></div>
     <div class="pointer-events-none absolute left-1/2 top-24 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-500/10"></div>
 
-    <div class="mx-auto w-full max-w-screen-2xl px-6">
+    <div class="mx-auto w-full pt-32 max-w-screen-2xl px-6">
         <div class="reveal text-center">
             <div class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
                 <span class="relative flex h-2 w-2">
@@ -106,6 +106,57 @@
     </div>
 </section>
 
+<section id="learning" class="py-20">
+    <div class="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div class="reveal">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-300">Learning Materials</p>
+            <h2 class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
+                {{ $defaultLearningBlock?->title ?? 'Seller Learning Hub' }}
+            </h2>
+            <p class="mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+                {{ $defaultLearningBlock?->description ?: 'Watch short training videos and improve your selling workflow.' }}
+            </p>
+        </div>
+        <a href="{{ route('learningMaterials') }}" class="reveal inline-flex items-center gap-2 rounded-2xl border border-cyan-200 bg-cyan-50 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-cyan-700 hover:bg-cyan-100 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-200 dark:hover:bg-cyan-500/20">
+            View More
+            <i class="fas fa-arrow-right text-[11px]"></i>
+        </a>
+    </div>
+
+    @php
+        $homeLearningVideos = $defaultLearningBlock?->videos?->take(3) ?? collect();
+    @endphp
+
+    @if($homeLearningVideos->isEmpty())
+        <div class="reveal rounded-2xl border border-dashed border-slate-300 px-5 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            Learning videos are coming soon.
+        </div>
+    @else
+        <div class="grid gap-6 md:grid-cols-3">
+            @foreach($homeLearningVideos as $video)
+                <article class="reveal overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="aspect-video overflow-hidden border-b border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950">
+                        <iframe
+                            src="{{ $video->embed_url ?: $video->embedded_link }}"
+                            class="h-full w-full"
+                            loading="lazy"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            referrerpolicy="strict-origin-when-cross-origin"
+                            allowfullscreen
+                        ></iframe>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-sm font-bold text-slate-900 dark:text-white">{{ $video->title }}</h3>
+                        <p class="mt-2 line-clamp-3 text-xs text-slate-600 dark:text-slate-300">
+                            {{ $video->description ?: 'No description available.' }}
+                        </p>
+                    </div>
+                </article>
+            @endforeach
+        </div>
+    @endif
+</section>
+
 <section id="features" class="py-20">
     <div class="grid gap-10 lg:grid-cols-2 lg:items-center">
         <div class="reveal">
@@ -154,8 +205,6 @@
         </div>
     </div>
 </section>
-
-
 
 <section id="stories" class="py-20">
     <h2 class="mb-10 text-center text-3xl font-extrabold text-slate-900 dark:text-white">Seller Success Stories</h2>

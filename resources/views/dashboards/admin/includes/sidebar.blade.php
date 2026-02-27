@@ -126,7 +126,7 @@
         @can('Manage Dispatch Management')
         <!-- Dispatch Management -->
         <div class="relative sidebar-dropdown"
-            data-subtitle="Dispatch Management"
+            data-subtitle="Dispatch"
             data-links='[
               {"label":"Dispatch Notes","href":"{{ route('adminDispatchNotes') }}"}
             ]'>
@@ -137,7 +137,7 @@
               <span class="sr-only">Dispatch Management</span>
             </div>
             <span class="sidebar-label flex-1 text-sm font-medium text-emerald-700 dark:text-white text-left">
-              Dispatch Management
+              Dispatch
             </span>
             <i class="fas fa-chevron-down text-xs text-emerald-500 sidebar-label"></i>
           </button>
@@ -207,12 +207,52 @@
         </div>
         @endcan
 
+        @can('Manage Finance')
+        <!-- Finance -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Finance"
+            data-links='[
+              {"label":"Pending Payment Orders","href":"{{ route('adminFinancePendingPayments') }}"},
+              {"label":"Available Payment Orders","href":"{{ route('adminFinanceAvailablePayments') }}"},
+              {"label":"Invoices","href":"{{ route('adminFinanceInvoices') }}"},
+              {"label":"Payment Manager","href":"{{ route('adminFinancePaymentManager') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-cyan-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-wallet" aria-hidden="true"></i>
+              <span class="sr-only">Finance</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-cyan-700 dark:text-white text-left">
+              Finance
+            </span>
+            <i class="fas fa-chevron-down text-xs text-cyan-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('adminFinancePendingPayments') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Pending Payment Orders
+            </a>
+            <a href="{{ route('adminFinanceAvailablePayments') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Available Payment Orders
+            </a>
+            <a href="{{ route('adminFinanceInvoices') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Invoices
+            </a>
+            <a href="{{ route('adminFinancePaymentManager') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Payment Manager
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage System Configuration')
         <!-- System Configuration -->
         <div class="relative sidebar-dropdown"
-            data-subtitle="System Configuration"
+            data-subtitle="System"
             data-links='[
               {"label":"Attribute Manager","href":"{{ url('/attributes') }}"},
+              {"label":"Banks","href":"{{ route('banks') }}"},
               {"label":"Royal Express","href":"{{ route('royalExpress') }}"},
               {"label":"Delivery Fees","href":"{{ route('deliveryFees') }}"}
             ]'>
@@ -223,7 +263,7 @@
               <span class="sr-only">System Configuration</span>
             </div>
             <span class="sidebar-label flex-1 text-sm font-medium text-amber-700 dark:text-white text-left">
-              System Configuration
+              System
             </span>
             <i class="fas fa-chevron-down text-xs text-amber-500 sidebar-label"></i>
           </button>
@@ -232,11 +272,41 @@
             <a href="{{ url('/attributes') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Attribute Manager
             </a>
+            <a href="{{ route('banks') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
+              Banks
+            </a>
             <a href="{{ route('royalExpress') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Royal Express
             </a>
             <a href="{{ route('deliveryFees') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Delivery Fees
+            </a>
+          </div>
+        </div>
+        @endcan
+
+        @can('Manage Learning')
+        <!-- Learning -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Learning"
+            data-links='[
+              {"label":"Content Manager","href":"{{ route('learningContentManager') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-fuchsia-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+              <span class="sr-only">Learning</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-fuchsia-700 dark:text-white text-left">
+              Learning
+            </span>
+            <i class="fas fa-chevron-down text-xs text-fuchsia-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('learningContentManager') }}" class="block px-4 py-2 text-xs font-semibold text-fuchsia-600 dark:text-fuchsia-300 hover:bg-fuchsia-100 dark:hover:bg-slate-700 rounded-md">
+              Content Manager
             </a>
           </div>
         </div>

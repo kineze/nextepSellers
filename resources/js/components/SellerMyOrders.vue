@@ -6,7 +6,7 @@
         <h2 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">Submitted Orders</h2>
       </div>
 
-      <div class="grid gap-2 sm:grid-cols-2">
+      <div class="grid gap-2 sm:grid-cols-3">
         <select
           v-model="filters.status"
           class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
@@ -20,6 +20,17 @@
           <option value="shipped">Shipped</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
+        </select>
+
+        <select
+          v-model="filters.payment_status"
+          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          @change="onFilterChanged"
+        >
+          <option value="all">All Payments</option>
+          <option value="pending">Pending</option>
+          <option value="available">Available</option>
+          <option value="paid">Paid</option>
         </select>
 
         <input
@@ -124,6 +135,7 @@ const orders = ref([])
 
 const filters = reactive({
   status: 'all',
+  payment_status: 'all',
   search: '',
   page: 1,
   per_page: 10,
@@ -172,6 +184,7 @@ const fetchOrders = async () => {
     const { data } = await axios.get('/api/seller/orders', {
       params: {
         status: filters.status,
+        payment_status: filters.payment_status,
         search: filters.search || undefined,
         page: filters.page,
         per_page: filters.per_page,

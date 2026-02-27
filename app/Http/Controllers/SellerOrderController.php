@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\RoyalExpressLogin;
 use App\Models\Seller;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductLevel;
 use Carbon\Carbon;
@@ -259,6 +260,7 @@ class SellerOrderController extends Controller
     {
         $validated = $request->validate([
             'status' => ['nullable', 'in:all,draft,approved,confirmed,packed,shipped,completed,cancelled'],
+            'payment_status' => ['nullable', 'in:all,pending,available,paid'],
             'search' => ['nullable', 'string', 'max:120'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
         ]);
@@ -271,6 +273,7 @@ class SellerOrderController extends Controller
         }
 
         $status = $validated['status'] ?? 'all';
+        $paymentStatus = $validated['payment_status'] ?? 'all';
         $search = trim((string) ($validated['search'] ?? ''));
         $perPage = (int) ($validated['per_page'] ?? 10);
 
@@ -291,6 +294,9 @@ class SellerOrderController extends Controller
         if ($status !== 'all') {
             $query->where('status', $status);
         }
+        if ($paymentStatus !== 'all') {
+            $query->where('payment_status', $paymentStatus);
+        }
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -304,6 +310,7 @@ class SellerOrderController extends Controller
         $orders = $query->paginate($perPage);
         $orderRows = collect($orders->items());
         $this->attachComputedMetrics($orderRows, (int) ($seller->seller_level_id ?? 0));
+        [$paymentSummary, $availablePayments] = $this->buildSellerPaymentSnapshot((int) $seller->id);
 
         return response()->json([
             'orders' => $orderRows->values(),
@@ -313,6 +320,8 @@ class SellerOrderController extends Controller
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
             ],
+            'payment_summary' => $paymentSummary,
+            'available_payments' => $availablePayments,
         ]);
     }
 
@@ -757,7 +766,44 @@ class SellerOrderController extends Controller
 
             $order->setAttribute('computed_commission_amount', $computed);
             $order->setAttribute('computed_points_earned', $this->calculatePointsForOrder($order));
+            $paymentStatus = strtolower(trim((string) ($order->payment_status ?? '')));
+            $order->setAttribute('payment_status', in_array($paymentStatus, ['pending', 'available', 'paid'], true) ? $paymentStatus : 'pending');
         }
+    }
+
+    private function buildSellerPaymentSnapshot(int $sellerId): array
+    {
+        $pending = (float) Order::query()
+            ->where('seller_id', $sellerId)
+            ->where('payment_status', 'pending')
+            ->sum('total_collectable_amount');
+
+        $available = (float) Payment::query()
+            ->where('seller_id', $sellerId)
+            ->where('status', 'available')
+            ->sum('amount');
+
+        $paid = (float) Payment::query()
+            ->where('seller_id', $sellerId)
+            ->where('status', 'paid')
+            ->sum('amount');
+
+        $availablePayments = Payment::query()
+            ->where('seller_id', $sellerId)
+            ->where('status', 'available')
+            ->with([
+                'order:id,customer_name,phone,waybill_no,total_collectable_amount,payment_status,completed_at',
+            ])
+            ->latest('available_at')
+            ->latest('id')
+            ->limit(10)
+            ->get();
+
+        return [[
+            'pending' => round($pending, 2),
+            'available' => round($available, 2),
+            'paid' => round($paid, 2),
+        ], $availablePayments];
     }
 
     private function calculateCommissionForItems(Collection $items, int $sellerLevelId): float

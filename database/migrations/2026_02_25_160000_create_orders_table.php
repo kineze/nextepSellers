@@ -48,7 +48,7 @@ return new class extends Migration
             $table->string('delivery_status', 50)->nullable()->index();
 
             // Payment
-            $table->string('payment_status', 30)->nullable()->index();
+            $table->enum('payment_status', ['pending', 'available', 'paid'])->default('pending')->index();
 
             // Multi-seller
             $table->foreignId('seller_id')->constrained()->cascadeOnDelete();

@@ -8,6 +8,7 @@ import Toast, { POSITION } from "vue-toastification";
 import { createApp } from 'vue'
 
 import DarkModeToggle from './components/DarkModeToggle.vue';
+import Dashboard from './components/Dashboard.vue';
 import RolePermissionManager from './components/RolePermissionManager.vue';
 import UserManager from './components/UserManager.vue';
 import SellerRegistrationForm from './components/SellerRegistrationForm.vue';
@@ -30,6 +31,8 @@ import StateMatcher from './components/StateMatcher.vue';
 import SellerOrderSubmit from './components/SellerOrderSubmit.vue';
 import SellerMyOrders from './components/SellerMyOrders.vue';
 import SellerOrderShow from './components/SellerOrderShow.vue';
+import SellerPayments from './components/SellerPayments.vue';
+import SellerProfileManager from './components/SellerProfileManager.vue';
 import AdminDraftOrders from './components/AdminDraftOrders.vue';
 import AdminApprovedOrders from './components/AdminApprovedOrders.vue';
 import AdminPackedOrders from './components/AdminPackedOrders.vue';
@@ -40,9 +43,15 @@ import AdminDispatchNotes from './components/AdminDispatchNotes.vue';
 import AdminDispatchNoteShow from './components/AdminDispatchNoteShow.vue';
 import AdminOrderShow from './components/AdminOrderShow.vue';
 import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
+import AdminFinancePendingPayments from './components/AdminFinancePendingPayments.vue';
+import AdminFinanceAvailablePayments from './components/AdminFinanceAvailablePayments.vue';
+import AdminFinanceInvoices from './components/AdminFinanceInvoices.vue';
+import AdminFinancePaymentManager from './components/AdminFinancePaymentManager.vue';
 import GrnManager from './components/GrnManager.vue';
 import LotManager from './components/LotManager.vue';
 import DeliveryFeeManager from './components/DeliveryFeeManager.vue';
+import BankManager from './components/BankManager.vue';
+import LearningContentManager from './components/LearningContentManager.vue';
 
 const app = createApp({})
 
@@ -56,6 +65,7 @@ app.use(Toast, {
 })
 
 .component('dark-mode-toggle', DarkModeToggle)
+.component('dashboard', Dashboard)
 .component('roles-and-permission-manager', RolePermissionManager)
 .component('user-manager', UserManager)
 .component('seller-registration-form', SellerRegistrationForm)
@@ -78,6 +88,8 @@ app.use(Toast, {
 .component('seller-order-submit', SellerOrderSubmit)
 .component('seller-my-orders', SellerMyOrders)
 .component('seller-order-show', SellerOrderShow)
+.component('seller-payments', SellerPayments)
+.component('seller-profile-manager', SellerProfileManager)
 .component('admin-draft-orders', AdminDraftOrders)
 .component('admin-approved-orders', AdminApprovedOrders)
 .component('admin-packed-orders', AdminPackedOrders)
@@ -88,8 +100,14 @@ app.use(Toast, {
 .component('admin-dispatch-note-show', AdminDispatchNoteShow)
 .component('admin-order-show', AdminOrderShow)
 .component('admin-global-filter-bar', AdminGlobalFilterBar)
+.component('admin-finance-pending-payments', AdminFinancePendingPayments)
+.component('admin-finance-available-payments', AdminFinanceAvailablePayments)
+.component('admin-finance-invoices', AdminFinanceInvoices)
+.component('admin-finance-payment-manager', AdminFinancePaymentManager)
 .component('grn-manager', GrnManager)
 .component('lot-manager', LotManager)
 .component('delivery-fee-manager', DeliveryFeeManager)
+.component('bank-manager', BankManager)
+.component('learning-content-manager', LearningContentManager)
 
 .mount('#app')

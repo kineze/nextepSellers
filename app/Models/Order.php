@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class Order extends Model
 {
@@ -20,12 +21,14 @@ class Order extends Model
         'delivery_charge',
         'total_discount',
         'commission_amount',
+        'points_awarded',
         'delivery_status',
         'payment_status',
         'is_damaged',
         'packed_at',
         'shipped_at',
         'completed_at',
+        'points_awarded_at',
         'cancelled_at',
     ];
 
@@ -38,14 +41,17 @@ class Order extends Model
         'delivery_charge',
         'total_discount',
         'commission_amount',
+        'points_awarded',
         'waybill_no',
         'packed_at',
         'shipped_at',
         'completed_at',
+        'points_awarded_at',
         'cancelled_at',
         'is_damaged',
         'delivery_status',
         'payment_status',
+        'invoice_id',
         'seller_id',
         'customer_id',
         'customer_name',
@@ -68,6 +74,8 @@ class Order extends Model
         'delivery_charge' => 'decimal:2',
         'total_discount' => 'decimal:2',
         'commission_amount' => 'decimal:2',
+        'points_awarded' => 'integer',
+        'points_awarded_at' => 'datetime',
     ];
 
     public function seller()
@@ -98,6 +106,16 @@ class Order extends Model
     public function logs()
     {
         return $this->hasMany(OrderLog::class)->latest('id');
+    }
+
+    public function payment()
+    {
+        return $this->hasOne(Payment::class);
+    }
+
+    public function invoice()
+    {
+        return $this->belongsTo(Invoice::class);
     }
 
     protected static function booted(): void
@@ -174,7 +192,7 @@ class Order extends Model
     ): void {
         try {
             $this->logs()->create([
-                'user_id' => auth()->id(),
+                'user_id' => Auth::id(),
                 'event_type' => $eventType,
                 'from_status' => $fromStatus,
                 'to_status' => $toStatus,

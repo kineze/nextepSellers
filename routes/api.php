@@ -8,14 +8,20 @@ use App\Http\Controllers\SellerController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\BankController;
+use App\Http\Controllers\LearningContentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GrnController;
 use App\Http\Controllers\LotController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\RoyalExpressLoginController;
 use App\Http\Controllers\SellerOrderController;
+use App\Http\Controllers\SellerProfileController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\DeliveryFeeController;
+use App\Http\Controllers\SellerPaymentController;
+use App\Http\Controllers\AdminFinanceController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -67,10 +73,26 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::put('/attributes/{attribute}', [AttributeController::class, 'update']);
     Route::delete('/attributes/{attribute}', [AttributeController::class, 'destroy']);
 
+    Route::get('/banks', [BankController::class, 'index']);
+    Route::post('/banks', [BankController::class, 'store']);
+    Route::put('/banks/{bank}', [BankController::class, 'update']);
+    Route::delete('/banks/{bank}', [BankController::class, 'destroy']);
+
     Route::get('/delivery-fees', [DeliveryFeeController::class, 'index']);
     Route::post('/delivery-fees', [DeliveryFeeController::class, 'store']);
     Route::put('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'update']);
     Route::delete('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'destroy']);
+});
+
+Route::middleware(['auth:sanctum', 'permission:Manage Learning'])->group(function () {
+    Route::get('/learning/content-blocks', [LearningContentController::class, 'index']);
+    Route::post('/learning/content-blocks', [LearningContentController::class, 'storeBlock']);
+    Route::put('/learning/content-blocks/{contentBlock}', [LearningContentController::class, 'updateBlock'])->whereNumber('contentBlock');
+    Route::delete('/learning/content-blocks/{contentBlock}', [LearningContentController::class, 'destroyBlock'])->whereNumber('contentBlock');
+
+    Route::post('/learning/content-blocks/{contentBlock}/videos', [LearningContentController::class, 'storeVideo'])->whereNumber('contentBlock');
+    Route::put('/learning/content-blocks/{contentBlock}/videos/{video}', [LearningContentController::class, 'updateVideo'])->whereNumber('contentBlock')->whereNumber('video');
+    Route::delete('/learning/content-blocks/{contentBlock}/videos/{video}', [LearningContentController::class, 'destroyVideo'])->whereNumber('contentBlock')->whereNumber('video');
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {
@@ -114,6 +136,8 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
 });
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+    Route::get('/admin/dashboard/analytics', [DashboardController::class, 'adminAnalytics']);
+
     Route::get('/royal-express/logins', [RoyalExpressLoginController::class, 'index']);
     Route::post('/royal-express/logins', [RoyalExpressLoginController::class, 'store']);
     Route::delete('/royal-express/logins/{id}', [RoyalExpressLoginController::class, 'destroy']);
@@ -162,12 +186,29 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::post('/admin/dispatch-notes/{dispatchNote}/link-lot-items', [DispatchNoteController::class, 'linkLotItems'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
     Route::post('/admin/dispatch-notes/{dispatchNote}/ship', [DispatchNoteController::class, 'ship'])->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management');
     Route::get('/admin/dispatch-notes/seller-options', [DispatchNoteController::class, 'sellerOptions'])->middleware('permission:Manage Dispatch Management');
+    Route::get('/admin/finance/pending-payments', [AdminFinanceController::class, 'pendingPayments'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/available-payments', [AdminFinanceController::class, 'availablePayments'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/invoices', [AdminFinanceController::class, 'invoices'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/invoices/export-bank-document', [AdminFinanceController::class, 'exportInvoicesBankDocument'])->middleware('permission:Manage Finance');
+    Route::post('/admin/finance/invoices/{invoice}/mark-paid', [AdminFinanceController::class, 'markInvoicePaid'])->whereNumber('invoice')->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/payment-manager/sellers', [AdminFinanceController::class, 'paymentManagerSellers'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/payment-manager/sellers/{seller}/orders', [AdminFinanceController::class, 'paymentManagerSellerOrders'])->whereNumber('seller')->middleware('permission:Manage Finance');
+    Route::post('/admin/finance/payment-manager/generate-invoices', [AdminFinanceController::class, 'generateInvoices'])->middleware('permission:Manage Finance');
+    Route::post('/admin/finance/payment-manager/sellers/{seller}/generate-invoice', [AdminFinanceController::class, 'generateSellerInvoice'])->whereNumber('seller')->middleware('permission:Manage Finance');
 });
 
 Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
     Route::get('/seller/orders', [SellerOrderController::class, 'index']);
     Route::get('/seller/orders/{order}', [SellerOrderController::class, 'sellerShow'])->whereNumber('order');
+    Route::get('/seller/profile', [SellerProfileController::class, 'show']);
+    Route::post('/seller/profile/email-otp/send', [SellerProfileController::class, 'sendEmailOtp']);
+    Route::post('/seller/profile/email-otp/verify', [SellerProfileController::class, 'verifyEmailOtp']);
+    Route::put('/seller/profile', [SellerProfileController::class, 'update']);
+    Route::get('/seller/profile/banks', [SellerProfileController::class, 'banks']);
+    Route::get('/seller/profile/bank-details', [SellerProfileController::class, 'bankDetails']);
+    Route::put('/seller/profile/bank-details', [SellerProfileController::class, 'updateBankDetails']);
+    Route::get('/seller/payments', [SellerPaymentController::class, 'index']);
     Route::get('/seller/orders/{order}/delivery-timeline', [SellerOrderController::class, 'sellerDeliveryTimeline'])->whereNumber('order');
     Route::get('/seller/orders/{order}/logs/{logId}', [SellerOrderController::class, 'sellerOrderLogShow'])
         ->whereNumber('order')

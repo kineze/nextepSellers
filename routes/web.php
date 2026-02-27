@@ -8,6 +8,8 @@ use App\Http\Controllers\SellerController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\BankController;
+use App\Http\Controllers\LearningContentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\SellerRegistrationController;
 
 Route::controller(GenaralController::class)->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::get('/learning-materials', 'learningMaterials')->name('learningMaterials');
     Route::get('/about', 'about')->name('about');
     Route::get('/contact', 'contact')->name('contact');
     Route::get('/home', 'home')->name('home');
@@ -46,6 +49,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/orders/cancelled', 'getAdminCancelledOrders')->name('adminCancelledOrders');
         Route::get('/orders/dispatch-notes', 'getAdminDispatchNotes')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNotes');
         Route::get('/orders/dispatch-notes/{dispatchNote}', 'getAdminDispatchNoteShow')->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNoteShow');
+        Route::get('/finance/pending-payments', 'getAdminFinancePendingPayments')->middleware('permission:Manage Finance')->name('adminFinancePendingPayments');
+        Route::get('/finance/available-payments', 'getAdminFinanceAvailablePayments')->middleware('permission:Manage Finance')->name('adminFinanceAvailablePayments');
+        Route::get('/finance/invoices', 'getAdminFinanceInvoices')->middleware('permission:Manage Finance')->name('adminFinanceInvoices');
+        Route::get('/finance/payment-manager', 'getAdminFinancePaymentManager')->middleware('permission:Manage Finance')->name('adminFinancePaymentManager');
         Route::get('/orders/{order}', 'getAdminOrderShow')->name('adminOrderShow');
     });
  
@@ -61,6 +68,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/seller/checkout', 'getSellerCheckout')->name('sellerCheckout');
         Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
         Route::get('/seller/orders/{order}', 'getSellerOrderShow')->whereNumber('order')->name('sellerOrderShow');
+        Route::get('/seller/payments', 'getSellerPayments')->name('sellerPayments');
+        Route::get('/seller/profile', 'getSellerProfileManager')->name('sellerProfileManager');
     });
 });
 
@@ -82,9 +91,19 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
         Route::get('/attributes', 'indexView')->name('attributes');
     });
 
+    Route::controller(BankController::class)->group(function () {
+        Route::get('/banks', 'indexView')->name('banks');
+    });
+
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/royal-express', 'getRoyalExpress')->name('royalExpress');
         Route::get('/delivery-fees', 'getDeliveryFees')->name('deliveryFees');
+    });
+});
+
+Route::middleware(['permission:Manage Learning', config('jetstream.auth_session'), 'verified',])->group(function () {
+    Route::controller(LearningContentController::class)->group(function () {
+        Route::get('/learning/content-manager', 'indexView')->name('learningContentManager');
     });
 });
 

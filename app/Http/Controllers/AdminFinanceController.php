@@ -27,6 +27,121 @@ class AdminFinanceController extends Controller
         return $this->ordersByPaymentStatus($request, 'available');
     }
 
+    public function affiliatePayments(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
+            'status' => ['nullable', 'in:all,available,paid'],
+            'date_type' => ['nullable', 'in:available_at,paid_at'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $status = (string) ($validated['status'] ?? 'all');
+        $dateType = (string) ($validated['date_type'] ?? 'available_at');
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $commissionFilter = function ($query) use ($validated, $status, $dateType) {
+            if ($status !== 'all') {
+                $query->where('status', $status);
+            }
+
+            if (!empty($validated['date_from'])) {
+                $query->whereDate($dateType, '>=', $validated['date_from']);
+            }
+            if (!empty($validated['date_to'])) {
+                $query->whereDate($dateType, '<=', $validated['date_to']);
+            }
+        };
+
+        $query = Seller::query()
+            ->select(['id', 'first_name', 'last_name', 'email', 'phone'])
+            ->whereHas('affiliateCommissionsEarned', $commissionFilter)
+            ->withCount(['affiliateCommissionsEarned as commissions_count' => $commissionFilter])
+            ->withSum(['affiliateCommissionsEarned as available_affiliate_value' => function ($q) use ($commissionFilter) {
+                $commissionFilter($q);
+                $q->where('status', 'available');
+            }], 'amount')
+            ->withSum(['affiliateCommissionsEarned as paid_affiliate_value' => function ($q) use ($commissionFilter) {
+                $commissionFilter($q);
+                $q->where('status', 'paid');
+            }], 'amount')
+            ->withSum(['affiliateCommissionsEarned as total_affiliate_value' => $commissionFilter], 'amount')
+            ->latest('id');
+
+        if (!empty($validated['seller_id'])) {
+            $query->where('id', (int) $validated['seller_id']);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhere('first_name', 'like', '%' . $search . '%')
+                    ->orWhere('last_name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
+
+        $sellers = $query->paginate($perPage);
+
+        $summaryQuery = AffiliateCommission::query()
+            ->when($status !== 'all', fn ($q) => $q->where('status', $status))
+            ->when(!empty($validated['seller_id']), fn ($q) => $q->where('affiliate_seller_id', (int) $validated['seller_id']))
+            ->when(!empty($validated['date_from']), fn ($q) => $q->whereDate($dateType, '>=', $validated['date_from']))
+            ->when(!empty($validated['date_to']), fn ($q) => $q->whereDate($dateType, '<=', $validated['date_to']));
+
+        if ($search !== '') {
+            $summaryQuery->whereHas('affiliateSeller', function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhere('first_name', 'like', '%' . $search . '%')
+                    ->orWhere('last_name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
+
+        $rows = collect($sellers->items())->map(function (Seller $seller) {
+            return [
+                'id' => (int) $seller->id,
+                'first_name' => $seller->first_name,
+                'last_name' => $seller->last_name,
+                'email' => $seller->email,
+                'phone' => $seller->phone,
+                'commissions_count' => (int) ($seller->commissions_count ?? 0),
+                'available_affiliate_value' => round((float) ($seller->available_affiliate_value ?? 0), 2),
+                'paid_affiliate_value' => round((float) ($seller->paid_affiliate_value ?? 0), 2),
+                'total_affiliate_value' => round((float) ($seller->total_affiliate_value ?? 0), 2),
+            ];
+        })->values();
+
+        $availableValue = (float) (clone $summaryQuery)->where('status', 'available')->sum('amount');
+        $paidValue = (float) (clone $summaryQuery)->where('status', 'paid')->sum('amount');
+        $totalValue = (float) (clone $summaryQuery)->sum('amount');
+        $sellersCount = (int) (clone $summaryQuery)->distinct('affiliate_seller_id')->count('affiliate_seller_id');
+        $recordsCount = (int) (clone $summaryQuery)->count();
+
+        return response()->json([
+            'sellers' => $rows,
+            'summary' => [
+                'sellers_count' => $sellersCount,
+                'records_count' => $recordsCount,
+                'available_value' => round($availableValue, 2),
+                'paid_value' => round($paidValue, 2),
+                'total_value' => round($totalValue, 2),
+            ],
+            'meta' => [
+                'current_page' => $sellers->currentPage(),
+                'last_page' => $sellers->lastPage(),
+                'per_page' => $sellers->perPage(),
+                'total' => $sellers->total(),
+            ],
+        ]);
+    }
+
     public function invoices(Request $request)
     {
         $validated = $request->validate([

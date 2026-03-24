@@ -9,7 +9,9 @@
       'total_referrals' => 0,
       'active_referrals' => 0,
       'orders_from_referrals' => 0,
-      'commission_lkr' => 0,
+      'available_commission_lkr' => 0,
+      'paid_commission_lkr' => 0,
+      'total_commission_lkr' => 0,
   ];
   $referredList = $referredSellers ?? collect();
 @endphp
@@ -80,18 +82,19 @@
     </div>
 
     <div class="rounded-2xl border border-violet-200/80 bg-violet-50/80 p-4 shadow-sm dark:border-violet-500/30 dark:bg-violet-500/10">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">Referral Orders</p>
-      <p class="mt-2 text-3xl font-extrabold text-violet-900 dark:text-violet-100">{{ number_format($stats['orders_from_referrals']) }}</p>
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-violet-700 dark:text-violet-300">Available Affiliate Commission</p>
+      <p class="mt-2 text-3xl font-extrabold text-violet-900 dark:text-violet-100">LKR {{ number_format((float) ($stats['available_commission_lkr'] ?? 0), 2) }}</p>
     </div>
 
     <div class="rounded-2xl border border-amber-200/80 bg-amber-50/80 p-4 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/10">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Estimated Commission</p>
-      <p class="mt-2 text-3xl font-extrabold text-amber-900 dark:text-amber-100">LKR {{ number_format($stats['commission_lkr']) }}</p>
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Paid Affiliate Commission</p>
+      <p class="mt-2 text-3xl font-extrabold text-amber-900 dark:text-amber-100">LKR {{ number_format((float) ($stats['paid_commission_lkr'] ?? 0), 2) }}</p>
+      <p class="mt-1 text-[11px] text-amber-700/80 dark:text-amber-300/80">Total: LKR {{ number_format((float) ($stats['total_commission_lkr'] ?? 0), 2) }}</p>
     </div>
   </div>
 
-  <div class="grid gap-4 xl:grid-cols-3">
-    <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 xl:col-span-2">
+  <div class="grid gap-4">
+    <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
       <div class="flex items-center justify-between gap-3">
         <h2 class="text-lg font-bold text-slate-900 dark:text-white">Referred Sellers</h2>
         <span class="rounded-full border border-slate-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-700 dark:text-slate-300">{{ number_format($referredList->count()) }} Linked</span>
@@ -107,7 +110,9 @@
               <th class="px-3 py-2">Joined</th>
               <th class="px-3 py-2">Status</th>
               <th class="px-3 py-2">Orders</th>
-              <th class="px-3 py-2 text-right">Commission</th>
+              <th class="px-3 py-2 text-right">Available</th>
+              <th class="px-3 py-2 text-right">Paid</th>
+              <th class="px-3 py-2 text-right">Total</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
@@ -123,38 +128,19 @@
                   </span>
                 </td>
                 <td class="px-3 py-2.5">{{ number_format((int) ($item->orders_count ?? 0)) }}</td>
-                <td class="px-3 py-2.5 text-right font-semibold">LKR {{ number_format((float) ($item->orders_sum_commission_amount ?? 0), 2) }}</td>
+                <td class="px-3 py-2.5 text-right font-semibold text-violet-700 dark:text-violet-300">LKR {{ number_format((float) ($item->affiliate_available_amount ?? 0), 2) }}</td>
+                <td class="px-3 py-2.5 text-right font-semibold text-blue-700 dark:text-blue-300">LKR {{ number_format((float) ($item->affiliate_paid_amount ?? 0), 2) }}</td>
+                <td class="px-3 py-2.5 text-right font-semibold">LKR {{ number_format((float) ($item->affiliate_total_amount ?? 0), 2) }}</td>
               </tr>
             @empty
               <tr>
-                <td colspan="7" class="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                <td colspan="9" class="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                   No sellers are linked to your affiliate account yet.
                 </td>
               </tr>
             @endforelse
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <div class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-      <h2 class="text-lg font-bold text-slate-900 dark:text-white">How It Works</h2>
-      <div class="mt-4 space-y-3">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Step 1</p>
-          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">Invite New Sellers</p>
-          <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Share your referral code with potential sellers.</p>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Step 2</p>
-          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">They Start Ordering</p>
-          <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Earnings are calculated as they place orders.</p>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Step 3</p>
-          <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">Receive Commission</p>
-          <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">Commissions are reflected in your affiliate earnings.</p>
-        </div>
       </div>
     </div>
   </div>

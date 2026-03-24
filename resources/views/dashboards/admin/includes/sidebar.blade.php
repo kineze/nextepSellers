@@ -218,6 +218,7 @@
             data-links='[
               {"label":"Pending Payment Orders","href":"{{ route('adminFinancePendingPayments') }}"},
               {"label":"Available Payment Orders","href":"{{ route('adminFinanceAvailablePayments') }}"},
+              {"label":"Affiliate Payments","href":"{{ route('adminFinanceAffiliatePayments') }}"},
               {"label":"Invoices","href":"{{ route('adminFinanceInvoices') }}"},
               {"label":"Payment Manager","href":"{{ route('adminFinancePaymentManager') }}"}
             ]'>
@@ -239,6 +240,9 @@
             </a>
             <a href="{{ route('adminFinanceAvailablePayments') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
               Available Payment Orders
+            </a>
+            <a href="{{ route('adminFinanceAffiliatePayments') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
+              Affiliate Payments
             </a>
             <a href="{{ route('adminFinanceInvoices') }}" class="block px-4 py-2 text-xs font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-slate-700 rounded-md">
               Invoices

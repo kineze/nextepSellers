@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliateCommission;
 use App\Models\Product;
 use App\Models\Order;
 use App\Models\Level;
@@ -274,7 +275,9 @@ class DashboardController extends Controller
             'total_referrals' => 0,
             'active_referrals' => 0,
             'orders_from_referrals' => 0,
-            'commission_lkr' => 0,
+            'available_commission_lkr' => 0,
+            'paid_commission_lkr' => 0,
+            'total_commission_lkr' => 0,
         ];
 
         if ($seller) {
@@ -282,17 +285,44 @@ class DashboardController extends Controller
                 ->select('id', 'first_name', 'last_name', 'email', 'phone', 'status', 'created_at')
                 ->where('affiliate_seller_id', $seller->id)
                 ->withCount('orders')
-                ->withSum('orders', 'commission_amount')
                 ->latest('id')
                 ->get();
+
+            $commissionSummaryBySeller = AffiliateCommission::query()
+                ->selectRaw('seller_id')
+                ->selectRaw('COALESCE(SUM(amount), 0) as total_amount')
+                ->selectRaw("COALESCE(SUM(CASE WHEN status = 'available' THEN amount ELSE 0 END), 0) as available_amount")
+                ->selectRaw("COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as paid_amount")
+                ->where('affiliate_seller_id', $seller->id)
+                ->groupBy('seller_id')
+                ->get()
+                ->keyBy('seller_id');
+
+            $referredSellers->transform(function ($item) use ($commissionSummaryBySeller) {
+                $summary = $commissionSummaryBySeller->get((int) $item->id);
+                $item->affiliate_total_amount = (float) ($summary->total_amount ?? 0);
+                $item->affiliate_available_amount = (float) ($summary->available_amount ?? 0);
+                $item->affiliate_paid_amount = (float) ($summary->paid_amount ?? 0);
+                return $item;
+            });
+
+            $availableCommission = (float) AffiliateCommission::query()
+                ->where('affiliate_seller_id', $seller->id)
+                ->where('status', 'available')
+                ->sum('amount');
+
+            $paidCommission = (float) AffiliateCommission::query()
+                ->where('affiliate_seller_id', $seller->id)
+                ->where('status', 'paid')
+                ->sum('amount');
 
             $stats = [
                 'total_referrals' => $referredSellers->count(),
                 'active_referrals' => $referredSellers->where('status', 'approved')->count(),
                 'orders_from_referrals' => (int) $referredSellers->sum('orders_count'),
-                'commission_lkr' => (float) $referredSellers->sum(function ($item) {
-                    return (float) ($item->orders_sum_commission_amount ?? 0);
-                }),
+                'available_commission_lkr' => round($availableCommission, 2),
+                'paid_commission_lkr' => round($paidCommission, 2),
+                'total_commission_lkr' => round($availableCommission + $paidCommission, 2),
             ];
         }
 
@@ -429,6 +459,11 @@ class DashboardController extends Controller
     public function getAdminFinanceAvailablePayments()
     {
         return view('dashboards.admin.finance.availablePayments');
+    }
+
+    public function getAdminFinanceAffiliatePayments()
+    {
+        return view('dashboards.admin.finance.affiliatePayments');
     }
 
     public function getAdminFinanceInvoices()

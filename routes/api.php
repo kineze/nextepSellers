@@ -190,6 +190,7 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::get('/admin/dispatch-notes/seller-options', [DispatchNoteController::class, 'sellerOptions'])->middleware('permission:Manage Dispatch Management');
     Route::get('/admin/finance/pending-payments', [AdminFinanceController::class, 'pendingPayments'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/available-payments', [AdminFinanceController::class, 'availablePayments'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/affiliate-payments', [AdminFinanceController::class, 'affiliatePayments'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/invoices', [AdminFinanceController::class, 'invoices'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/invoices/export-bank-document', [AdminFinanceController::class, 'exportInvoicesBankDocument'])->middleware('permission:Manage Finance');
     Route::post('/admin/finance/invoices/{invoice}/mark-paid', [AdminFinanceController::class, 'markInvoicePaid'])->whereNumber('invoice')->middleware('permission:Manage Finance');

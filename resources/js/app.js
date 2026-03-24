@@ -47,6 +47,7 @@ import AdminOrderShow from './components/AdminOrderShow.vue';
 import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
 import AdminFinancePendingPayments from './components/AdminFinancePendingPayments.vue';
 import AdminFinanceAvailablePayments from './components/AdminFinanceAvailablePayments.vue';
+import AdminFinanceAffiliatePayments from './components/AdminFinanceAffiliatePayments.vue';
 import AdminFinanceInvoices from './components/AdminFinanceInvoices.vue';
 import AdminFinancePaymentManager from './components/AdminFinancePaymentManager.vue';
 import GrnManager from './components/GrnManager.vue';
@@ -106,6 +107,7 @@ app.use(Toast, {
 .component('admin-global-filter-bar', AdminGlobalFilterBar)
 .component('admin-finance-pending-payments', AdminFinancePendingPayments)
 .component('admin-finance-available-payments', AdminFinanceAvailablePayments)
+.component('admin-finance-affiliate-payments', AdminFinanceAffiliatePayments)
 .component('admin-finance-invoices', AdminFinanceInvoices)
 .component('admin-finance-payment-manager', AdminFinancePaymentManager)
 .component('grn-manager', GrnManager)

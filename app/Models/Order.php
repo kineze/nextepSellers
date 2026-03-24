@@ -52,6 +52,7 @@ class Order extends Model
         'delivery_status',
         'payment_status',
         'invoice_id',
+        'bulk_order_request_id',
         'seller_id',
         'customer_id',
         'customer_name',
@@ -113,9 +114,19 @@ class Order extends Model
         return $this->hasOne(Payment::class);
     }
 
+    public function affiliateCommission()
+    {
+        return $this->hasOne(AffiliateCommission::class);
+    }
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function bulkOrderRequest()
+    {
+        return $this->belongsTo(BulkOrderRequest::class);
     }
 
     protected static function booted(): void

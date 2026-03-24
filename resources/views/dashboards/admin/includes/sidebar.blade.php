@@ -81,6 +81,7 @@
         <div class="relative sidebar-dropdown"
             data-subtitle="Orders"
             data-links='[
+              {"label":"Bulk Order Requests","href":"{{ route('adminBulkOrderRequests') }}"},
               {"label":"Draft Orders","href":"{{ route('adminDraftOrders') }}"},
               {"label":"Approved Orders","href":"{{ route('adminApprovedOrders') }}"},
               {"label":"Packed Orders","href":"{{ route('adminPackedOrders') }}"},
@@ -101,6 +102,9 @@
           </button>
 
           <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('adminBulkOrderRequests') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Bulk Order Requests
+            </a>
             <a href="{{ route('adminDraftOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
               Draft Orders
             </a>

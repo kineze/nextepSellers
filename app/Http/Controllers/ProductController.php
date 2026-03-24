@@ -153,6 +153,7 @@ class ProductController extends Controller
             'levels.*.level_id' => ['required_with:levels', 'integer', 'exists:levels,id', 'distinct'],
             'levels.*.type' => ['required_with:levels', 'string', 'in:percentage,amount'],
             'levels.*.value' => ['required_with:levels', 'numeric', 'min:0'],
+            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
@@ -228,6 +229,7 @@ class ProductController extends Controller
                     'level_id' => (int) $row['level_id'],
                     'type' => $row['type'],
                     'value' => $row['value'],
+                    'affiliate_commission' => (float) ($row['affiliate_commission'] ?? 0),
                 ];
             })->all();
 
@@ -278,6 +280,7 @@ class ProductController extends Controller
             'levels.*.level_id' => ['required_with:levels', 'integer', 'exists:levels,id', 'distinct'],
             'levels.*.type' => ['required_with:levels', 'string', 'in:percentage,amount'],
             'levels.*.value' => ['required_with:levels', 'numeric', 'min:0'],
+            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', 'max:100'],
         ]);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
@@ -425,6 +428,7 @@ class ProductController extends Controller
                     'level_id' => (int) $row['level_id'],
                     'type' => $row['type'],
                     'value' => $row['value'],
+                    'affiliate_commission' => (float) ($row['affiliate_commission'] ?? 0),
                 ];
             })->all();
 

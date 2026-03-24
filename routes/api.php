@@ -165,6 +165,8 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
     Route::delete('/curfox-cities/orphans', [RoyalExpressLoginController::class, 'cityDeleteOrphans']);
 
     Route::get('/admin/orders/draft', [SellerOrderController::class, 'adminDraftOrders']);
+    Route::get('/admin/orders/bulk-requests', [SellerOrderController::class, 'adminBulkOrderRequests']);
+    Route::post('/admin/orders/bulk-requests/{bulkOrderRequest}/approve', [SellerOrderController::class, 'adminApproveBulkOrderRequest'])->whereNumber('bulkOrderRequest');
     Route::get('/admin/orders/{order}', [SellerOrderController::class, 'adminShow'])->whereNumber('order');
     Route::get('/admin/orders/{order}/logs/{logId}', [SellerOrderController::class, 'adminOrderLogShow'])
         ->whereNumber('order')
@@ -199,7 +201,10 @@ Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
 Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
+    Route::post('/seller/cities/resolve', [SellerOrderController::class, 'resolveCities']);
+    Route::get('/seller/order-products', [SellerOrderController::class, 'productOptions']);
     Route::get('/seller/orders', [SellerOrderController::class, 'index']);
+    Route::post('/seller/orders/bulk', [SellerOrderController::class, 'storeBulk']);
     Route::get('/seller/orders/{order}', [SellerOrderController::class, 'sellerShow'])->whereNumber('order');
     Route::get('/seller/profile', [SellerProfileController::class, 'show']);
     Route::post('/seller/profile/email-otp/send', [SellerProfileController::class, 'sendEmailOtp']);

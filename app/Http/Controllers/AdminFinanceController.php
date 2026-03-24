@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliateCommission;
 use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Seller;
+use App\Services\InvoiceGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdminFinanceController extends Controller
 {
+    public function __construct(private readonly InvoiceGenerationService $invoiceGenerationService)
+    {
+    }
+
     public function pendingPayments(Request $request)
     {
         return $this->ordersByPaymentStatus($request, 'pending');
@@ -419,6 +425,41 @@ class AdminFinanceController extends Controller
         }
 
         $sellerIds = (clone $query)->select('seller_id')->distinct()->pluck('seller_id');
+        $affiliateQuery = AffiliateCommission::query()
+            ->where('status', 'available')
+            ->whereNull('invoice_id');
+
+        if (!empty($validated['seller_id'])) {
+            $affiliateQuery->where('affiliate_seller_id', (int) $validated['seller_id']);
+        }
+
+        if (!empty($validated['date_from'])) {
+            $affiliateQuery->whereDate('available_at', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $affiliateQuery->whereDate('available_at', '<=', $validated['date_to']);
+        }
+
+        if ($search !== '') {
+            $affiliateQuery->whereHas('affiliateSeller', function ($sellerQuery) use ($search) {
+                $sellerQuery->where('id', $search)
+                    ->orWhere('first_name', 'like', '%' . $search . '%')
+                    ->orWhere('last_name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
+
+        $affiliateSellerIds = $affiliateQuery
+            ->distinct()
+            ->pluck('affiliate_seller_id');
+
+        $sellerIds = $sellerIds
+            ->merge($affiliateSellerIds)
+            ->filter()
+            ->unique()
+            ->values();
+
         if ($sellerIds->isEmpty()) {
             return response()->json([
                 'message' => 'No eligible sellers found to generate invoices.',
@@ -431,7 +472,7 @@ class AdminFinanceController extends Controller
 
         DB::transaction(function () use ($sellerIds, $validated, &$createdCount, &$totalOrdersAssigned, &$invoiceIds) {
             foreach ($sellerIds as $sellerId) {
-                $result = $this->generateDraftInvoiceForSeller((int) $sellerId, $validated);
+                $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $sellerId, $validated, now());
                 if ($result['invoice_id']) {
                     $createdCount++;
                     $totalOrdersAssigned += (int) $result['orders_assigned'];
@@ -464,11 +505,9 @@ class AdminFinanceController extends Controller
             'date_to' => ['nullable', 'date'],
         ]);
 
-        $result = DB::transaction(function () use ($seller, $validated) {
-            return $this->generateDraftInvoiceForSeller((int) $seller->id, $validated);
-        });
+        $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $seller->id, $validated, now());
 
-        if (!(int) ($result['orders_assigned'] ?? 0)) {
+        if (!(int) (($result['orders_assigned'] ?? 0) + ($result['affiliate_commissions_assigned'] ?? 0))) {
             return response()->json([
                 'message' => 'No eligible orders found for this seller.',
             ], 422);
@@ -518,6 +557,14 @@ class AdminFinanceController extends Controller
                     ]);
             }
 
+            $affiliateCommissionsUpdated = AffiliateCommission::query()
+                ->where('invoice_id', $invoice->id)
+                ->where('status', 'available')
+                ->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+
             $invoice->update([
                 'status' => 'paid',
             ]);
@@ -525,6 +572,7 @@ class AdminFinanceController extends Controller
             return [
                 'orders_updated' => (int) $ordersUpdated,
                 'payments_updated' => (int) $paymentsUpdated,
+                'affiliate_commissions_updated' => (int) $affiliateCommissionsUpdated,
             ];
         });
 
@@ -678,42 +726,4 @@ class AdminFinanceController extends Controller
         }
     }
 
-    private function generateDraftInvoiceForSeller(int $sellerId, array $filters): array
-    {
-        $ordersQuery = Order::query()
-            ->where('seller_id', $sellerId)
-            ->where('payment_status', 'available')
-            ->whereNull('invoice_id');
-
-        $this->applyDateFilter($ordersQuery, $filters);
-
-        $orderIds = (clone $ordersQuery)->pluck('id');
-        if ($orderIds->isEmpty()) {
-            return [
-                'invoice_id' => null,
-                'orders_assigned' => 0,
-            ];
-        }
-
-        $totalCommissionValue = (float) (clone $ordersQuery)->sum('commission_amount');
-
-        $invoice = Invoice::create([
-            'seller_id' => $sellerId,
-            'invoice_date' => now()->toDateString(),
-            'invoice_time' => now()->format('H:i:s'),
-            'total_commission_value' => round($totalCommissionValue, 2),
-            'status' => 'draft',
-        ]);
-
-        $ordersAssigned = Order::query()
-            ->whereIn('id', $orderIds)
-            ->update([
-                'invoice_id' => $invoice->id,
-            ]);
-
-        return [
-            'invoice_id' => (int) $invoice->id,
-            'orders_assigned' => (int) $ordersAssigned,
-        ];
-    }
 }

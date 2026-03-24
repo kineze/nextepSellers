@@ -89,6 +89,18 @@
       <p class="mt-2 text-xs text-slate-600 dark:text-slate-300">Track order statuses and fulfillment progress.</p>
     </a>
 
+    <a href="{{ route('sellerBulkOrders') }}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500/40">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Orders</p>
+      <p class="mt-2 text-lg font-bold text-slate-900 dark:text-white">Bulk Orders</p>
+      <p class="mt-2 text-xs text-slate-600 dark:text-slate-300">Create multiple customer orders in one submission.</p>
+    </a>
+
+    <a href="{{ route('sellerAffiliate') }}" class="rounded-2xl border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500/40">
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Growth</p>
+      <p class="mt-2 text-lg font-bold text-slate-900 dark:text-white">Affiliate</p>
+      <p class="mt-2 text-xs text-slate-600 dark:text-slate-300">Refer new sellers and earn recurring commissions from their orders.</p>
+    </a>
+
     <a href="{{ route('home') }}" class="rounded-2xl border border-blue-200 bg-blue-50 p-5 transition hover:-translate-y-0.5 hover:shadow-sm dark:border-blue-500/30 dark:bg-blue-500/10">
       <p class="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Site</p>
       <p class="mt-2 text-lg font-bold text-slate-900 dark:text-white">Back to Website</p>

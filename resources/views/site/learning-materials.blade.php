@@ -24,7 +24,7 @@
           </div>
           <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ $block->description ?: 'No description' }}</p>
 
-          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             @forelse($block->videos as $video)
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
                 <div class="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900">

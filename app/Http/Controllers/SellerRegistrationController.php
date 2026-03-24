@@ -6,6 +6,7 @@ use App\Models\Seller;
 use App\Services\BrevoMailer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
@@ -129,7 +130,15 @@ class SellerRegistrationController extends Controller
             }
         }
 
-        DB::transaction(function () use ($request, $validated) {
+        $referralCodeFromCookie = strtoupper(trim((string) $request->cookie('seller_aff_ref', '')));
+        $affiliateSellerId = null;
+        if ($referralCodeFromCookie !== '') {
+            $affiliateSellerId = Seller::query()
+                ->where('referral_code', $referralCodeFromCookie)
+                ->value('id');
+        }
+
+        DB::transaction(function () use ($request, $validated, $affiliateSellerId) {
             $nicFrontPath = $request->file('nic_front')->store('seller-documents/nic', 'public');
             $nicBackPath = $request->file('nic_back')->store('seller-documents/nic', 'public');
             $sellerImagePath = $request->file('seller_image')
@@ -150,6 +159,7 @@ class SellerRegistrationController extends Controller
                 'phone_verified' => false,
                 'agreement_accepted' => true,
                 'status' => 'pending',
+                'affiliate_seller_id' => $affiliateSellerId,
             ]);
 
             if ($validated['seller_type'] === 'business') {
@@ -175,6 +185,8 @@ class SellerRegistrationController extends Controller
         if ($validated['email_verified']) {
             Cache::forget($this->getEmailVerifiedKey($validated['email']));
         }
+
+        Cookie::queue(Cookie::forget('seller_aff_ref'));
 
         return response()->json([
             'message' => 'Seller registration submitted successfully. Our team will review your application.',

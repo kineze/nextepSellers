@@ -269,6 +269,7 @@
                 <tr>
                   <th class="px-3 py-2 text-left">Level</th>
                   <th class="px-3 py-2 text-left">{{ levelMode === 'percentage' ? 'Commission %' : 'Commission Amount' }}</th>
+                  <th class="px-3 py-2 text-left">Affiliate Commission %</th>
                 </tr>
               </thead>
               <tbody>
@@ -293,6 +294,20 @@
                       <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400">
                         {{ levelMode === 'percentage' ? '%' : 'LKR' }}
                       </span>
+                    </div>
+                  </td>
+                  <td class="px-3 py-2">
+                    <div class="relative w-44">
+                      <input
+                        v-model.number="row.affiliate_commission"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        placeholder="0.00"
+                        class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      />
+                      <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400">%</span>
                     </div>
                   </td>
                 </tr>
@@ -415,6 +430,7 @@ const initializeLevelRows = () => {
       level_label: level.level_name || `Level ${level.level_no}`,
       type: levelMode.value,
       value: existing ? Number(existing.value || 0) : 0,
+      affiliate_commission: existing ? Number(existing.affiliate_commission || 0) : 0,
     }
   })
 }
@@ -685,6 +701,7 @@ const saveProduct = async () => {
       level_id: row.level_id,
       type: row.type,
       value: Number(row.value || 0),
+      affiliate_commission: Number(row.affiliate_commission || 0),
     })),
     varients: form.value.hasVariants === 'yes'
       ? variants.value.map((v) => ({
@@ -781,6 +798,7 @@ const loadProduct = async () => {
           level_label: level.level_name || `Level ${level.level_no}`,
           type: item?.type || levelMode.value,
           value: Number(item?.value || 0),
+          affiliate_commission: Number(item?.affiliate_commission || 0),
         }
       })
     }

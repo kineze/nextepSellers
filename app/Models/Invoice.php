@@ -29,4 +29,9 @@ class Invoice extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function affiliateCommissions()
+    {
+        return $this->hasMany(AffiliateCommission::class);
+    }
 }

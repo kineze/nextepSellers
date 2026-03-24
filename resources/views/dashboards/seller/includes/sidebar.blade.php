@@ -53,6 +53,16 @@
     </a>
 
     <a
+      href="{{ route('sellerBulkOrders') }}"
+      class="seller-sidebar-item group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('sellerBulkOrders') ? 'border-blue-200 bg-blue-50 text-blue-800 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-200/70 text-slate-700 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white dark:border-slate-800 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:bg-slate-800/60' }}"
+    >
+      <span class="seller-sidebar-icon inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-blue-100 group-hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200 dark:group-hover:bg-blue-500/20 dark:group-hover:text-blue-200">
+        <i class="fas fa-table-list w-4"></i>
+      </span>
+      <span class="seller-sidebar-label">Bulk Orders</span>
+    </a>
+
+    <a
       href="{{ route('sellerPayments') }}"
       class="seller-sidebar-item group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('sellerPayments') ? 'border-blue-200 bg-blue-50 text-blue-800 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-200/70 text-slate-700 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white dark:border-slate-800 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:bg-slate-800/60' }}"
     >
@@ -60,6 +70,16 @@
         <i class="fas fa-money-check-dollar w-4"></i>
       </span>
       <span class="seller-sidebar-label">Payments</span>
+    </a>
+
+    <a
+      href="{{ route('sellerAffiliate') }}"
+      class="seller-sidebar-item group flex items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('sellerAffiliate') ? 'border-blue-200 bg-blue-50 text-blue-800 shadow-sm dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-200/70 text-slate-700 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white dark:border-slate-800 dark:text-slate-200 dark:hover:border-blue-500/30 dark:hover:bg-slate-800/60' }}"
+    >
+      <span class="seller-sidebar-icon inline-flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-700 transition group-hover:bg-blue-100 group-hover:text-blue-700 dark:bg-slate-800 dark:text-slate-200 dark:group-hover:bg-blue-500/20 dark:group-hover:text-blue-200">
+        <i class="fas fa-users w-4"></i>
+      </span>
+      <span class="seller-sidebar-label">Affiliate</span>
     </a>
 
     <a

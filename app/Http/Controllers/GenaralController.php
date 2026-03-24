@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ContentBlock;
+use App\Models\Seller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -25,6 +26,27 @@ class GenaralController extends Controller
     }
 
     public function sellerRegistration(){
+        $ref = strtoupper(trim((string) request()->query('ref', '')));
+
+        if ($ref !== '') {
+            $exists = Seller::query()->where('referral_code', $ref)->exists();
+            if ($exists) {
+                return response()
+                    ->view('site.seller-registration')
+                    ->cookie(
+                        'seller_aff_ref',
+                        $ref,
+                        60 * 24 * 30, // 30 days
+                        '/',
+                        null,
+                        request()->isSecure(),
+                        true,
+                        false,
+                        'Lax'
+                    );
+            }
+        }
+
         return view('site.seller-registration');
     }
 

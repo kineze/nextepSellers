@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\City;
 use App\Models\Customer;
+use App\Models\BulkOrderRequest;
 use App\Models\Order;
 use App\Models\RoyalExpressLogin;
 use App\Models\Seller;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class SellerOrderController extends Controller
 {
@@ -55,6 +57,7 @@ class SellerOrderController extends Controller
         $query = Order::query()
             ->with([
                 'seller:id,first_name,last_name,email,phone',
+                'bulkOrderRequest:id,request_no,status',
                 'city:id,name_en',
                 'customer:id,default_name,primary_phone,additional_phone,email,notes',
                 'items:id,order_id,product_id,product_variant_id,quantity,price',
@@ -64,6 +67,12 @@ class SellerOrderController extends Controller
             ->where(function ($q) {
                 $q->where('status', 'draft')
                     ->orWhere('is_draft', true);
+            })
+            ->where(function ($q) {
+                $q->whereNull('bulk_order_request_id')
+                    ->orWhereHas('bulkOrderRequest', function ($bulkQ) {
+                        $bulkQ->where('status', 'approved');
+                    });
             })
             ->latest('order_datetime')
             ->latest('id');
@@ -102,6 +111,95 @@ class SellerOrderController extends Controller
                 'last_page' => $orders->lastPage(),
                 'per_page' => $orders->perPage(),
                 'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    public function adminBulkOrderRequests(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
+            'status' => ['nullable', 'in:all,draft,submitted,approved,cancelled'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $status = (string) ($validated['status'] ?? 'all');
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $query = BulkOrderRequest::query()
+            ->with([
+                'seller:id,first_name,last_name,email,phone',
+                'orders:id,bulk_order_request_id,order_datetime,status,is_draft,total_collectable_amount,customer_name,phone,city_id',
+                'orders.city:id,name_en',
+            ])
+            ->withSum('orders as total_collectable_amount', 'total_collectable_amount')
+            ->latest('id');
+
+        if (!empty($validated['seller_id'])) {
+            $query->where('seller_id', (int) $validated['seller_id']);
+        }
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('created_at', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('created_at', '<=', $validated['date_to']);
+        }
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('request_no', 'like', '%' . $search . '%')
+                    ->orWhereHas('seller', function ($sellerQ) use ($search) {
+                        $sellerQ->where('first_name', 'like', '%' . $search . '%')
+                            ->orWhere('last_name', 'like', '%' . $search . '%')
+                            ->orWhere('email', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('orders', function ($orderQ) use ($search) {
+                        $orderQ->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('phone', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $requests = $query->paginate($perPage);
+
+        return response()->json([
+            'requests' => collect($requests->items())->map(function (BulkOrderRequest $request) {
+                $request->setAttribute('total_collectable_amount', (float) ($request->total_collectable_amount ?? 0));
+                return $request;
+            })->values(),
+            'meta' => [
+                'current_page' => $requests->currentPage(),
+                'last_page' => $requests->lastPage(),
+                'per_page' => $requests->perPage(),
+                'total' => $requests->total(),
+            ],
+        ]);
+    }
+
+    public function adminApproveBulkOrderRequest(BulkOrderRequest $bulkOrderRequest)
+    {
+        if ($bulkOrderRequest->status === 'approved') {
+            return response()->json([
+                'message' => 'Bulk order request already approved.',
+            ]);
+        }
+
+        $bulkOrderRequest->update([
+            'status' => 'approved',
+        ]);
+
+        return response()->json([
+            'message' => 'Bulk order request approved successfully.',
+            'request' => [
+                'id' => $bulkOrderRequest->id,
+                'request_no' => $bulkOrderRequest->request_no,
+                'status' => $bulkOrderRequest->status,
             ],
         ]);
     }
@@ -280,6 +378,7 @@ class SellerOrderController extends Controller
         $query = Order::query()
             ->where('seller_id', $seller->id)
             ->with([
+                'bulkOrderRequest:id,request_no,status,seller_id,orders_count,created_at',
                 'city:id,name_en',
                 'customer:id,default_name,primary_phone,additional_phone,email,notes',
                 'items:id,order_id,product_id,product_variant_id,quantity,price',
@@ -303,7 +402,10 @@ class SellerOrderController extends Controller
                 $q->where('id', $search)
                     ->orWhere('customer_name', 'like', '%' . $search . '%')
                     ->orWhere('phone', 'like', '%' . $search . '%')
-                    ->orWhere('waybill_no', 'like', '%' . $search . '%');
+                    ->orWhere('waybill_no', 'like', '%' . $search . '%')
+                    ->orWhereHas('bulkOrderRequest', function ($bulkQuery) use ($search) {
+                        $bulkQuery->where('request_no', 'like', '%' . $search . '%');
+                    });
             });
         }
 
@@ -410,6 +512,107 @@ class SellerOrderController extends Controller
         ]);
     }
 
+    public function resolveCities(Request $request)
+    {
+        $validated = $request->validate([
+            'names' => ['required', 'array', 'min:1', 'max:500'],
+            'names.*' => ['required', 'string', 'max:255'],
+        ]);
+
+        $normalizedNames = collect($validated['names'])
+            ->map(fn ($name) => trim((string) $name))
+            ->filter(fn ($name) => $name !== '')
+            ->map(fn ($name) => mb_strtolower($name))
+            ->unique()
+            ->values();
+
+        if ($normalizedNames->isEmpty()) {
+            return response()->json([
+                'matches' => [],
+            ]);
+        }
+
+        $cities = City::query()
+            ->select('id', 'name_en')
+            ->whereIn(DB::raw('LOWER(name_en)'), $normalizedNames->all())
+            ->orderBy('name_en')
+            ->get();
+
+        $matches = [];
+        foreach ($cities as $city) {
+            $key = mb_strtolower(trim((string) $city->name_en));
+            if (!isset($matches[$key])) {
+                $matches[$key] = [
+                    'id' => (int) $city->id,
+                    'name_en' => (string) $city->name_en,
+                ];
+            }
+        }
+
+        return response()->json([
+            'matches' => $matches,
+        ]);
+    }
+
+    public function productOptions(Request $request)
+    {
+        $search = trim((string) $request->query('search', ''));
+        $limit = max(5, min((int) $request->query('limit', 20), 100));
+
+        $query = Product::query()
+            ->select('id', 'title', 'product_code', 'delivery_fee', 'is_free_shipping', 'has_varients')
+            ->with([
+                'images' => function ($q) {
+                    $q->select('id', 'product_id', 'path', 'is_primary')
+                        ->orderByDesc('is_primary')
+                        ->orderBy('id');
+                },
+                'varients' => function ($q) {
+                    $q->select('id', 'product_id', 'sku', 'attributes', 'price', 'is_active')
+                        ->where('is_active', true)
+                        ->orderBy('id');
+                },
+            ])
+            ->where('is_active', true)
+            ->whereHas('varients', function ($q) {
+                $q->where('is_active', true);
+            })
+            ->orderBy('title');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('product_code', 'like', '%' . $search . '%');
+            });
+        }
+
+        $products = $query->limit($limit)->get()->map(function (Product $product) {
+            $image = $product->images->first();
+
+            return [
+                'id' => (int) $product->id,
+                'title' => (string) $product->title,
+                'product_code' => (string) ($product->product_code ?? ''),
+                'image' => $image ? asset('storage/' . ltrim((string) $image->path, '/')) : null,
+                'delivery_fee' => (float) ($product->delivery_fee ?? 0),
+                'is_free_shipping' => (bool) ($product->is_free_shipping ?? false),
+                'has_varients' => (bool) ($product->has_varients ?? false),
+                'variants' => $product->varients->map(function ($variant) {
+                    return [
+                        'id' => (int) $variant->id,
+                        'sku' => (string) ($variant->sku ?? ''),
+                        'attributes' => is_array($variant->attributes) ? $variant->attributes : [],
+                        'price' => (float) ($variant->price ?? 0),
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'products' => $products,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -443,110 +646,79 @@ class SellerOrderController extends Controller
             ], 422);
         }
 
-        $customerData = $validated['customer'];
-        $phone = $this->normalizePhone($customerData['phone']);
-        $customerKey = 'phone:' . $phone;
-
-        $cityId = !empty($customerData['city_id']) ? (int) $customerData['city_id'] : null;
-        if (!$cityId && !empty($customerData['city'])) {
-            $cityName = trim((string) $customerData['city']);
-            $cityId = City::query()
-                ->whereRaw('LOWER(name_en) = ?', [mb_strtolower($cityName)])
-                ->value('id');
-        }
-
-        $items = collect($validated['items']);
-        $netTotal = $items->sum(fn ($item) => (float) $item['price'] * (int) $item['quantity']);
-        $productIds = $items
-            ->pluck('product_id')
-            ->filter()
-            ->map(fn ($id) => (int) $id)
-            ->unique()
-            ->values();
-
-        $deliveryCharge = 0.0;
-        if ($productIds->isNotEmpty()) {
-            $deliveryCharge = (float) Product::query()
-                ->whereIn('id', $productIds->all())
-                ->selectRaw('MAX(CASE WHEN is_free_shipping = 1 THEN 0 ELSE COALESCE(delivery_fee, 0) END) as max_delivery_fee')
-                ->value('max_delivery_fee');
-        }
-
-        $totalDiscount = (float) ($validated['total_discount'] ?? 0);
-        $commissionAmount = $this->calculateCommissionForItems(
-            $items,
-            (int) ($seller->seller_level_id ?? 0)
-        );
-        $collectable = $netTotal + $deliveryCharge - $totalDiscount;
-
-        $order = DB::transaction(function () use (
-            $seller,
-            $customerKey,
-            $customerData,
-            $cityId,
-            $validated,
-            $items,
-            $netTotal,
-            $deliveryCharge,
-            $totalDiscount,
-            $commissionAmount,
-            $collectable,
-            $phone
-        ) {
-            $customer = Customer::updateOrCreate(
-                [
-                    'seller_id' => $seller->id,
-                    'customer_key' => $customerKey,
-                ],
-                [
-                    'primary_phone' => $phone,
-                    'additional_phone' => $this->nullableString($customerData['additional_phone'] ?? null),
-                    'email' => $this->nullableString($customerData['email'] ?? null),
-                    'default_name' => $customerData['name'],
-                    'default_address' => $customerData['address'],
-                    'city_id' => $cityId,
-                    'notes' => $this->nullableString($customerData['notes'] ?? null),
-                    'status' => 'active',
-                    'last_order_at' => now(),
-                ]
-            );
-
-            $customer->increment('orders_count');
-
-            $order = Order::create([
-                'order_datetime' => $validated['order_datetime'] ?? now(),
-                'status' => $validated['status'] ?? 'draft',
-                'is_draft' => ($validated['status'] ?? 'draft') === 'draft',
-                'net_total' => $netTotal,
-                'total_collectable_amount' => $collectable,
-                'delivery_charge' => $deliveryCharge,
-                'total_discount' => $totalDiscount,
-                'commission_amount' => $commissionAmount,
-                'seller_id' => $seller->id,
-                'customer_id' => $customer->id,
-                'customer_name' => $customerData['name'],
-                'address' => $customerData['address'],
-                'phone' => $phone,
-                'additional_phone' => $this->nullableString($customerData['additional_phone'] ?? null),
-                'city_id' => $cityId,
-            ]);
-
-            $order->items()->createMany(
-                $items->map(fn ($item) => [
-                    'product_id' => (int) $item['product_id'],
-                    'product_variant_id' => !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
-                    'quantity' => (int) $item['quantity'],
-                    'price' => (float) $item['price'],
-                ])->all()
-            );
-
-            return $order;
-        });
+        $order = $this->createSellerOrder($seller, $validated, null);
 
         return response()->json([
             'message' => 'Order submitted successfully.',
             'order_id' => $order->id,
             'status' => $order->status,
+        ], 201);
+    }
+
+    public function storeBulk(Request $request)
+    {
+        $validated = $request->validate([
+            'orders' => ['required', 'array', 'min:1', 'max:300'],
+
+            'orders.*.order_datetime' => ['nullable', 'date'],
+            'orders.*.status' => ['nullable', 'in:draft,approved,confirmed,packed,shipped,completed,cancelled'],
+            'orders.*.delivery_charge' => ['nullable', 'numeric', 'min:0'],
+            'orders.*.total_discount' => ['nullable', 'numeric', 'min:0'],
+            'orders.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
+
+            'orders.*.customer' => ['required', 'array'],
+            'orders.*.customer.name' => ['required', 'string', 'max:255'],
+            'orders.*.customer.phone' => ['required', 'string', 'max:30'],
+            'orders.*.customer.additional_phone' => ['nullable', 'string', 'max:30'],
+            'orders.*.customer.email' => ['nullable', 'email', 'max:255'],
+            'orders.*.customer.address' => ['required', 'string', 'max:5000'],
+            'orders.*.customer.city_id' => ['required', 'integer', 'exists:cities,id'],
+            'orders.*.customer.city' => ['nullable', 'string', 'max:255'],
+            'orders.*.customer.notes' => ['nullable', 'string', 'max:2000'],
+
+            'orders.*.items' => ['required', 'array', 'min:1'],
+            'orders.*.items.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'orders.*.items.*.product_variant_id' => ['nullable', 'integer', 'exists:varients,id'],
+            'orders.*.items.*.quantity' => ['required', 'integer', 'min:1'],
+            'orders.*.items.*.price' => ['required', 'numeric', 'min:0'],
+        ]);
+
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        $bulkOrderRequest = null;
+        $createdOrders = DB::transaction(function () use ($seller, $validated, &$bulkOrderRequest) {
+            $bulkOrderRequest = BulkOrderRequest::create([
+                'request_no' => $this->generateBulkRequestNo(),
+                'seller_id' => (int) $seller->id,
+                'status' => 'draft',
+                'orders_count' => 0,
+            ]);
+
+            $orders = collect($validated['orders'])
+                ->map(fn (array $orderPayload) => $this->createSellerOrder($seller, $orderPayload, (int) $bulkOrderRequest->id))
+                ->values();
+
+            $bulkOrderRequest->update([
+                'orders_count' => $orders->count(),
+            ]);
+
+            return $orders;
+        });
+
+        return response()->json([
+            'message' => $createdOrders->count() . ' orders submitted successfully.',
+            'created_count' => $createdOrders->count(),
+            'order_ids' => $createdOrders->pluck('id')->values(),
+            'bulk_order_request' => [
+                'id' => $bulkOrderRequest?->id,
+                'request_no' => $bulkOrderRequest?->request_no,
+                'status' => $bulkOrderRequest?->status,
+            ],
         ], 201);
     }
 
@@ -697,6 +869,107 @@ class SellerOrderController extends Controller
             'approved' => $approved,
             'failed' => $failed,
         ]);
+    }
+
+    private function createSellerOrder(Seller $seller, array $payload, ?int $bulkOrderRequestId = null): Order
+    {
+        $customerData = $payload['customer'];
+        $phone = $this->normalizePhone((string) ($customerData['phone'] ?? ''));
+        $customerKey = 'phone:' . $phone;
+
+        $cityId = !empty($customerData['city_id']) ? (int) $customerData['city_id'] : null;
+        if (!$cityId && !empty($customerData['city'])) {
+            $cityName = trim((string) $customerData['city']);
+            $cityId = City::query()
+                ->whereRaw('LOWER(name_en) = ?', [mb_strtolower($cityName)])
+                ->value('id');
+        }
+
+        $items = collect($payload['items']);
+        $netTotal = (float) $items->sum(fn ($item) => (float) $item['price'] * (int) $item['quantity']);
+        $productIds = $items
+            ->pluck('product_id')
+            ->filter()
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        $deliveryCharge = 0.0;
+        if ($productIds->isNotEmpty()) {
+            $deliveryCharge = (float) Product::query()
+                ->whereIn('id', $productIds->all())
+                ->selectRaw('MAX(CASE WHEN is_free_shipping = 1 THEN 0 ELSE COALESCE(delivery_fee, 0) END) as max_delivery_fee')
+                ->value('max_delivery_fee');
+        }
+
+        $totalDiscount = (float) ($payload['total_discount'] ?? 0);
+        $commissionAmount = $this->calculateCommissionForItems(
+            $items,
+            (int) ($seller->seller_level_id ?? 0)
+        );
+        $collectable = $netTotal + $deliveryCharge - $totalDiscount;
+
+        $customer = Customer::updateOrCreate(
+            [
+                'seller_id' => $seller->id,
+                'customer_key' => $customerKey,
+            ],
+            [
+                'primary_phone' => $phone,
+                'additional_phone' => $this->nullableString($customerData['additional_phone'] ?? null),
+                'email' => $this->nullableString($customerData['email'] ?? null),
+                'default_name' => (string) ($customerData['name'] ?? ''),
+                'default_address' => (string) ($customerData['address'] ?? ''),
+                'city_id' => $cityId,
+                'notes' => $this->nullableString($customerData['notes'] ?? null),
+                'status' => 'active',
+                'last_order_at' => now(),
+            ]
+        );
+
+        $customer->increment('orders_count');
+
+        $status = (string) ($payload['status'] ?? 'draft');
+
+        $order = Order::create([
+            'order_datetime' => $payload['order_datetime'] ?? now(),
+            'status' => $status,
+            'is_draft' => $status === 'draft',
+            'net_total' => $netTotal,
+            'total_collectable_amount' => $collectable,
+            'delivery_charge' => $deliveryCharge,
+            'total_discount' => $totalDiscount,
+            'commission_amount' => $commissionAmount,
+            'bulk_order_request_id' => $bulkOrderRequestId,
+            'seller_id' => $seller->id,
+            'customer_id' => $customer->id,
+            'customer_name' => (string) ($customerData['name'] ?? ''),
+            'address' => (string) ($customerData['address'] ?? ''),
+            'phone' => $phone,
+            'additional_phone' => $this->nullableString($customerData['additional_phone'] ?? null),
+            'city_id' => $cityId,
+        ]);
+
+        $order->items()->createMany(
+            $items->map(fn ($item) => [
+                'product_id' => (int) $item['product_id'],
+                'product_variant_id' => !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
+                'quantity' => (int) $item['quantity'],
+                'price' => (float) $item['price'],
+            ])->all()
+        );
+
+        return $order;
+    }
+
+    private function generateBulkRequestNo(): string
+    {
+        do {
+            $candidate = 'BOR-' . now()->format('Ymd') . '-' . Str::upper(Str::random(6));
+            $exists = BulkOrderRequest::query()->where('request_no', $candidate)->exists();
+        } while ($exists);
+
+        return $candidate;
     }
 
     private function normalizePhone(string $value): string

@@ -11,6 +11,7 @@ use App\Models\Seller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
@@ -260,6 +261,82 @@ class DashboardController extends Controller
         return view('dashboards.seller.orders');
     }
 
+    public function getSellerBulkOrders()
+    {
+        return view('dashboards.seller.bulk-orders');
+    }
+
+    public function getSellerAffiliate()
+    {
+        $seller = auth()->user()?->seller;
+        $referredSellers = collect();
+        $stats = [
+            'total_referrals' => 0,
+            'active_referrals' => 0,
+            'orders_from_referrals' => 0,
+            'commission_lkr' => 0,
+        ];
+
+        if ($seller) {
+            $referredSellers = Seller::query()
+                ->select('id', 'first_name', 'last_name', 'email', 'phone', 'status', 'created_at')
+                ->where('affiliate_seller_id', $seller->id)
+                ->withCount('orders')
+                ->withSum('orders', 'commission_amount')
+                ->latest('id')
+                ->get();
+
+            $stats = [
+                'total_referrals' => $referredSellers->count(),
+                'active_referrals' => $referredSellers->where('status', 'approved')->count(),
+                'orders_from_referrals' => (int) $referredSellers->sum('orders_count'),
+                'commission_lkr' => (float) $referredSellers->sum(function ($item) {
+                    return (float) ($item->orders_sum_commission_amount ?? 0);
+                }),
+            ];
+        }
+
+        return view('dashboards.seller.affiliate', [
+            'seller' => $seller,
+            'referredSellers' => $referredSellers,
+            'affiliateStats' => $stats,
+        ]);
+    }
+
+    public function postSellerAffiliateGenerate(Request $request)
+    {
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            abort(403, 'Seller profile not found.');
+        }
+
+        $code = null;
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $candidate = strtoupper('NEX-' . Str::random(8));
+            $exists = Seller::query()
+                ->where('referral_code', $candidate)
+                ->where('id', '!=', $seller->id)
+                ->exists();
+
+            if (!$exists) {
+                $code = $candidate;
+                break;
+            }
+        }
+
+        if (!$code) {
+            return redirect()
+                ->route('sellerAffiliate')
+                ->withErrors(['affiliate' => 'Unable to generate referral code. Please try again.']);
+        }
+
+        $seller->referral_code = $code;
+        $seller->referral_link = route('sellerRegistration', ['ref' => $code]);
+        $seller->save();
+
+        return redirect()->route('sellerAffiliate');
+    }
+
     public function getSellerPayments()
     {
         return view('dashboards.seller.payments');
@@ -300,6 +377,11 @@ class DashboardController extends Controller
     public function getAdminDraftOrders()
     {
         return view('dashboards.admin.orders.draftOrders');
+    }
+
+    public function getAdminBulkOrderRequests()
+    {
+        return view('dashboards.admin.orders.bulkOrderRequests');
     }
 
     public function getAdminApprovedOrders()

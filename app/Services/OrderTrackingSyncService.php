@@ -2,9 +2,11 @@
 
 namespace App\Services;
 
+use App\Models\AffiliateCommission;
 use App\Models\Level;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\ProductLevel;
 use App\Models\RoyalExpressLogin;
 use App\Models\Seller;
 use Illuminate\Support\Facades\DB;
@@ -216,6 +218,7 @@ class OrderTrackingSyncService
         }
 
         $this->syncPaymentLedger($fresh);
+        $this->syncAffiliateCommission($fresh);
 
         $pointsAwarded = 0;
         $levelUpgraded = false;
@@ -311,6 +314,10 @@ class OrderTrackingSyncService
                 $seller->points = max(0, (int) $seller->points) + $points;
             }
 
+            if (empty($seller->first_success_order_date)) {
+                $seller->first_success_order_date = optional($order->completed_at)->toDateString() ?? now()->toDateString();
+            }
+
             $newLevel = Level::query()
                 ->where('points', '<=', (int) $seller->points)
                 ->orderByDesc('points')
@@ -368,6 +375,130 @@ class OrderTrackingSyncService
                 'status' => $paymentStatus,
                 'available_at' => $availableAt,
                 'paid_at' => $paidAt,
+            ]
+        );
+    }
+
+    private function syncAffiliateCommission(Order $order): void
+    {
+        if ($order->status !== 'completed') {
+            return;
+        }
+
+        $paymentStatus = strtolower(trim((string) ($order->payment_status ?? 'pending')));
+        if (!in_array($paymentStatus, ['available', 'paid'], true)) {
+            return;
+        }
+
+        $seller = Seller::query()
+            ->select('id', 'affiliate_seller_id')
+            ->find((int) $order->seller_id);
+
+        if (!$seller || empty($seller->affiliate_seller_id)) {
+            return;
+        }
+
+        $affiliateSeller = Seller::query()
+            ->select('id', 'seller_level_id')
+            ->find((int) $seller->affiliate_seller_id);
+
+        if (!$affiliateSeller) {
+            return;
+        }
+
+        $levelId = (int) ($affiliateSeller->seller_level_id ?? 0);
+        if ($levelId <= 0) {
+            $levelId = (int) (Level::query()
+                ->where('is_default', true)
+                ->value('id') ?? 0);
+        }
+        if ($levelId <= 0) {
+            $levelId = (int) (Level::query()
+                ->orderBy('points')
+                ->value('id') ?? 0);
+        }
+        if ($levelId <= 0) {
+            return;
+        }
+
+        $order->loadMissing('items:id,order_id,product_id,quantity,price');
+        $items = $order->items ?? collect();
+        if ($items->isEmpty()) {
+            return;
+        }
+
+        $productIds = $items
+            ->pluck('product_id')
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($productIds->isEmpty()) {
+            return;
+        }
+
+        $levelsByProduct = ProductLevel::query()
+            ->select('product_id', 'affiliate_commission')
+            ->where('level_id', $levelId)
+            ->whereIn('product_id', $productIds)
+            ->get()
+            ->keyBy('product_id');
+
+        $totalAmount = 0.0;
+        $breakdown = [];
+
+        foreach ($items as $item) {
+            $qty = max(0, (int) ($item->quantity ?? 0));
+            $unitPrice = (float) ($item->price ?? 0);
+            $lineAmount = max(0, $qty * $unitPrice);
+
+            $productLevel = $levelsByProduct->get((int) ($item->product_id ?? 0));
+            $rate = max(0, (float) ($productLevel->affiliate_commission ?? 0));
+
+            $lineCommission = round(($lineAmount * $rate) / 100, 2);
+            $totalAmount += $lineCommission;
+
+            $breakdown[] = [
+                'product_id' => (int) ($item->product_id ?? 0),
+                'quantity' => $qty,
+                'unit_price' => round($unitPrice, 2),
+                'line_amount' => round($lineAmount, 2),
+                'rate_percent' => round($rate, 2),
+                'commission_amount' => $lineCommission,
+            ];
+        }
+
+        $totalAmount = round($totalAmount, 2);
+        if ($totalAmount <= 0) {
+            AffiliateCommission::query()
+                ->where('order_id', (int) $order->id)
+                ->delete();
+            return;
+        }
+
+        $existing = AffiliateCommission::query()
+            ->select('id', 'status', 'invoice_id', 'paid_at')
+            ->where('order_id', (int) $order->id)
+            ->first();
+
+        if ($existing && !empty($existing->invoice_id)) {
+            return;
+        }
+
+        $status = ($existing && (string) $existing->status === 'paid') ? 'paid' : 'available';
+        $availableAt = $order->completed_at ?? now();
+        $paidAt = $status === 'paid' ? ($existing?->paid_at ?? ($order->updated_at ?? now())) : null;
+
+        AffiliateCommission::query()->updateOrCreate(
+            ['order_id' => (int) $order->id],
+            [
+                'affiliate_seller_id' => (int) $affiliateSeller->id,
+                'seller_id' => (int) $seller->id,
+                'amount' => $totalAmount,
+                'status' => $status,
+                'available_at' => $availableAt,
+                'paid_at' => $paidAt,
+                'breakdown' => $breakdown,
             ]
         );
     }

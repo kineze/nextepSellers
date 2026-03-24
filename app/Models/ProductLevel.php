@@ -12,10 +12,12 @@ class ProductLevel extends Model
         'level_id',
         'type',
         'value',
+        'affiliate_commission',
     ];
 
     protected $casts = [
         'value' => 'decimal:2',
+        'affiliate_commission' => 'decimal:2',
     ];
 
     public function product(): BelongsTo

@@ -1,75 +1,115 @@
 @extends('layouts.site.app')
 
 @section('content')
-<section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen -mt-20  overflow-hidden bg-gradient-to-b from-sky-50 via-cyan-50 to-white dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 sm:pt-20">
-    <div class="pointer-events-none absolute -left-10 -top-10 h-56 w-56 rounded-full bg-sky-300/30 blur-3xl dark:bg-sky-500/20"></div>
-    <div class="pointer-events-none absolute -right-12 top-1/2 h-64 w-64 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-500/20"></div>
-    <div class="pointer-events-none absolute left-1/2 top-24 h-64 w-64 -translate-x-1/2 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-500/10"></div>
+<section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen -mt-20 overflow-hidden bg-gradient-to-br from-sky-100 via-cyan-100 to-emerald-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 sm:pt-20">
+    <div class="pointer-events-none absolute -left-16 -top-10 h-72 w-72 rounded-full bg-fuchsia-300/35 blur-3xl dark:bg-fuchsia-600/20"></div>
+    <div class="pointer-events-none absolute -right-12 top-28 h-80 w-80 rounded-full bg-cyan-300/35 blur-3xl dark:bg-cyan-500/20"></div>
+    <div class="pointer-events-none absolute bottom-10 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/35 blur-3xl dark:bg-emerald-500/15"></div>
+    <div class="pointer-events-none absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_30%,#38bdf8_0,transparent_40%),radial-gradient(circle_at_80%_20%,#f472b6_0,transparent_35%),radial-gradient(circle_at_50%_85%,#34d399_0,transparent_35%)]"></div>
 
-    <div class="mx-auto w-full pt-32 max-w-screen-2xl px-6">
-        <div class="reveal text-center">
-            <div class="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
-                <span class="relative flex h-2 w-2">
-                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-500 opacity-75"></span>
-                    <span class="relative inline-flex h-2 w-2 rounded-full bg-sky-500"></span>
-                </span>
-                Join 2,000+ Active Sellers
+    <div class="mx-auto w-full max-w-screen-2xl px-6 pb-16 pt-28 sm:pt-32">
+        <div class="grid items-center gap-10 lg:grid-cols-2">
+            <div class="reveal">
+                <div class="inline-flex items-center gap-2 rounded-full border border-sky-200/70 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 shadow-sm backdrop-blur dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-500 opacity-75"></span>
+                        <span class="relative inline-flex h-2 w-2 rounded-full bg-sky-500"></span>
+                    </span>
+                    Join 2,000+ Active Sellers
+                </div>
+
+                <h1 class="mt-6 max-w-2xl text-5xl font-extrabold leading-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+                    Smart Selling,
+                    <span class="bg-gradient-to-r from-sky-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:via-cyan-300 dark:to-emerald-300">Made Simple</span>
+                </h1>
+                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-300 sm:text-xl">
+                    Explore products, learn with practical video guides, and grow faster with reliable fulfillment and weekly payouts.
+                </p>
+
+                <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <a href="{{ route('sellerRegistration') }}" class="rounded-2xl bg-slate-900 px-7 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/25 hover:-translate-y-0.5 hover:bg-black dark:bg-white dark:text-slate-900">
+                        Join as Seller
+                    </a>
+                    <a href="{{ route('learnMore') }}" class="rounded-2xl border border-slate-200 bg-white/90 px-7 py-3 text-sm font-semibold uppercase tracking-wide text-slate-700 shadow-sm hover:bg-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                        Learn More
+                    </a>
+                </div>
+
+                <div class="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
+                    <div class="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Sellers</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">2,000+</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Avg. Growth</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">3.2x</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Weekly Payouts</p>
+                        <p class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">On Time</p>
+                    </div>
+                </div>
             </div>
 
-            <h1 class="mx-auto mt-6 max-w-5xl text-5xl font-extrabold leading-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
-                Smart Selling,
-                <span class="text-sky-600 dark:text-sky-400">Made Simple</span>
-            </h1>
-            <p class="mx-auto mt-6 max-w-3xl text-lg leading-relaxed text-slate-600 dark:text-slate-300 sm:text-xl">
-                Access a curated portfolio of high-demand products. We handle operations and shipping, so you can focus on growing your income with confidence.
-            </p>
-
-            <div class="mt-10 flex flex-col justify-center gap-3 sm:flex-row sm:items-center">
-                <a href="{{ route('sellerRegistration') }}" class="rounded-2xl bg-slate-900 px-7 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/25 hover:-translate-y-0.5 hover:bg-black dark:bg-white dark:text-slate-900">
-                    Join as Seller
-                </a>
-                <a href="{{ route('learnMore') }}" class="rounded-2xl border border-slate-200 bg-white px-7 py-3 text-sm font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
-                    Learn More
-                </a>
-            </div>
-
-            <section id="growth" class="py-20">
-
-                <div class="grid gap-6 lg:grid-cols-3">
-                    <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300">
-                            <i class="fas fa-chart-column"></i>
-                        </div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Conversion Lift</p>
-                        <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">+24%</p>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Product-market alignment and fast shipping improve close rates.</p>
+            <div class="reveal relative mx-auto w-full max-w-xl lg:max-w-none">
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
+                        <img src="{{asset('/assets/img/conversion-growth.webp')}}" alt="Seller reviewing product catalog on laptop" class="h-56 w-full object-cover sm:h-64" loading="eager">
                     </article>
-
-                    <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
-                            <i class="fas fa-rotate"></i>
-                        </div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat Customers</p>
-                        <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">41%</p>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Reliable fulfillment drives trust and repeat purchases.</p>
+                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+                        <img src="{{asset('/assets/img/accelerate_sales_growth.webp')}}" alt="Packed orders ready for dispatch" class="h-44 w-full object-cover sm:h-52" loading="lazy">
                     </article>
-
-                    <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                        <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
-                            <i class="fas fa-arrow-trend-up"></i>
-                        </div>
-                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Revenue Growth</p>
-                        <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">+3.2x</p>
-                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Sellers scale faster with proven catalog strategy and support.</p>
+                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
+                        <img src="{{asset('/assets/img/accelerate_sales_growth.webp')}}" alt="Business growth analytics dashboard" class="h-44 w-full object-cover sm:h-52" loading="lazy">
                     </article>
                 </div>
 
-                <div class="reveal mt-8 rounded-3xl border border-sky-200 bg-sky-50 p-7 dark:border-sky-500/30 dark:bg-sky-500/10">
-                    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">Growth Plan</p>
-                    <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Launch with high-intent products, optimize weekly using dashboard insights, and reinvest in top-performing categories to compound growth each month.</p>
+                <div class="absolute -bottom-4 -left-4 rounded-2xl border border-emerald-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur dark:border-emerald-500/30 dark:bg-slate-900/80">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Conversion Lift</p>
+                    <p class="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">+24%</p>
                 </div>
-            </section>
+                <div class="absolute -right-4 top-6 rounded-2xl border border-sky-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur dark:border-sky-500/30 dark:bg-slate-900/80">
+                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">Repeat Customers</p>
+                    <p class="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">41%</p>
+                </div>
+            </div>
         </div>
+
+        <section id="growth" class="pt-14">
+            <div class="grid gap-6 lg:grid-cols-3">
+                <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300">
+                        <i class="fas fa-chart-column"></i>
+                    </div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Conversion Lift</p>
+                    <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">+24%</p>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Product-market alignment and fast shipping improve close rates.</p>
+                </article>
+
+                <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
+                        <i class="fas fa-rotate"></i>
+                    </div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Repeat Customers</p>
+                    <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">41%</p>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Reliable fulfillment drives trust and repeat purchases.</p>
+                </article>
+
+                <article class="reveal rounded-3xl border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="mb-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
+                        <i class="fas fa-arrow-trend-up"></i>
+                    </div>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Revenue Growth</p>
+                    <p class="mt-2 text-3xl font-extrabold text-slate-900 dark:text-white">+3.2x</p>
+                    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Sellers scale faster with proven catalog strategy and support.</p>
+                </article>
+            </div>
+
+            <div class="reveal mt-8 rounded-3xl border border-sky-200 bg-white/70 p-7 shadow-sm backdrop-blur dark:border-sky-500/30 dark:bg-sky-500/10">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">Growth Plan</p>
+                <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Launch with high-intent products, optimize weekly using dashboard insights, and reinvest in top-performing categories to compound growth each month.</p>
+            </div>
+        </section>
     </div>
 </section>
 
@@ -124,7 +164,7 @@
     </div>
 
     @php
-        $homeLearningVideos = $defaultLearningBlock?->videos?->take(3) ?? collect();
+        $homeLearningVideos = $defaultLearningBlock?->videos?->take(4) ?? collect();
     @endphp
 
     @if($homeLearningVideos->isEmpty())
@@ -132,7 +172,7 @@
             Learning videos are coming soon.
         </div>
     @else
-        <div class="grid gap-6 md:grid-cols-3">
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
             @foreach($homeLearningVideos as $video)
                 <article class="reveal overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
                     <div class="aspect-video overflow-hidden border-b border-slate-200 bg-slate-100 dark:border-slate-800 dark:bg-slate-950">
@@ -186,43 +226,70 @@
         </div>
 
         <div class="reveal rounded-[2rem] border border-sky-200 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-sky-500/30 dark:bg-slate-900/70">
-            <svg class="h-auto w-full" viewBox="0 0 560 360" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <rect x="16" y="24" width="528" height="312" rx="24" fill="#E0F2FE" />
-                <rect x="46" y="56" width="468" height="248" rx="16" fill="white" />
-                <rect x="76" y="92" width="116" height="18" rx="9" fill="#BAE6FD" />
-                <rect x="76" y="126" width="88" height="10" rx="5" fill="#E2E8F0" />
-                <rect x="76" y="146" width="118" height="10" rx="5" fill="#E2E8F0" />
-                <rect x="76" y="166" width="68" height="10" rx="5" fill="#E2E8F0" />
-                <rect x="76" y="202" width="180" height="58" rx="14" fill="#F0F9FF" />
-                <rect x="278" y="92" width="206" height="168" rx="14" fill="#F8FAFC" />
-                <path d="M302 220L340 180L374 196L416 144L458 164" stroke="#0284C7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
-                <circle cx="458" cy="164" r="9" fill="#0EA5E9" />
-                <rect x="302" y="242" width="122" height="10" rx="5" fill="#E2E8F0" />
-                <rect x="302" y="260" width="162" height="10" rx="5" fill="#E2E8F0" />
-                <circle cx="504" cy="74" r="16" fill="#FDE68A" />
-                <path d="M497 74H511M504 67V81" stroke="#92400E" stroke-width="3" stroke-linecap="round" />
-            </svg>
+           <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
+                <img src="{{asset('/assets/img/conversion-growth.webp')}}" alt="Seller reviewing product catalog on laptop" class="h-56 w-full object-cover sm:h-96" loading="eager">
+            </article>
         </div>
     </div>
 </section>
 
 <section id="stories" class="py-20">
-    <h2 class="mb-10 text-center text-3xl font-extrabold text-slate-900 dark:text-white">Seller Success Stories</h2>
-    <div class="grid gap-6 md:grid-cols-2">
-        <article class="reveal flex gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <img src="https://i.pravatar.cc/120?u=1" alt="Alex Rivera" class="h-16 w-16 rounded-2xl object-cover">
-            <div>
-                <p class="text-sm italic text-slate-600 dark:text-slate-300">"The platform is intuitive. I doubled my income in three months selling tech accessories."</p>
-                <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Alex Rivera, Platinum Seller</p>
-            </div>
-        </article>
-        <article class="reveal flex gap-4 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <img src="https://i.pravatar.cc/120?u=2" alt="Priya K" class="h-16 w-16 rounded-2xl object-cover">
-            <div>
-                <p class="text-sm italic text-slate-600 dark:text-slate-300">"Finally a network with quality products and less operational noise."</p>
-                <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Priya K., Global Partner</p>
-            </div>
-        </article>
+    <div class="reveal rounded-[2rem] border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-8 shadow-sm dark:border-sky-500/30 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 sm:p-10">
+        <div class="mb-10 text-center">
+            <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">Seller Stories</p>
+            <h2 class="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">Real Seller Results</h2>
+            <p class="mx-auto mt-3 max-w-2xl text-sm text-slate-600 dark:text-slate-300">Hear how sellers are scaling faster using our catalog, fulfillment support, and learning resources.</p>
+        </div>
+
+        <div class="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+            <article class="reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-md shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.pravatar.cc/120?u=1" alt="Alex Rivera" class="h-14 w-14 rounded-2xl object-cover">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Alex Rivera</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Platinum Seller</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm italic text-slate-600 dark:text-slate-300">"The platform is intuitive. I doubled my income in three months selling tech accessories."</p>
+                <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Revenue up 2x in 90 days</p>
+            </article>
+
+            <article class="reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-md shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.pravatar.cc/120?u=2" alt="Priya K" class="h-14 w-14 rounded-2xl object-cover">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Priya K.</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Global Partner</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm italic text-slate-600 dark:text-slate-300">"Finally a network with quality products and less operational noise."</p>
+                <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Fulfillment issues down 60%</p>
+            </article>
+
+            <article class="reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-md shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.pravatar.cc/120?u=3" alt="Rashan Silva" class="h-14 w-14 rounded-2xl object-cover">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Rashan Silva</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Growth Seller</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm italic text-slate-600 dark:text-slate-300">"The learning videos gave me a clear system. I now close more orders every week."</p>
+                <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Orders up 48% QoQ</p>
+            </article>
+
+            <article class="reveal rounded-3xl border border-slate-200 bg-white p-6 shadow-md shadow-sky-100/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.pravatar.cc/120?u=4" alt="Maya Fernando" class="h-14 w-14 rounded-2xl object-cover">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 dark:text-white">Maya Fernando</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Pro Seller</p>
+                    </div>
+                </div>
+                <p class="mt-4 text-sm italic text-slate-600 dark:text-slate-300">"I started part-time and now run this as my main income stream with stable payouts."</p>
+                <p class="mt-4 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Weekly payouts on schedule</p>
+            </article>
+        </div>
     </div>
 </section>
 

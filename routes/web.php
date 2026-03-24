@@ -42,6 +42,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/dashboard', 'getAdminDashboard')->name('adminDashboard');
         Route::get('/orders/draft', 'getAdminDraftOrders')->name('adminDraftOrders');
+        Route::get('/orders/bulk-requests', 'getAdminBulkOrderRequests')->name('adminBulkOrderRequests');
         Route::get('/orders/approved', 'getAdminApprovedOrders')->name('adminApprovedOrders');
         Route::get('/orders/packed', 'getAdminPackedOrders')->name('adminPackedOrders');
         Route::get('/orders/shipped', 'getAdminShippedOrders')->name('adminShippedOrders');
@@ -67,6 +68,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/seller/inventory', 'getSellerInventory')->name('sellerInventory');
         Route::get('/seller/checkout', 'getSellerCheckout')->name('sellerCheckout');
         Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
+        Route::get('/seller/bulk-orders', 'getSellerBulkOrders')->name('sellerBulkOrders');
+        Route::get('/seller/affiliate', 'getSellerAffiliate')->name('sellerAffiliate');
+        Route::post('/seller/affiliate/generate', 'postSellerAffiliateGenerate')->name('sellerAffiliateGenerate');
         Route::get('/seller/orders/{order}', 'getSellerOrderShow')->whereNumber('order')->name('sellerOrderShow');
         Route::get('/seller/payments', 'getSellerPayments')->name('sellerPayments');
         Route::get('/seller/profile', 'getSellerProfileManager')->name('sellerProfileManager');

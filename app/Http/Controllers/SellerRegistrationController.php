@@ -20,25 +20,23 @@ class SellerRegistrationController extends Controller
     public function sendEmailOtp(Request $request)
     {
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:sellers,email'],
             'first_name' => ['nullable', 'string', 'max:255'],
+        ], [
+            'email.unique' => 'This email is already used for seller registration.',
         ]);
 
-        if (Seller::where('email', $validated['email'])->exists()) {
-            return response()->json([
-                'message' => 'This email is already used for seller registration.',
-            ], 422);
-        }
+        $normalizedEmail = strtolower(trim($validated['email']));
 
         $otp = (string) random_int(100000, 999999);
-        $otpKey = $this->getEmailOtpKey($validated['email']);
-        $verifiedKey = $this->getEmailVerifiedKey($validated['email']);
+        $otpKey = $this->getEmailOtpKey($normalizedEmail);
+        $verifiedKey = $this->getEmailVerifiedKey($normalizedEmail);
 
         Cache::put($otpKey, Hash::make($otp), now()->addMinutes(10));
         Cache::forget($verifiedKey);
 
         $sent = $this->mailer->sendSellerEmailOtp(
-            $validated['email'],
+            $normalizedEmail,
             $validated['first_name'] ?? 'Seller',
             $otp
         );

@@ -2,7 +2,11 @@
     $isLanding = request()->routeIs('index');
 @endphp
 
-<nav class="{{ $isLanding ? 'sticky top-0 z-50 w-full border-b border-white/30 bg-white/35 backdrop-blur-md dark:border-slate-800/40 dark:bg-slate-950/35' : 'sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/80 backdrop-blur-md dark:border-slate-800/70 dark:bg-slate-950/70' }}">
+<nav id="siteNav"
+    data-is-landing="{{ $isLanding ? 'true' : 'false' }}"
+    class="{{ $isLanding
+        ? 'sticky top-0 z-50 w-full border-b border-transparent bg-transparent backdrop-blur-md transition-colors duration-300 dark:border-transparent dark:bg-transparent'
+        : 'sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/80 backdrop-blur-md transition-colors duration-300 dark:border-slate-800/70 dark:bg-slate-950/70' }}">
     <div class="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-6 py-4">
         <a href="{{ url('/') }}" class="flex items-center gap-3">
             <img src="{{ asset('assets/img/nextep-icon.webp') }}" alt="Nextep" class="h-8 w-8">
@@ -29,9 +33,6 @@
             <div class="flex items-center rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
                 <button type="button" onclick="updateSiteTheme('light')" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Light mode">
                     <i class="fas fa-sun"></i>
-                </button>
-                <button type="button" onclick="updateSiteTheme('comfort')" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Comfort mode">
-                    <i class="fas fa-eye"></i>
                 </button>
                 <button type="button" onclick="updateSiteTheme('dark')" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Dark mode">
                     <i class="fas fa-moon"></i>
@@ -104,9 +105,6 @@
             <button type="button" onclick="updateSiteTheme('light')" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Light mode">
                 <i class="fas fa-sun"></i>
             </button>
-            <button type="button" onclick="updateSiteTheme('comfort')" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Comfort mode">
-                <i class="fas fa-eye"></i>
-            </button>
             <button type="button" onclick="updateSiteTheme('dark')" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Dark mode">
                 <i class="fas fa-moon"></i>
             </button>
@@ -133,6 +131,7 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const nav = document.getElementById('siteNav');
             const toggleBtn = document.getElementById('mobileNavToggle');
             const closeBtn = document.getElementById('mobileNavClose');
             const overlay = document.getElementById('mobileNavOverlay');
@@ -169,19 +168,40 @@
                 if (window.innerWidth >= 768) closeMenu();
             });
 
+            const isLanding = nav?.dataset.isLanding === 'true';
+
+            if (nav && isLanding) {
+                const applyNavTransparency = () => {
+                    const isTransparent = window.scrollY <= 2;
+
+                    nav.classList.toggle('bg-transparent', isTransparent);
+                    nav.classList.toggle('border-transparent', isTransparent);
+                    nav.classList.toggle('dark:bg-transparent', isTransparent);
+                    nav.classList.toggle('dark:border-transparent', isTransparent);
+
+                    nav.classList.toggle('bg-white/80', !isTransparent);
+                    nav.classList.toggle('border-slate-200/70', !isTransparent);
+                    nav.classList.toggle('dark:bg-slate-950/70', !isTransparent);
+                    nav.classList.toggle('dark:border-slate-800/70', !isTransparent);
+
+                    nav.dataset.transparent = isTransparent ? 'true' : 'false';
+                };
+
+                applyNavTransparency();
+                window.addEventListener('scroll', applyNavTransparency, { passive: true });
+            }
+
             const THEME_KEY = 'nextep-theme-pref';
             const themeButtons = Array.from(document.querySelectorAll('[onclick*="updateSiteTheme"]'));
 
             const applyTheme = (theme) => {
                 document.documentElement.classList.remove('dark');
-                document.documentElement.classList.remove('theme-preload-dark', 'theme-preload-comfort');
-                document.body.classList.remove('theme-light', 'theme-dark', 'theme-comfort');
+                document.documentElement.classList.remove('theme-preload-dark');
+                document.body.classList.remove('theme-light', 'theme-dark');
 
                 if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                     document.body.classList.add('theme-dark');
-                } else if (theme === 'comfort') {
-                    document.body.classList.add('theme-comfort');
                 } else {
                     document.body.classList.add('theme-light');
                 }

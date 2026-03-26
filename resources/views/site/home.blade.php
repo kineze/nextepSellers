@@ -60,7 +60,7 @@
                         <img src="{{asset('/assets/img/accelerate_sales_growth.webp')}}" alt="Packed orders ready for dispatch" class="h-44 w-full object-cover sm:h-52" loading="lazy">
                     </article>
                     <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-                        <img src="{{asset('/assets/img/accelerate_sales_growth.webp')}}" alt="Business growth analytics dashboard" class="h-44 w-full object-cover sm:h-52" loading="lazy">
+                        <img src="{{asset('/assets/img/counting money.webp')}}" alt="Business growth analytics dashboard" class="h-44 w-full object-cover sm:h-52" loading="lazy">
                     </article>
                 </div>
 

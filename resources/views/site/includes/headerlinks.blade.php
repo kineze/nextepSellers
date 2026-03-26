@@ -12,11 +12,6 @@
             color: #e2e8f0;
         }
 
-        html.theme-preload-comfort,
-        html.theme-preload-comfort body {
-            background-color: #fdf6e3;
-            color: #586e75;
-        }
     </style>
     <script>
         (function() {
@@ -24,11 +19,9 @@
                 var theme = localStorage.getItem('nextep-theme-pref') || 'light';
                 var root = document.documentElement;
 
-                root.classList.remove('theme-preload-dark', 'theme-preload-comfort');
+                root.classList.remove('theme-preload-dark');
                 if (theme === 'dark') {
                     root.classList.add('dark', 'theme-preload-dark');
-                } else if (theme === 'comfort') {
-                    root.classList.add('theme-preload-comfort');
                 }
             } catch (e) {
                 // ignore localStorage/theme preload errors

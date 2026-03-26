@@ -28,9 +28,6 @@
             <button type="button" data-theme-btn="light" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Light mode">
               <i class="fas fa-sun"></i>
             </button>
-            <button type="button" data-theme-btn="comfort" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Comfort mode">
-              <i class="fas fa-eye"></i>
-            </button>
             <button type="button" data-theme-btn="dark" class="rounded-full px-2 py-1 text-[12px] font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Dark mode">
               <i class="fas fa-moon"></i>
             </button>
@@ -91,9 +88,6 @@
         <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
           <button type="button" data-theme-btn="light" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Light mode">
             <i class="fas fa-sun"></i>
-          </button>
-          <button type="button" data-theme-btn="comfort" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Comfort mode">
-            <i class="fas fa-eye"></i>
           </button>
           <button type="button" data-theme-btn="dark" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Dark mode">
             <i class="fas fa-moon"></i>
@@ -210,15 +204,13 @@
       };
 
       const applyTheme = (theme) => {
-        const normalized = ['light', 'comfort', 'dark'].includes(theme) ? theme : 'light';
-        document.documentElement.classList.remove('dark', 'theme-preload-dark', 'theme-preload-comfort');
-        document.body.classList.remove('theme-light', 'theme-dark', 'theme-comfort');
+        const normalized = ['light', 'dark'].includes(theme) ? theme : 'light';
+        document.documentElement.classList.remove('dark', 'theme-preload-dark');
+        document.body.classList.remove('theme-light', 'theme-dark');
 
         if (normalized === 'dark') {
           document.documentElement.classList.add('dark');
           document.body.classList.add('theme-dark');
-        } else if (normalized === 'comfort') {
-          document.body.classList.add('theme-comfort');
         } else {
           document.body.classList.add('theme-light');
         }
@@ -233,7 +225,7 @@
       };
 
       const setTheme = (theme) => {
-        const normalized = ['light', 'comfort', 'dark'].includes(theme) ? theme : 'light';
+        const normalized = ['light', 'dark'].includes(theme) ? theme : 'light';
         applyTheme(normalized);
         try {
           window.localStorage.setItem(themeKey, normalized);

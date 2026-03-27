@@ -76,7 +76,28 @@
             {{ errors.general[0] }}
           </p>
 
-          <div class="space-y-4">
+          <div v-if="submissionCompleted" class="rounded-2xl border border-emerald-200 bg-emerald-50/80 p-6 dark:border-emerald-500/30 dark:bg-emerald-500/10 sm:p-8">
+            <div class="mx-auto max-w-2xl text-center">
+              <span class="inline-flex items-center rounded-full border border-emerald-300 bg-white px-3 py-1 text-[0.68rem] font-extrabold uppercase tracking-[0.1em] text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/20 dark:text-emerald-200">
+                Step 5 Complete
+              </span>
+              <h2 class="mt-4 text-3xl font-black text-emerald-900 dark:text-emerald-100">Congratulations!</h2>
+              <p class="mt-3 text-base text-emerald-800 dark:text-emerald-200/90">
+                We received your application successfully, and our team is currently reviewing it.
+              </p>
+              <p class="mt-2 text-sm text-emerald-700 dark:text-emerald-300/90">
+                Meanwhile, learn more about our platform from the learning materials section.
+              </p>
+              <a
+                :href="props.learningMaterialsUrl"
+                class="mt-6 inline-flex items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-4 focus:ring-emerald-200 dark:border-emerald-400 dark:bg-emerald-400 dark:text-slate-950 dark:hover:bg-emerald-300 dark:focus:ring-emerald-500/30"
+              >
+                Go to Learning Materials
+              </a>
+            </div>
+          </div>
+
+          <div v-else class="space-y-4">
             <section id="step-panel-1" class="rounded-2xl border border-slate-200/80 bg-white/85 p-1.5 shadow-sm dark:border-slate-700/80 dark:bg-slate-900/80">
               <button
                 type="button"
@@ -471,10 +492,15 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  learningMaterialsUrl: {
+    type: String,
+    required: true,
+  },
 })
 
 const step = ref(1)
 const completedStep = ref(0)
+const submissionCompleted = ref(false)
 const submitting = ref(false)
 const successMessage = ref('')
 const errors = ref({})
@@ -519,6 +545,7 @@ const steps = computed(() => [
   { id: 2, label: 'Detailed Information', hint: 'Registration and tax details', summary: 'Registration details saved.' },
   { id: 3, label: 'Uploads & Agreement', hint: 'Documents and final consent', summary: 'Documents ready for submission.' },
   { id: 4, label: 'Review & Submit', hint: 'Submission summary and confirmation', summary: 'Ready to submit.' },
+  { id: 5, label: 'Application Received', hint: 'Review in progress', summary: 'Application submitted successfully.' },
 ])
 
 const inputClasses = 'w-full rounded-xl border border-slate-300/90 bg-white px-3.5 py-2.5 text-[0.92rem] text-slate-900 shadow-sm transition duration-200 placeholder:text-slate-400 hover:border-slate-400 focus:border-sky-500 focus:outline-none focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:hover:border-slate-600 dark:focus:border-sky-400 dark:focus:ring-sky-500/20'
@@ -531,7 +558,7 @@ const secondaryButtonClasses = `${buttonBaseClasses} border border-slate-300 bg-
 const accordionHeadClasses = 'flex w-full items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left transition duration-200 dark:border-slate-700 dark:bg-slate-900'
 const accordionHeadActiveClasses = 'border-sky-300 bg-sky-50 shadow-sm shadow-sky-500/10 dark:border-slate-600 dark:bg-slate-800'
 
-const unlockedStep = computed(() => Math.min(4, completedStep.value + 1))
+const unlockedStep = computed(() => Math.min(5, completedStep.value + 1))
 
 const filePreviewUrls = reactive({
   seller_image: '',
@@ -879,6 +906,7 @@ function resetForm() {
   emailOtpMessage.value = ''
   emailOtpError.value = ''
   completedStep.value = 0
+  submissionCompleted.value = false
 
   Object.keys(fileMeta).forEach((key) => {
     fileMeta[key] = null
@@ -918,7 +946,9 @@ async function submitForm() {
     successMessage.value = response.data.message || 'Seller registration submitted successfully.'
     toast.success(successMessage.value)
     resetForm()
-    step.value = 1
+    completedStep.value = 5
+    submissionCompleted.value = true
+    step.value = 5
   } catch (error) {
     if (error.response?.status === 422) {
       errors.value = error.response.data.errors || {

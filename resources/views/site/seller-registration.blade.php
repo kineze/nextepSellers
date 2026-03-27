@@ -53,6 +53,7 @@
             email-otp-send-url="{{ route('sellerRegistration.emailOtp.send') }}"
             email-otp-verify-url="{{ route('sellerRegistration.emailOtp.verify') }}"
             csrf-token="{{ csrf_token() }}"
+            learning-materials-url="{{ route('learningMaterials') }}"
         ></seller-registration-form>
     </div>
 </section>

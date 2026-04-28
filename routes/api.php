@@ -135,7 +135,7 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
     Route::post('/lots/{lot}/adjust', [LotController::class, 'adjust']);
 });
 
-Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/dashboard/analytics', [DashboardController::class, 'adminAnalytics']);
 
     Route::get('/royal-express/logins', [RoyalExpressLoginController::class, 'index']);

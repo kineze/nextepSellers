@@ -24,7 +24,7 @@ class PermissionSeeder extends Seeder
             'Manage Dispatch Management',
             'Manage Finance',
             'Manage Learning',
-            'View Reports'
+            'View Reports',
         ];
 
         foreach ($permissions as $permissionName) {

@@ -13,13 +13,8 @@
         </script>
     @endauth
 
-    @role('Admin')
-        @include('dashboards.admin.includes.sidebar')
-    @endrole
 
-    @role('Marketer')
-        @include('dashboards.marketer.includes.sidebar')
-    @endrole
+    @include('dashboards.admin.includes.sidebar')
        
     <main id="mainContent" class="content-gradient relative z-50 min-h-screen rounded-xl duration-200 ease-soft-in-out">
 

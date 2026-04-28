@@ -113,6 +113,10 @@ class GenaralController extends Controller
             return redirect()->route('adminDashboard');
         }
 
+        if ($user->hasRole('Product Coordinator')) {
+            return redirect()->route('adminDashboard');
+        }
+
         if ($user->hasRole('Seller')) {
             return redirect()->route('sellerDashboard');
         }

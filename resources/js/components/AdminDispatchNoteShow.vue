@@ -156,11 +156,11 @@
         <div class="label-box">
           <div class="label-header">
             <div>
-              <strong>Name:</strong> {{ row.seller?.name || 'Nextep' }}<br>
-              <strong>Date:</strong> {{ formatDate(note?.dispatch_date) }}
+              <strong>Name:</strong> {{ labelSenderName }}<br>
+              <strong>Phone:</strong> {{ labelSenderPhone || '-' }}
             </div>
             <div class="text-right text-xs">
-              <p><strong>Ref:</strong> {{ note?.ref_no || '-' }}</p>
+              <p><strong>Date:</strong> {{ labelDate }}</p>
               <p><strong>Waybill:</strong> {{ waybillValue(row) }}</p>
             </div>
           </div>
@@ -383,6 +383,7 @@ const toast = useToast()
 const loading = ref(false)
 const shipping = ref(false)
 const note = ref(null)
+const labelSetting = ref(null)
 const orders = ref([])
 const printRows = ref([])
 const alreadyPrinted = ref(false)
@@ -420,6 +421,19 @@ const isLotScanComplete = computed(() => {
 })
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
+
+const labelSenderName = computed(() => {
+  const name = String(labelSetting.value?.name || '').trim()
+  return name || 'Nextep'
+})
+
+const labelSenderPhone = computed(() => {
+  return String(labelSetting.value?.phone || '').trim()
+})
+
+const labelDate = computed(() => {
+  return new Date().toLocaleDateString()
+})
 
 const formatDate = (value) => {
   if (!value) return '-'
@@ -489,6 +503,15 @@ const fetchNote = async () => {
     toast.error(error?.response?.data?.message || 'Failed to load dispatch note.')
   } finally {
     loading.value = false
+  }
+}
+
+const fetchLabelSetting = async () => {
+  try {
+    const { data } = await axios.get('/api/label-settings/active')
+    labelSetting.value = data?.data || null
+  } catch (error) {
+    labelSetting.value = null
   }
 }
 
@@ -845,5 +868,5 @@ const bulkPrintLabels = async (selectedOnly) => {
   }
 }
 
-fetchNote()
+Promise.all([fetchNote(), fetchLabelSetting()])
 </script>

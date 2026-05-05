@@ -267,6 +267,7 @@ const loading = ref(false)
 const timelineLoading = ref(false)
 const timelineMessage = ref('')
 const order = ref(null)
+const labelSetting = ref(null)
 const timeline = ref([])
 const expandedLogId = ref(null)
 const logDetails = ref({})
@@ -278,6 +279,19 @@ const waybillToShow = computed(() => {
   const wb = String(order.value?.waybill_no || '').trim()
   if (wb !== '') return wb
   return `PKG${String(props.orderId).padStart(6, '0')}`
+})
+
+const labelSenderName = computed(() => {
+  const name = String(labelSetting.value?.name || '').trim()
+  return name || 'Nextep Sellers'
+})
+
+const labelSenderPhone = computed(() => {
+  return String(labelSetting.value?.phone || '').trim()
+})
+
+const labelDate = computed(() => {
+  return new Date().toLocaleDateString()
 })
 
 const totalQty = computed(() => {
@@ -472,6 +486,15 @@ const fetchOrder = async () => {
   }
 }
 
+const fetchLabelSetting = async () => {
+  try {
+    const { data } = await axios.get('/api/label-settings/active')
+    labelSetting.value = data?.data || null
+  } catch (error) {
+    labelSetting.value = null
+  }
+}
+
 const fetchTimeline = async (refresh = true) => {
   timelineLoading.value = true
   timelineMessage.value = ''
@@ -494,7 +517,7 @@ const fetchTimeline = async (refresh = true) => {
 }
 
 const refreshAll = async () => {
-  await Promise.all([fetchOrder(), fetchTimeline(true)])
+  await Promise.all([fetchOrder(), fetchTimeline(true), fetchLabelSetting()])
 }
 
 const escapeHtml = (value) => {
@@ -517,6 +540,9 @@ const printLabel = () => {
   }
 
   const waybill = escapeHtml(waybillToShow.value)
+  const senderName = escapeHtml(labelSenderName.value)
+  const senderPhone = escapeHtml(labelSenderPhone.value)
+  const labelPrintDate = escapeHtml(labelDate.value)
   const customerName = escapeHtml(order.value?.customer_name || '-')
   const phone = escapeHtml(order.value?.phone || '-')
   const additionalPhone = escapeHtml(order.value?.additional_phone || '')
@@ -574,8 +600,20 @@ const printLabel = () => {
           padding: 6px;
           height: 15%;
           justify-content: space-between;
+          align-items: flex-start;
           font-size: 12px;
           font-weight: 600;
+        }
+
+        .label-header p {
+          margin: 0;
+        }
+
+        .label-header .text-right {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+          gap: 4px;
         }
 
         .barcode-block {
@@ -707,11 +745,11 @@ const printLabel = () => {
         <div class="label-box">
           <div class="label-header">
             <div>
-              <strong>Name:</strong> Nextep Sellers<br/>
-              <strong>Address:</strong> Seller Fulfillment Center
+              <strong>Name:</strong> ${senderName}<br/>
+              <strong>Phone:</strong> ${senderPhone || '-'}
             </div>
             <div class="text-right">
-              <p><strong>Date:</strong> ${escapeHtml(formatDate(order.value?.order_datetime))}</p>
+              <p><strong>Date:</strong> ${labelPrintDate}</p>
               <p><strong>Waybill:</strong> ${waybill}</p>
             </div>
           </div>

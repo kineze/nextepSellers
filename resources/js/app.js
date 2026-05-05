@@ -54,6 +54,7 @@ import AdminFinancePaymentManager from './components/AdminFinancePaymentManager.
 import GrnManager from './components/GrnManager.vue';
 import LotManager from './components/LotManager.vue';
 import DeliveryFeeManager from './components/DeliveryFeeManager.vue';
+import LabelSettingManager from './components/LabelSettingManager.vue';
 import BankManager from './components/BankManager.vue';
 import LearningContentManager from './components/LearningContentManager.vue';
 
@@ -115,6 +116,7 @@ app.use(Toast, {
 .component('grn-manager', GrnManager)
 .component('lot-manager', LotManager)
 .component('delivery-fee-manager', DeliveryFeeManager)
+.component('label-setting-manager', LabelSettingManager)
 .component('bank-manager', BankManager)
 .component('learning-content-manager', LearningContentManager)
 

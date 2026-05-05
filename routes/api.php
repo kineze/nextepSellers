@@ -22,6 +22,7 @@ use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\SellerPaymentController;
 use App\Http\Controllers\AdminFinanceController;
+use App\Http\Controllers\LabelSettingController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
@@ -82,6 +83,12 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::post('/delivery-fees', [DeliveryFeeController::class, 'store']);
     Route::put('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'update']);
     Route::delete('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'destroy']);
+
+    Route::get('/label-settings', [LabelSettingController::class, 'index']);
+    Route::post('/label-settings', [LabelSettingController::class, 'store']);
+    Route::put('/label-settings/{labelSetting}', [LabelSettingController::class, 'update']);
+    Route::post('/label-settings/{labelSetting}/toggle-active', [LabelSettingController::class, 'toggleActive']);
+    Route::delete('/label-settings/{labelSetting}', [LabelSettingController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Learning'])->group(function () {
@@ -137,6 +144,7 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/dashboard/analytics', [DashboardController::class, 'adminAnalytics']);
+    Route::get('/label-settings/active', [LabelSettingController::class, 'active']);
 
     Route::get('/royal-express/logins', [RoyalExpressLoginController::class, 'index']);
     Route::post('/royal-express/logins', [RoyalExpressLoginController::class, 'store']);

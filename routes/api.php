@@ -174,12 +174,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/orders/{order}/delivery-timeline', [SellerOrderController::class, 'adminDeliveryTimeline'])->whereNumber('order');
     Route::get('/admin/orders/filter-options', [SellerOrderController::class, 'adminOrderFilterOptions']);
     Route::post('/admin/orders/{order}/approve', [SellerOrderController::class, 'adminApprove']);
+    Route::post('/admin/orders/{order}/reject', [SellerOrderController::class, 'adminReject']);
     Route::post('/admin/orders/bulk-approve', [SellerOrderController::class, 'adminBulkApprove']);
     Route::get('/admin/orders/approved', [DispatchNoteController::class, 'adminApprovedOrders']);
     Route::get('/admin/orders/packed', [DispatchNoteController::class, 'adminPackedOrders']);
     Route::get('/admin/orders/shipped', [DispatchNoteController::class, 'adminShippedOrders']);
     Route::get('/admin/orders/completed', [DispatchNoteController::class, 'adminCompletedOrders']);
     Route::get('/admin/orders/cancelled', [DispatchNoteController::class, 'adminCancelledOrders']);
+    Route::get('/admin/orders/rejected', [SellerOrderController::class, 'adminRejectedOrders']);
     Route::post('/admin/dispatch-notes/from-approved', [DispatchNoteController::class, 'createFromApproved'])->middleware('permission:Manage Dispatch Management');
     Route::get('/admin/dispatch-notes', [DispatchNoteController::class, 'adminDispatchNotes'])->middleware('permission:Manage Dispatch Management');
     Route::post('/admin/shipping/scan-waybill', [DispatchNoteController::class, 'scanWaybillForShipping'])->middleware('permission:Manage Dispatch Management');

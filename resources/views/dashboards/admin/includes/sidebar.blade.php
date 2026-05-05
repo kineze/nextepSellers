@@ -87,7 +87,8 @@
               {"label":"Packed Orders","href":"{{ route('adminPackedOrders') }}"},
               {"label":"Shipped Orders","href":"{{ route('adminShippedOrders') }}"},
               {"label":"Completed Orders","href":"{{ route('adminCompletedOrders') }}"},
-              {"label":"Cancelled Orders","href":"{{ route('adminCancelledOrders') }}"}
+              {"label":"Cancelled Orders","href":"{{ route('adminCancelledOrders') }}"},
+              {"label":"Rejected Orders","href":"{{ route('adminRejectedOrders') }}"}
             ]'>
 
           <button class="dropdown-toggle dark:border-blue-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
@@ -122,6 +123,9 @@
             </a>
             <a href="{{ route('adminCancelledOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
               Cancelled Orders
+            </a>
+            <a href="{{ route('adminRejectedOrders') }}" class="block px-4 py-2 text-xs font-semibold text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-slate-700 rounded-md">
+              Rejected Orders
             </a>
           </div>
         </div>

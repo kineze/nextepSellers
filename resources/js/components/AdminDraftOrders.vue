@@ -105,10 +105,18 @@
                 <button
                   type="button"
                   class="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  :disabled="approvingSingleId === order.id"
+                  :disabled="approvingSingleId === order.id || rejectingSingleId === order.id"
                   @click="approveSingle(order.id)"
                 >
                   {{ approvingSingleId === order.id ? 'Approving...' : 'Approve' }}
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  :disabled="approvingSingleId === order.id || rejectingSingleId === order.id"
+                  @click="confirmReject(order)"
+                >
+                  {{ rejectingSingleId === order.id ? 'Rejecting...' : 'Reject' }}
                 </button>
               </div>
             </td>
@@ -149,6 +157,7 @@ const toast = useToast()
 const loading = ref(false)
 const approvingBulk = ref(false)
 const approvingSingleId = ref(null)
+const rejectingSingleId = ref(null)
 const orders = ref([])
 const selectedIds = ref([])
 
@@ -286,6 +295,30 @@ const approveSingle = async (orderId) => {
     toast.error(error?.response?.data?.message || 'Failed to approve order.')
   } finally {
     approvingSingleId.value = null
+  }
+}
+
+const confirmReject = (order) => {
+  const label = order?.customer_name ? `#${order.id} for ${order.customer_name}` : `#${order?.id}`
+  if (!window.confirm(`Reject draft order ${label}? This will remove it from the draft order list.`)) {
+    return
+  }
+
+  rejectSingle(order.id)
+}
+
+const rejectSingle = async (orderId) => {
+  rejectingSingleId.value = orderId
+  try {
+    const { data } = await axios.post(`/api/admin/orders/${orderId}/reject`)
+    toast.success(data?.message || 'Order rejected successfully.')
+
+    selectedIds.value = selectedIds.value.filter((id) => id !== orderId)
+    fetchOrders()
+  } catch (error) {
+    toast.error(error?.response?.data?.message || 'Failed to reject order.')
+  } finally {
+    rejectingSingleId.value = null
   }
 }
 

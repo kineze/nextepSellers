@@ -115,6 +115,80 @@ class SellerOrderController extends Controller
         ]);
     }
 
+    public function adminRejectedOrders(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'date_basis' => ['nullable', 'in:order_date,rejected_date'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? 20);
+        $dateBasis = (string) ($validated['date_basis'] ?? 'rejected_date');
+        $dateColumn = $dateBasis === 'order_date' ? 'order_datetime' : 'updated_at';
+
+        $query = Order::query()
+            ->with([
+                'seller:id,first_name,last_name,email,phone',
+                'bulkOrderRequest:id,request_no,status',
+                'city:id,name_en',
+                'customer:id,default_name,primary_phone,additional_phone,email,notes',
+                'items:id,order_id,product_id,product_variant_id,quantity,price',
+                'items.product:id,title,product_code',
+                'items.variant:id,sku,attributes',
+            ])
+            ->where('status', 'rejected')
+            ->latest('updated_at')
+            ->latest('id');
+
+        if (!empty($validated['seller_id'])) {
+            $query->where('seller_id', (int) $validated['seller_id']);
+        }
+
+        if (!empty($validated['date_from'])) {
+            $query->whereDate($dateColumn, '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate($dateColumn, '<=', $validated['date_to']);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhere('customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%')
+                    ->orWhereHas('seller', function ($sellerQuery) use ($search) {
+                        $sellerQuery
+                            ->where('first_name', 'like', '%' . $search . '%')
+                            ->orWhere('last_name', 'like', '%' . $search . '%')
+                            ->orWhere('email', 'like', '%' . $search . '%');
+                    })
+                    ->orWhereHas('bulkOrderRequest', function ($bulkQuery) use ($search) {
+                        $bulkQuery->where('request_no', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $orders = $query->paginate($perPage);
+
+        return response()->json([
+            'orders' => $orders->items(),
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+            'filters' => [
+                'date_basis' => $dateBasis,
+            ],
+        ]);
+    }
+
     public function adminBulkOrderRequests(Request $request)
     {
         $validated = $request->validate([
@@ -357,7 +431,7 @@ class SellerOrderController extends Controller
     public function index(Request $request)
     {
         $validated = $request->validate([
-            'status' => ['nullable', 'in:all,draft,approved,confirmed,packed,shipped,completed,cancelled'],
+            'status' => ['nullable', 'in:all,draft,approved,confirmed,packed,shipped,completed,cancelled,rejected'],
             'payment_status' => ['nullable', 'in:all,pending,available,paid'],
             'search' => ['nullable', 'string', 'max:120'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
@@ -384,6 +458,10 @@ class SellerOrderController extends Controller
                 'items:id,order_id,product_id,product_variant_id,quantity,price',
                 'items.product:id,title,product_code',
                 'items.variant:id,sku,attributes',
+                'lotItems:id,order_id,lot_id,variant_id,barcode,status',
+                'lotItems.lot:id,lot_number,manufactured_at,expires_at',
+                'lotItems.variant:id,sku,attributes,product_id',
+                'lotItems.variant.product:id,title,product_code',
                 'logs:id,order_id,user_id,event_type,from_status,to_status,note,created_at',
                 'logs.user:id,name,email',
             ])
@@ -617,7 +695,7 @@ class SellerOrderController extends Controller
     {
         $validated = $request->validate([
             'order_datetime' => ['nullable', 'date'],
-            'status' => ['nullable', 'in:draft,approved,confirmed,packed,shipped,completed,cancelled'],
+            'status' => ['nullable', 'in:draft,approved,confirmed,packed,shipped,completed,cancelled,rejected'],
             'delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'total_discount' => ['nullable', 'numeric', 'min:0'],
             'commission_amount' => ['nullable', 'numeric', 'min:0'],
@@ -661,7 +739,7 @@ class SellerOrderController extends Controller
             'orders' => ['required', 'array', 'min:1', 'max:300'],
 
             'orders.*.order_datetime' => ['nullable', 'date'],
-            'orders.*.status' => ['nullable', 'in:draft,approved,confirmed,packed,shipped,completed,cancelled'],
+            'orders.*.status' => ['nullable', 'in:draft,approved,confirmed,packed,shipped,completed,cancelled,rejected'],
             'orders.*.delivery_charge' => ['nullable', 'numeric', 'min:0'],
             'orders.*.total_discount' => ['nullable', 'numeric', 'min:0'],
             'orders.*.commission_amount' => ['nullable', 'numeric', 'min:0'],
@@ -812,6 +890,25 @@ class SellerOrderController extends Controller
             'message' => 'Order approved successfully.',
             'order_id' => $order->id,
             'waybill' => $order->waybill_no,
+        ]);
+    }
+
+    public function adminReject(Request $request, Order $order)
+    {
+        if (!$this->isDraftOrder($order)) {
+            return response()->json([
+                'message' => 'Only draft orders can be rejected.',
+            ], 422);
+        }
+
+        $order->update([
+            'status' => 'rejected',
+            'is_draft' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Order rejected successfully.',
+            'order_id' => $order->id,
         ]);
     }
 

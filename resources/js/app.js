@@ -41,6 +41,7 @@ import AdminPackedOrders from './components/AdminPackedOrders.vue';
 import AdminShippedOrders from './components/AdminShippedOrders.vue';
 import AdminCompletedOrders from './components/AdminCompletedOrders.vue';
 import AdminCancelledOrders from './components/AdminCancelledOrders.vue';
+import AdminRejectedOrders from './components/AdminRejectedOrders.vue';
 import AdminDispatchNotes from './components/AdminDispatchNotes.vue';
 import AdminDispatchNoteShow from './components/AdminDispatchNoteShow.vue';
 import AdminOrderShow from './components/AdminOrderShow.vue';
@@ -101,6 +102,7 @@ app.use(Toast, {
 .component('admin-shipped-orders', AdminShippedOrders)
 .component('admin-completed-orders', AdminCompletedOrders)
 .component('admin-cancelled-orders', AdminCancelledOrders)
+.component('admin-rejected-orders', AdminRejectedOrders)
 .component('admin-dispatch-notes', AdminDispatchNotes)
 .component('admin-dispatch-note-show', AdminDispatchNoteShow)
 .component('admin-order-show', AdminOrderShow)

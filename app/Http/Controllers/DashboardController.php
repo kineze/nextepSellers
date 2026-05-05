@@ -439,6 +439,11 @@ class DashboardController extends Controller
         return view('dashboards.admin.orders.cancelledOrders');
     }
 
+    public function getAdminRejectedOrders()
+    {
+        return view('dashboards.admin.orders.rejectedOrders');
+    }
+
     public function getAdminDispatchNotes()
     {
         return view('dashboards.admin.orders.dispatchNotes');

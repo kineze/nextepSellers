@@ -104,6 +104,11 @@ class Order extends Model
         return $this->hasMany(DispatchNoteItem::class);
     }
 
+    public function lotItems()
+    {
+        return $this->hasMany(LotItem::class);
+    }
+
     public function logs()
     {
         return $this->hasMany(OrderLog::class)->latest('id');

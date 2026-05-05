@@ -48,6 +48,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/orders/shipped', 'getAdminShippedOrders')->name('adminShippedOrders');
         Route::get('/orders/completed', 'getAdminCompletedOrders')->name('adminCompletedOrders');
         Route::get('/orders/cancelled', 'getAdminCancelledOrders')->name('adminCancelledOrders');
+        Route::get('/orders/rejected', 'getAdminRejectedOrders')->name('adminRejectedOrders');
         Route::get('/orders/dispatch-notes', 'getAdminDispatchNotes')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNotes');
         Route::get('/orders/dispatch-notes/{dispatchNote}', 'getAdminDispatchNoteShow')->whereNumber('dispatchNote')->middleware('permission:Manage Dispatch Management')->name('adminDispatchNoteShow');
         Route::get('/finance/pending-payments', 'getAdminFinancePendingPayments')->middleware('permission:Manage Finance')->name('adminFinancePendingPayments');

@@ -20,6 +20,7 @@
           <option value="shipped">Shipped</option>
           <option value="completed">Completed</option>
           <option value="cancelled">Cancelled</option>
+          <option value="rejected">Rejected</option>
         </select>
 
         <select
@@ -112,6 +113,26 @@
               <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(order)) }}</p>
               <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(order) }}</p>
             </div>
+
+            <div v-if="batchGroups(order).length" class="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-500/20 dark:bg-indigo-500/10">
+              <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Selected Batches</p>
+              <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                <div
+                  v-for="batch in batchGroups(order)"
+                  :key="batch.key"
+                  class="rounded-lg border border-indigo-100 bg-white p-2 text-xs text-slate-600 dark:border-indigo-500/20 dark:bg-slate-950/70 dark:text-slate-300"
+                >
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-semibold text-slate-900 dark:text-white">Batch {{ batch.lot_number }}</span>
+                    <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                      {{ batch.quantity }} item{{ batch.quantity === 1 ? '' : 's' }}
+                    </span>
+                  </div>
+                  <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ batch.product_title }} · {{ batch.variant_label }}</p>
+                  <p class="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">{{ barcodePreview(batch.barcodes) }}</p>
+                </div>
+              </div>
+            </div>
           </article>
         </div>
       </section>
@@ -156,6 +177,26 @@
             <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(order.delivery_charge) }}</p>
             <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(order)) }}</p>
             <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(order) }}</p>
+          </div>
+
+          <div v-if="batchGroups(order).length" class="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-500/20 dark:bg-indigo-500/10">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Selected Batches</p>
+            <div class="mt-2 grid gap-2 sm:grid-cols-2">
+              <div
+                v-for="batch in batchGroups(order)"
+                :key="batch.key"
+                class="rounded-lg border border-indigo-100 bg-white p-2 text-xs text-slate-600 dark:border-indigo-500/20 dark:bg-slate-950/70 dark:text-slate-300"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span class="font-semibold text-slate-900 dark:text-white">Batch {{ batch.lot_number }}</span>
+                  <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
+                    {{ batch.quantity }} item{{ batch.quantity === 1 ? '' : 's' }}
+                  </span>
+                </div>
+                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ batch.product_title }} · {{ batch.variant_label }}</p>
+                <p class="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">{{ barcodePreview(batch.barcodes) }}</p>
+              </div>
+            </div>
           </div>
         </article>
       </section>
@@ -231,10 +272,65 @@ const pointsEarned = (order) => {
   return Number(order?.computed_points_earned ?? 0)
 }
 
+const stringifyAttrValue = (value) => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'object') {
+    return Object.entries(value)
+      .map(([key, nestedValue]) => `${key}=${stringifyAttrValue(nestedValue)}`)
+      .filter(Boolean)
+      .join(' | ')
+  }
+  return String(value)
+}
+
+const variantLabel = (variant) => {
+  const sku = variant?.sku || ''
+  const attrs = variant?.attributes || {}
+  const attrText = Object.entries(attrs)
+    .map(([key, value]) => `${key}:${stringifyAttrValue(value)}`)
+    .filter((row) => !row.endsWith(':'))
+    .join(', ')
+
+  return [sku, attrText].filter(Boolean).join(' · ') || 'Variant'
+}
+
+const batchGroups = (order) => {
+  const map = new Map()
+
+  for (const item of order?.lot_items || []) {
+    const key = `${item.lot_id || 'no-lot'}-${item.variant_id || 'no-variant'}`
+    if (!map.has(key)) {
+      map.set(key, {
+        key,
+        lot_number: item.lot?.lot_number || item.lot_id || '-',
+        product_title: item.variant?.product?.title || 'Product',
+        variant_label: variantLabel(item.variant),
+        quantity: 0,
+        barcodes: [],
+      })
+    }
+
+    const group = map.get(key)
+    group.quantity += 1
+    if (item.barcode) {
+      group.barcodes.push(item.barcode)
+    }
+  }
+
+  return Array.from(map.values())
+}
+
+const barcodePreview = (barcodes) => {
+  if (!Array.isArray(barcodes) || !barcodes.length) return 'No barcodes'
+  const visible = barcodes.slice(0, 3).join(', ')
+  const remaining = barcodes.length - 3
+  return remaining > 0 ? `${visible} +${remaining} more` : visible
+}
+
 const statusClass = (status) => {
   const value = String(status || '').toLowerCase()
   if (value === 'completed') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-  if (value === 'cancelled') return 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
+  if (value === 'cancelled' || value === 'rejected') return 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
   if (value === 'shipped' || value === 'packed') return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
   if (value === 'confirmed' || value === 'approved') return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
   return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'

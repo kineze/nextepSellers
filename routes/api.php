@@ -24,6 +24,15 @@ use App\Http\Controllers\SellerPaymentController;
 use App\Http\Controllers\AdminFinanceController;
 use App\Http\Controllers\AdminOrderTrackingController;
 use App\Http\Controllers\LabelSettingController;
+use App\Http\Controllers\DeliveryWebhookController;
+
+Route::post('/delivery/webhook', [DeliveryWebhookController::class, 'store'])
+    ->name('delivery.webhook.store');
+
+Route::middleware(['auth:sanctum', 'permission:Manage Webhooks and API'])->group(function () {
+    Route::get('/webhooks/delivery/configuration', [DeliveryWebhookController::class, 'configuration']);
+    Route::get('/webhooks/delivery/logs', [DeliveryWebhookController::class, 'logs']);
+});
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 

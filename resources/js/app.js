@@ -56,6 +56,7 @@ import LotManager from './components/LotManager.vue';
 import DeliveryFeeManager from './components/DeliveryFeeManager.vue';
 import LabelSettingManager from './components/LabelSettingManager.vue';
 import ManualDeliveryStatusFetcher from './components/ManualDeliveryStatusFetcher.vue';
+import DeliveryWebhookManager from './components/DeliveryWebhookManager.vue';
 import BankManager from './components/BankManager.vue';
 import LearningContentManager from './components/LearningContentManager.vue';
 
@@ -119,6 +120,7 @@ app.use(Toast, {
 .component('delivery-fee-manager', DeliveryFeeManager)
 .component('label-setting-manager', LabelSettingManager)
 .component('manual-delivery-status-fetcher', ManualDeliveryStatusFetcher)
+.component('delivery-webhook-manager', DeliveryWebhookManager)
 .component('bank-manager', BankManager)
 .component('learning-content-manager', LearningContentManager)
 

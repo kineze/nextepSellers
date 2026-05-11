@@ -24,6 +24,7 @@ class PermissionSeeder extends Seeder
             'Manage Dispatch Management',
             'Manage Finance',
             'Manage Learning',
+            'Manage Webhooks and API',
             'View Reports',
         ];
 

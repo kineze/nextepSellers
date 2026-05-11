@@ -113,6 +113,12 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
     });
 });
 
+Route::middleware(['permission:Manage Webhooks and API', config('jetstream.auth_session'), 'verified',])->group(function () {
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('/webhooks/delivery', 'getDeliveryWebhook')->name('deliveryWebhook');
+    });
+});
+
 Route::middleware(['permission:Manage Learning', config('jetstream.auth_session'), 'verified',])->group(function () {
     Route::controller(LearningContentController::class)->group(function () {
         Route::get('/learning/content-manager', 'indexView')->name('learningContentManager');

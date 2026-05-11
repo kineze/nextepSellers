@@ -43,4 +43,8 @@ return [
         'tenant' => env('ROYAL_EXPRESS_TENANT'),
     ],
 
+    'delivery_webhook' => [
+        'key' => env('DELIVERY_WEBHOOK_KEY'),
+    ],
+
 ];

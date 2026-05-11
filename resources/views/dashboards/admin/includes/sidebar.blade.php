@@ -305,6 +305,33 @@
         </div>
         @endcan
 
+        @can('Manage Webhooks and API')
+        <!-- Webhooks and API -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Webhooks"
+            data-links='[
+              {"label":"Delivery Webhook","href":"{{ route('deliveryWebhook') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-indigo-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-code-branch" aria-hidden="true"></i>
+              <span class="sr-only">Webhooks and API</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-indigo-700 dark:text-white text-left">
+              Webhooks and API
+            </span>
+            <i class="fas fa-chevron-down text-xs text-indigo-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('deliveryWebhook') }}" class="block px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-slate-700 rounded-md">
+              Delivery Webhook
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage Learning')
         <!-- Learning -->
         <div class="relative sidebar-dropdown"

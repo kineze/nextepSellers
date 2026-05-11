@@ -36,12 +36,12 @@
         <input
           v-model.trim="state.search"
           type="text"
-          placeholder="Search order/customer/seller"
+          :placeholder="searchPlaceholder"
           class="w-56 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           @keyup.enter="emitNow"
         />
 
-        <div ref="sellerDropdownRef" class="relative">
+        <div v-if="showSellerFilter" ref="sellerDropdownRef" class="relative">
           <button
             type="button"
             class="flex min-w-52 items-center justify-between gap-2 rounded-xl bg-blue-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-800"
@@ -114,6 +114,8 @@ import axios from 'axios'
 
 const props = defineProps({
   contextKey: { type: String, required: true },
+  showSellerFilter: { type: Boolean, default: true },
+  searchPlaceholder: { type: String, default: 'Search order/customer/seller' },
 })
 
 const emit = defineEmits(['filters-changed'])
@@ -201,6 +203,11 @@ const setDatePreset = (preset) => {
 }
 
 const loadSellers = async () => {
+  if (!props.showSellerFilter) {
+    sellers.value = []
+    return
+  }
+
   try {
     const { data } = await axios.get('/api/admin/orders/filter-options')
     sellers.value = Array.isArray(data?.sellers) ? data.sellers : []
@@ -261,7 +268,7 @@ const emitNow = () => {
     search: state.search || '',
     date_from: state.date_from || '',
     date_to: state.date_to || '',
-    seller_id: state.seller_id ? Number(state.seller_id) : null,
+    seller_id: props.showSellerFilter && state.seller_id ? Number(state.seller_id) : null,
     date_preset: state.date_preset,
   })
 }

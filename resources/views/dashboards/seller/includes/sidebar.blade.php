@@ -63,6 +63,17 @@
     </a>
 
     <a
+      href="{{ route('sellerOrderCreate') }}"
+      class="{{ $itemBase }} {{ request()->routeIs('sellerOrderCreate') ? $itemActive : $itemIdle }}"
+    >
+      <span class="{{ $iconClass }}">
+        <i class="fas fa-plus"></i>
+      </span>
+      <span class="seller-sidebar-label">Create Order</span>
+      <span class="seller-sidebar-tooltip">Create Order</span>
+    </a>
+
+    <a
       href="{{ route('sellerBulkOrders') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerBulkOrders') ? $itemActive : $itemIdle }}"
     >

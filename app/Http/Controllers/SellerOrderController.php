@@ -434,6 +434,8 @@ class SellerOrderController extends Controller
             'status' => ['nullable', 'in:all,draft,approved,confirmed,packed,shipped,completed,cancelled,rejected'],
             'payment_status' => ['nullable', 'in:all,pending,available,paid'],
             'search' => ['nullable', 'string', 'max:120'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
         ]);
 
@@ -473,6 +475,12 @@ class SellerOrderController extends Controller
         }
         if ($paymentStatus !== 'all') {
             $query->where('payment_status', $paymentStatus);
+        }
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('order_datetime', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('order_datetime', '<=', $validated['date_to']);
         }
 
         if ($search !== '') {
@@ -629,6 +637,62 @@ class SellerOrderController extends Controller
 
         return response()->json([
             'matches' => $matches,
+        ]);
+    }
+
+    public function customers(Request $request)
+    {
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        $search = trim((string) $request->query('search', ''));
+        $limit = max(5, min((int) $request->query('limit', 12), 30));
+
+        $query = Customer::query()
+            ->select([
+                'id',
+                'default_name',
+                'primary_phone',
+                'additional_phone',
+                'email',
+                'default_address',
+                'city_id',
+                'notes',
+                'orders_count',
+                'last_order_at',
+            ])
+            ->with('city:id,name_en')
+            ->where('seller_id', $seller->id)
+            ->latest('last_order_at')
+            ->latest('id');
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('default_name', 'like', '%' . $search . '%')
+                    ->orWhere('primary_phone', 'like', '%' . $search . '%')
+                    ->orWhere('additional_phone', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+
+        return response()->json([
+            'customers' => $query->limit($limit)->get()->map(fn (Customer $customer) => [
+                'id' => (int) $customer->id,
+                'name' => (string) ($customer->default_name ?? ''),
+                'phone' => (string) ($customer->primary_phone ?? ''),
+                'additional_phone' => $customer->additional_phone,
+                'email' => $customer->email,
+                'address' => (string) ($customer->default_address ?? ''),
+                'city_id' => $customer->city_id ? (int) $customer->city_id : null,
+                'city' => $customer->city?->name_en,
+                'notes' => $customer->notes,
+                'orders_count' => (int) ($customer->orders_count ?? 0),
+                'last_order_at' => $customer->last_order_at?->toDateTimeString(),
+            ])->values(),
         ]);
     }
 

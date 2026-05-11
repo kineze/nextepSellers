@@ -30,6 +30,7 @@ import CitySync from './components/CitySync.vue';
 import StateMatcher from './components/StateMatcher.vue';
 import SellerOrderSubmit from './components/SellerOrderSubmit.vue';
 import SellerBulkOrderCreate from './components/SellerBulkOrderCreate.vue';
+import SellerSingleOrderCreate from './components/SellerSingleOrderCreate.vue';
 import SellerMyOrders from './components/SellerMyOrders.vue';
 import SellerOrderShow from './components/SellerOrderShow.vue';
 import SellerPayments from './components/SellerPayments.vue';
@@ -96,6 +97,7 @@ app.use(Toast, {
 .component('state-matcher', StateMatcher)
 .component('seller-order-submit', SellerOrderSubmit)
 .component('seller-bulk-order-create', SellerBulkOrderCreate)
+.component('seller-single-order-create', SellerSingleOrderCreate)
 .component('seller-my-orders', SellerMyOrders)
 .component('seller-order-show', SellerOrderShow)
 .component('seller-payments', SellerPayments)

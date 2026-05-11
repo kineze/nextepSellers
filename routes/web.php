@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::get('/seller/inventory', 'getSellerInventory')->name('sellerInventory');
         Route::get('/seller/checkout', 'getSellerCheckout')->name('sellerCheckout');
         Route::get('/seller/orders', 'getSellerOrders')->name('sellerOrders');
+        Route::get('/seller/orders/create', 'getSellerOrderCreate')->name('sellerOrderCreate');
         Route::get('/seller/bulk-orders', 'getSellerBulkOrders')->name('sellerBulkOrders');
         Route::get('/seller/affiliate', 'getSellerAffiliate')->name('sellerAffiliate');
         Route::post('/seller/affiliate/generate', 'postSellerAffiliateGenerate')->name('sellerAffiliateGenerate');

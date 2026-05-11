@@ -1,15 +1,32 @@
 <template>
-  <div class="space-y-4 rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-      <div>
-        <p class="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">My Orders</p>
-        <h2 class="mt-1 text-xl font-bold text-slate-900 dark:text-white">Submitted Orders</h2>
+  <section class="mx-3 mt-3 mb-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div class="space-y-3">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-300">Orders</p>
+          <h1 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">My Orders</h1>
+        </div>
+
+        <a
+          href="/seller/orders/create"
+          class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700"
+        >
+          <i class="fas fa-plus" aria-hidden="true"></i>
+          Create Order
+        </a>
       </div>
 
-      <div class="grid gap-2 sm:grid-cols-3">
+      <admin-global-filter-bar
+        context-key="seller-my-orders"
+        :show-seller-filter="false"
+        search-placeholder="Search order/customer/phone/waybill"
+        @filters-changed="onGlobalFiltersChanged"
+      />
+
+      <div class="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
         <select
           v-model="filters.status"
-          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           @change="onFilterChanged"
         >
           <option value="all">All Statuses</option>
@@ -25,7 +42,7 @@
 
         <select
           v-model="filters.payment_status"
-          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
           @change="onFilterChanged"
         >
           <option value="all">All Payments</option>
@@ -34,196 +51,155 @@
           <option value="paid">Paid</option>
         </select>
 
-        <input
-          v-model.trim="filters.search"
-          type="text"
-          placeholder="Search by order, customer, phone"
-          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-          @keyup.enter="onFilterChanged"
-        />
+        <select
+          v-model.number="filters.per_page"
+          class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          @change="onFilterChanged"
+        >
+          <option :value="10">10 per page</option>
+          <option :value="20">20 per page</option>
+          <option :value="30">30 per page</option>
+          <option :value="50">50 per page</option>
+        </select>
+
+        <button
+          type="button"
+          class="ml-auto rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black dark:bg-white dark:text-slate-900"
+          @click="fetchOrders"
+        >
+          Refresh
+        </button>
       </div>
     </div>
 
-    <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-      <p>Total {{ meta.total }} orders</p>
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        @click="fetchOrders"
-      >
-        Refresh
-      </button>
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Showing <span class="font-semibold text-slate-900 dark:text-white">{{ paginationFrom }}</span>
+        to <span class="font-semibold text-slate-900 dark:text-white">{{ paginationTo }}</span>
+        of <span class="font-semibold text-slate-900 dark:text-white">{{ meta.total }}</span> orders
+      </p>
     </div>
 
-    <div v-if="loading" class="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-      Loading orders...
-    </div>
+    <div class="mt-4 overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+      <table class="min-w-full divide-y divide-slate-200 text-sm dark:divide-slate-700">
+        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+          <tr>
+            <th class="px-3 py-3 text-left">Order</th>
+            <th class="px-3 py-3 text-left">Customer</th>
+            <th class="px-3 py-3 text-left">Products</th>
+            <th class="px-3 py-3 text-left">City</th>
+            <th class="px-3 py-3 text-left">Status</th>
+            <th class="px-3 py-3 text-left">Payment</th>
+            <th class="px-3 py-3 text-left">Waybill</th>
+            <th class="px-3 py-3 text-right">Collectable</th>
+            <th class="px-3 py-3 text-right">Earnings</th>
+            <th class="px-3 py-3 text-left">Created</th>
+            <th class="px-3 py-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+          <tr v-if="loading">
+            <td colspan="11" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Loading orders...</td>
+          </tr>
+          <tr v-else-if="!orders.length">
+            <td colspan="11" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">No orders found.</td>
+          </tr>
 
-    <div v-else-if="!orders.length" class="rounded-xl border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-      No orders found.
-    </div>
-
-    <div v-else class="space-y-4">
-      <section v-for="group in bulkGroups" :key="`group-${group.id}`" class="rounded-xl border border-blue-200/70 bg-blue-50/40 p-3 dark:border-blue-500/20 dark:bg-blue-500/5">
-        <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Bulk Order Request</p>
-            <p class="text-sm font-bold text-slate-900 dark:text-white">{{ group.request_no }}</p>
-            <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ formatDate(group.created_at) }}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <span :class="bulkStatusClass(group.status)" class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{{ group.status }}</span>
-            <span class="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-              {{ group.orders.length }} order{{ group.orders.length === 1 ? '' : 's' }}
-            </span>
-          </div>
-        </div>
-
-        <div class="space-y-2">
-          <article
-            v-for="order in group.orders"
-            :key="order.id"
-            class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/50"
-          >
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p class="text-sm font-semibold text-slate-900 dark:text-white">#{{ order.id }} · {{ order.customer_name || 'Unknown Customer' }}</p>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                  {{ formatDate(order.order_datetime) }} · {{ order.phone || '-' }} · {{ order.city?.name_en || 'No city' }}
+          <tr v-for="order in orders" :key="order.id" class="bg-white align-top dark:bg-slate-900/40">
+            <td class="px-3 py-3">
+              <a :href="`/seller/orders/${order.id}`" class="font-bold text-blue-600 hover:underline dark:text-blue-300">#{{ order.id }}</a>
+              <p v-if="order.bulk_order_request?.request_no" class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                {{ order.bulk_order_request.request_no }}
+              </p>
+            </td>
+            <td class="px-3 py-3 text-slate-700 dark:text-slate-200">
+              <p class="font-semibold text-slate-900 dark:text-white">{{ order.customer_name || '-' }}</p>
+              <p class="text-xs text-slate-500 dark:text-slate-400">{{ order.phone || '-' }}</p>
+            </td>
+            <td class="px-3 py-3">
+              <div class="max-w-72 space-y-1.5">
+                <div
+                  v-for="item in visibleItems(order)"
+                  :key="item.id"
+                  class="rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-800/60"
+                >
+                  <p class="truncate text-xs font-semibold text-slate-800 dark:text-slate-100">{{ item.product?.title || 'Product' }}</p>
+                  <p class="mt-0.5 text-[11px] text-slate-500 dark:text-slate-300">
+                    SKU: <span class="font-mono">{{ item.variant?.sku || '-' }}</span>
+                    <span class="mx-1">|</span>
+                    Qty: <span class="font-semibold">{{ item.quantity || 0 }}</span>
+                  </p>
+                </div>
+                <p v-if="(order.items || []).length > 2" class="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  +{{ (order.items || []).length - 2 }} more
                 </p>
               </div>
-
-              <div class="flex items-center gap-2">
-                <span :class="statusClass(order.status)" class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{{ order.status }}</span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                  {{ itemCount(order) }} item{{ itemCount(order) === 1 ? '' : 's' }}
-                </span>
-                <a
-                  :href="`/seller/orders/${order.id}`"
-                  class="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white hover:bg-blue-700"
-                >
-                  View
-                </a>
-              </div>
-            </div>
-
-            <div class="mt-3 grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-4">
-              <p><span class="font-semibold">Net:</span> LKR {{ toMoney(order.net_total) }}</p>
-              <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(order.delivery_charge) }}</p>
-              <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(order)) }}</p>
-              <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(order) }}</p>
-            </div>
-
-            <div v-if="batchGroups(order).length" class="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-500/20 dark:bg-indigo-500/10">
-              <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Selected Batches</p>
-              <div class="mt-2 grid gap-2 sm:grid-cols-2">
-                <div
-                  v-for="batch in batchGroups(order)"
-                  :key="batch.key"
-                  class="rounded-lg border border-indigo-100 bg-white p-2 text-xs text-slate-600 dark:border-indigo-500/20 dark:bg-slate-950/70 dark:text-slate-300"
-                >
-                  <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span class="font-semibold text-slate-900 dark:text-white">Batch {{ batch.lot_number }}</span>
-                    <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                      {{ batch.quantity }} item{{ batch.quantity === 1 ? '' : 's' }}
-                    </span>
-                  </div>
-                  <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ batch.product_title }} · {{ batch.variant_label }}</p>
-                  <p class="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">{{ barcodePreview(batch.barcodes) }}</p>
-                </div>
-              </div>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section v-if="singleOrders.length" class="space-y-2">
-        <div class="flex items-center justify-between">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Single Orders</p>
-          <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-            {{ singleOrders.length }} order{{ singleOrders.length === 1 ? '' : 's' }}
-          </span>
-        </div>
-
-        <article
-          v-for="order in singleOrders"
-          :key="order.id"
-          class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-950/50"
-        >
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p class="text-sm font-semibold text-slate-900 dark:text-white">#{{ order.id }} · {{ order.customer_name || 'Unknown Customer' }}</p>
-              <p class="text-xs text-slate-500 dark:text-slate-400">
-                {{ formatDate(order.order_datetime) }} · {{ order.phone || '-' }} · {{ order.city?.name_en || 'No city' }}
-              </p>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span :class="statusClass(order.status)" class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{{ order.status }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                {{ itemCount(order) }} item{{ itemCount(order) === 1 ? '' : 's' }}
-              </span>
+            </td>
+            <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ order.city?.name_en || '-' }}</td>
+            <td class="px-3 py-3">
+              <span :class="statusClass(order.status)" class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{{ order.status || '-' }}</span>
+            </td>
+            <td class="px-3 py-3">
+              <span :class="paymentClass(order.payment_status)" class="rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide">{{ order.payment_status || 'pending' }}</span>
+            </td>
+            <td class="px-3 py-3 font-mono text-xs text-slate-600 dark:text-slate-300">{{ order.waybill_no || '-' }}</td>
+            <td class="px-3 py-3 text-right font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(order.total_collectable_amount) }}</td>
+            <td class="px-3 py-3 text-right">
+              <p class="font-semibold text-emerald-700 dark:text-emerald-300">LKR {{ toMoney(commissionAmount(order)) }}</p>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400">{{ pointsEarned(order) }} pts</p>
+            </td>
+            <td class="px-3 py-3 text-slate-600 dark:text-slate-300">{{ formatDate(order.order_datetime) }}</td>
+            <td class="px-3 py-3 text-right">
               <a
                 :href="`/seller/orders/${order.id}`"
-                class="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-white hover:bg-blue-700"
+                class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
               >
                 View
               </a>
-            </div>
-          </div>
-
-          <div class="mt-3 grid gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-4">
-            <p><span class="font-semibold">Net:</span> LKR {{ toMoney(order.net_total) }}</p>
-            <p><span class="font-semibold">Delivery:</span> LKR {{ toMoney(order.delivery_charge) }}</p>
-            <p><span class="font-semibold">Commission:</span> LKR {{ toMoney(commissionAmount(order)) }}</p>
-            <p><span class="font-semibold">Points Earned:</span> {{ pointsEarned(order) }}</p>
-          </div>
-
-          <div v-if="batchGroups(order).length" class="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 dark:border-indigo-500/20 dark:bg-indigo-500/10">
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">Selected Batches</p>
-            <div class="mt-2 grid gap-2 sm:grid-cols-2">
-              <div
-                v-for="batch in batchGroups(order)"
-                :key="batch.key"
-                class="rounded-lg border border-indigo-100 bg-white p-2 text-xs text-slate-600 dark:border-indigo-500/20 dark:bg-slate-950/70 dark:text-slate-300"
-              >
-                <div class="flex flex-wrap items-center justify-between gap-2">
-                  <span class="font-semibold text-slate-900 dark:text-white">Batch {{ batch.lot_number }}</span>
-                  <span class="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300">
-                    {{ batch.quantity }} item{{ batch.quantity === 1 ? '' : 's' }}
-                  </span>
-                </div>
-                <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">{{ batch.product_title }} · {{ batch.variant_label }}</p>
-                <p class="mt-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">{{ barcodePreview(batch.barcodes) }}</p>
-              </div>
-            </div>
-          </div>
-        </article>
-      </section>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <div class="flex items-center justify-between border-t border-slate-200 pt-3 dark:border-slate-700">
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        :disabled="meta.current_page <= 1 || loading"
-        @click="changePage(meta.current_page - 1)"
-      >
-        Previous
-      </button>
-
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-xs text-slate-500 dark:text-slate-400">Page {{ meta.current_page }} of {{ meta.last_page }}</p>
 
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        :disabled="meta.current_page >= meta.last_page || loading"
-        @click="changePage(meta.current_page + 1)"
-      >
-        Next
-      </button>
+      <div class="flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="meta.current_page <= 1 || loading"
+          @click="changePage(meta.current_page - 1)"
+        >
+          Prev
+        </button>
+
+        <button
+          v-for="page in pageNumbers"
+          :key="page"
+          type="button"
+          class="h-8 min-w-8 rounded-lg border px-2 text-xs font-semibold transition"
+          :class="page === meta.current_page
+            ? 'border-blue-600 bg-blue-600 text-white'
+            : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
+          :disabled="loading"
+          @click="changePage(page)"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="meta.current_page >= meta.last_page || loading"
+          @click="changePage(meta.current_page + 1)"
+        >
+          Next
+        </button>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <script setup>
@@ -240,15 +216,41 @@ const filters = reactive({
   status: 'all',
   payment_status: 'all',
   search: '',
+  date_from: '',
+  date_to: '',
   page: 1,
-  per_page: 10,
+  per_page: 20,
 })
 
 const meta = reactive({
   current_page: 1,
   last_page: 1,
-  per_page: 10,
+  per_page: 20,
   total: 0,
+})
+
+const paginationFrom = computed(() => {
+  if (!meta.total) return 0
+  return ((meta.current_page - 1) * meta.per_page) + 1
+})
+
+const paginationTo = computed(() => {
+  if (!meta.total) return 0
+  return Math.min(meta.current_page * meta.per_page, meta.total)
+})
+
+const pageNumbers = computed(() => {
+  const total = meta.last_page || 1
+  const current = meta.current_page || 1
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
+  const pages = []
+
+  for (let page = start; page <= end; page += 1) {
+    pages.push(page)
+  }
+
+  return pages
 })
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
@@ -260,9 +262,7 @@ const formatDate = (value) => {
   return date.toLocaleString()
 }
 
-const itemCount = (order) => {
-  return (order?.items || []).reduce((sum, row) => sum + Number(row.quantity || 0), 0)
-}
+const visibleItems = (order) => (order?.items || []).slice(0, 2)
 
 const commissionAmount = (order) => {
   return Number(order?.computed_commission_amount ?? order?.commission_amount ?? 0)
@@ -270,61 +270,6 @@ const commissionAmount = (order) => {
 
 const pointsEarned = (order) => {
   return Number(order?.computed_points_earned ?? 0)
-}
-
-const stringifyAttrValue = (value) => {
-  if (value === null || value === undefined) return ''
-  if (typeof value === 'object') {
-    return Object.entries(value)
-      .map(([key, nestedValue]) => `${key}=${stringifyAttrValue(nestedValue)}`)
-      .filter(Boolean)
-      .join(' | ')
-  }
-  return String(value)
-}
-
-const variantLabel = (variant) => {
-  const sku = variant?.sku || ''
-  const attrs = variant?.attributes || {}
-  const attrText = Object.entries(attrs)
-    .map(([key, value]) => `${key}:${stringifyAttrValue(value)}`)
-    .filter((row) => !row.endsWith(':'))
-    .join(', ')
-
-  return [sku, attrText].filter(Boolean).join(' · ') || 'Variant'
-}
-
-const batchGroups = (order) => {
-  const map = new Map()
-
-  for (const item of order?.lot_items || []) {
-    const key = `${item.lot_id || 'no-lot'}-${item.variant_id || 'no-variant'}`
-    if (!map.has(key)) {
-      map.set(key, {
-        key,
-        lot_number: item.lot?.lot_number || item.lot_id || '-',
-        product_title: item.variant?.product?.title || 'Product',
-        variant_label: variantLabel(item.variant),
-        quantity: 0,
-        barcodes: [],
-      })
-    }
-
-    const group = map.get(key)
-    group.quantity += 1
-    if (item.barcode) {
-      group.barcodes.push(item.barcode)
-    }
-  }
-
-  return Array.from(map.values())
-}
-
-const barcodePreview = (barcodes) => {
-  if (!Array.isArray(barcodes) || !barcodes.length) return 'No barcodes'
-  const visible = barcodes.slice(0, 3).join(', ')
-  const remaining = barcodes.length - 3
-  return remaining > 0 ? `${visible} +${remaining} more` : visible
 }
 
 const statusClass = (status) => {
@@ -336,47 +281,12 @@ const statusClass = (status) => {
   return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
 }
 
-const bulkStatusClass = (status) => {
+const paymentClass = (status) => {
   const value = String(status || '').toLowerCase()
-  if (value === 'submitted') return 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300'
-  if (value === 'approved') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
-  if (value === 'cancelled') return 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
-  return 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300'
+  if (value === 'paid') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+  if (value === 'available') return 'bg-cyan-100 text-cyan-700 dark:bg-cyan-500/15 dark:text-cyan-300'
+  return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
 }
-
-const bulkGroups = computed(() => {
-  const map = new Map()
-
-  for (const order of orders.value) {
-    const bulk = order?.bulk_order_request
-    if (!bulk?.id) continue
-
-    if (!map.has(bulk.id)) {
-      map.set(bulk.id, {
-        id: Number(bulk.id),
-        request_no: bulk.request_no || `Bulk #${bulk.id}`,
-        status: bulk.status || 'draft',
-        created_at: bulk.created_at || order.order_datetime || null,
-        orders: [],
-      })
-    }
-
-    map.get(bulk.id).orders.push(order)
-  }
-
-  return Array.from(map.values())
-    .map((group) => ({
-      ...group,
-      orders: group.orders.sort((a, b) => Number(b.id || 0) - Number(a.id || 0)),
-    }))
-    .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
-})
-
-const singleOrders = computed(() => {
-  return orders.value
-    .filter((order) => !order?.bulk_order_request?.id)
-    .sort((a, b) => Number(b.id || 0) - Number(a.id || 0))
-})
 
 const fetchOrders = async () => {
   loading.value = true
@@ -386,6 +296,8 @@ const fetchOrders = async () => {
         status: filters.status,
         payment_status: filters.payment_status,
         search: filters.search || undefined,
+        date_from: filters.date_from || undefined,
+        date_to: filters.date_to || undefined,
         page: filters.page,
         per_page: filters.per_page,
       },
@@ -408,7 +320,15 @@ const onFilterChanged = () => {
   fetchOrders()
 }
 
+const onGlobalFiltersChanged = (payload) => {
+  filters.search = payload?.search || ''
+  filters.date_from = payload?.date_from || ''
+  filters.date_to = payload?.date_to || ''
+  onFilterChanged()
+}
+
 const changePage = (page) => {
+  if (page < 1 || page > meta.last_page || page === meta.current_page) return
   filters.page = page
   fetchOrders()
 }
@@ -419,7 +339,6 @@ const onOrderCreated = () => {
 }
 
 onMounted(() => {
-  fetchOrders()
   window.addEventListener('seller-order-created', onOrderCreated)
 })
 

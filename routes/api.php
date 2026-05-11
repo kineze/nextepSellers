@@ -229,6 +229,7 @@ Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/dashboard/analytics', [SellerDashboardController::class, 'analytics']);
     Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
     Route::post('/seller/cities/resolve', [SellerOrderController::class, 'resolveCities']);
+    Route::get('/seller/customers/search', [SellerOrderController::class, 'customers']);
     Route::get('/seller/order-products', [SellerOrderController::class, 'productOptions']);
     Route::get('/seller/orders', [SellerOrderController::class, 'index']);
     Route::post('/seller/orders/bulk', [SellerOrderController::class, 'storeBulk']);

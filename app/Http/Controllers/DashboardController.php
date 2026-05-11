@@ -210,6 +210,11 @@ class DashboardController extends Controller
         return view('dashboards.seller.orders');
     }
 
+    public function getSellerOrderCreate()
+    {
+        return view('dashboards.seller.order-create');
+    }
+
     public function getSellerBulkOrders()
     {
         return view('dashboards.seller.bulk-orders');

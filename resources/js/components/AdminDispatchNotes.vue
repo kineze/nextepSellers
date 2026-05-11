@@ -342,5 +342,4 @@ const scanAndShip = async () => {
   }
 }
 
-fetchNotes()
 </script>

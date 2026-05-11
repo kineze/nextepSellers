@@ -239,5 +239,4 @@ const changePage = (page) => {
   fetchOrders()
 }
 
-fetchOrders()
 </script>

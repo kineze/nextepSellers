@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import axios from 'axios'
 import { useToast } from 'vue-toastification'
 
@@ -309,8 +309,5 @@ const changePage = (page) => {
   fetchRequests()
 }
 
-onMounted(() => {
-  loadStatusPreference()
-  fetchRequests()
-})
+loadStatusPreference()
 </script>

@@ -295,7 +295,7 @@ onMounted(async () => {
   const loaded = loadPreference()
   if (!loaded) {
     applyPresetDates()
-  } else if (state.date_preset !== 'custom' && (!state.date_from || !state.date_to)) {
+  } else if (state.date_preset !== 'custom') {
     applyPresetDates()
   }
 

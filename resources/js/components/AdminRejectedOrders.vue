@@ -257,5 +257,4 @@ const changePage = (page) => {
 }
 
 loadPreferences()
-fetchOrders()
 </script>

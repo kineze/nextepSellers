@@ -440,5 +440,4 @@ const createDispatchNote = async () => {
   }
 }
 
-fetchOrders()
 </script>

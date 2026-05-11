@@ -63,6 +63,11 @@ class OrderTrackingSyncService
                 'error' => $context['message'] ?? 'Unknown context error',
             ]);
             return [
+                'order_id' => $orderId,
+                'waybill_no' => null,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => null,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -78,6 +83,11 @@ class OrderTrackingSyncService
                 'order_id' => $orderId,
             ]);
             return [
+                'order_id' => $orderId,
+                'waybill_no' => $order?->waybill_no,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => $order?->status,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -104,6 +114,11 @@ class OrderTrackingSyncService
             ]);
 
             return [
+                'order_id' => (int) $order->id,
+                'waybill_no' => (string) $order->waybill_no,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => $order->status,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -122,6 +137,11 @@ class OrderTrackingSyncService
             ]);
 
             return [
+                'order_id' => (int) $order->id,
+                'waybill_no' => (string) $order->waybill_no,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => $order->status,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -139,6 +159,11 @@ class OrderTrackingSyncService
             ]);
 
             return [
+                'order_id' => (int) $order->id,
+                'waybill_no' => (string) $order->waybill_no,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => $order->status,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -160,6 +185,11 @@ class OrderTrackingSyncService
             ]);
 
             return [
+                'order_id' => (int) $order->id,
+                'waybill_no' => (string) $order->waybill_no,
+                'courier_status' => null,
+                'local_status' => null,
+                'order_status' => $order->status,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -174,6 +204,11 @@ class OrderTrackingSyncService
         $fresh = Order::query()->find($order->id);
         if (!$fresh) {
             return [
+                'order_id' => (int) $order->id,
+                'waybill_no' => (string) $order->waybill_no,
+                'courier_status' => $latestStatus,
+                'local_status' => $localStatus,
+                'order_status' => null,
                 'updated' => false,
                 'completed' => false,
                 'cancelled' => false,
@@ -229,6 +264,11 @@ class OrderTrackingSyncService
         }
 
         return [
+            'order_id' => (int) $fresh->id,
+            'waybill_no' => (string) $fresh->waybill_no,
+            'courier_status' => $latestStatus,
+            'local_status' => $localStatus,
+            'order_status' => $fresh->status,
             'updated' => $changed,
             'completed' => $completed,
             'cancelled' => $cancelled,

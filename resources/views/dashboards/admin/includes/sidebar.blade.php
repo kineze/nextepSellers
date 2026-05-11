@@ -266,6 +266,7 @@
               {"label":"Attribute Manager","href":"{{ url('/attributes') }}"},
               {"label":"Banks","href":"{{ route('banks') }}"},
               {"label":"Royal Express","href":"{{ route('royalExpress') }}"},
+              {"label":"Delivery Status Fetcher","href":"{{ route('manualDeliveryStatusFetcher') }}"},
               {"label":"Delivery Fees","href":"{{ route('deliveryFees') }}"},
               {"label":"Label Settings","href":"{{ route('labelSettings') }}"}
             ]'>
@@ -290,6 +291,9 @@
             </a>
             <a href="{{ route('royalExpress') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Royal Express
+            </a>
+            <a href="{{ route('manualDeliveryStatusFetcher') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
+              Delivery Status Fetcher
             </a>
             <a href="{{ route('deliveryFees') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Delivery Fees

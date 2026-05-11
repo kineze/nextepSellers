@@ -22,6 +22,7 @@ use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\SellerPaymentController;
 use App\Http\Controllers\AdminFinanceController;
+use App\Http\Controllers\AdminOrderTrackingController;
 use App\Http\Controllers\LabelSettingController;
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
@@ -83,6 +84,9 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::post('/delivery-fees', [DeliveryFeeController::class, 'store']);
     Route::put('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'update']);
     Route::delete('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'destroy']);
+
+    Route::get('/admin/tracking/manual-fetch/summary', [AdminOrderTrackingController::class, 'summary']);
+    Route::post('/admin/tracking/manual-fetch', [AdminOrderTrackingController::class, 'fetchShipped']);
 
     Route::get('/label-settings', [LabelSettingController::class, 'index']);
     Route::post('/label-settings', [LabelSettingController::class, 'store']);

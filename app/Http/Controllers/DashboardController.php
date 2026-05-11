@@ -404,6 +404,11 @@ class DashboardController extends Controller
         return view('dashboards.admin.settings.deliveryFees');
     }
 
+    public function getManualDeliveryStatusFetcher()
+    {
+        return view('dashboards.admin.settings.manualDeliveryStatusFetcher');
+    }
+
     public function getAdminDraftOrders()
     {
         return view('dashboards.admin.orders.draftOrders');

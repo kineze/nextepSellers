@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeliveryWebhookLog;
+use App\Services\OrderTrackingSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -48,7 +49,7 @@ class DeliveryWebhookController extends Controller
         return response()->json($query->paginate($perPage));
     }
 
-    public function store(Request $request)
+    public function store(Request $request, OrderTrackingSyncService $trackingSync)
     {
         $configuredKey = (string) config('services.delivery_webhook.key');
         $requestKey = (string) $request->header('X-Webhook-Key');
@@ -80,13 +81,30 @@ class DeliveryWebhookController extends Controller
             'status' => $validated['status'],
         ]);
 
+        $result = $trackingSync->syncOrderStatusByWaybill(
+            $validated['waybill_no'],
+            $validated['status']
+        );
+
+        $log->update([
+            'order_id' => $result['order_id'] ?? null,
+            'is_matched' => (bool) ($result['matched'] ?? false),
+            'processed_result' => $result,
+            'processed_at' => now(),
+        ]);
+
         return response()->json([
-            'message' => 'Delivery webhook logged successfully.',
+            'message' => ($result['matched'] ?? false)
+                ? 'Delivery webhook logged and order updated successfully.'
+                : 'Delivery webhook logged. No matching order found.',
             'data' => [
                 'id' => $log->id,
+                'order_id' => $log->order_id,
+                'is_matched' => $log->is_matched,
                 'waybill_no' => $log->waybill_no,
                 'status_key' => $log->status_key,
                 'status' => $log->status,
+                'processed_result' => $log->processed_result,
                 'created_at' => $log->created_at,
             ],
         ], 201);

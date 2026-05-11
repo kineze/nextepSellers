@@ -94,6 +94,8 @@
           <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
             <tr>
               <th class="px-3 py-3 text-left">Time</th>
+              <th class="px-3 py-3 text-left">Result</th>
+              <th class="px-3 py-3 text-left">Order</th>
               <th class="px-3 py-3 text-left">Waybill</th>
               <th class="px-3 py-3 text-left">Status Key</th>
               <th class="px-3 py-3 text-left">Status</th>
@@ -102,13 +104,28 @@
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
             <tr v-if="loading">
-              <td colspan="5" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Loading webhook logs...</td>
+              <td colspan="7" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Loading webhook logs...</td>
             </tr>
             <tr v-else-if="!logs.length">
-              <td colspan="5" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">No webhook logs found.</td>
+              <td colspan="7" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">No webhook logs found.</td>
             </tr>
             <tr v-for="log in logs" :key="log.id" class="bg-white dark:bg-slate-900/40">
               <td class="px-3 py-3 align-top text-xs text-slate-500 dark:text-slate-400">{{ formatDate(log.created_at) }}</td>
+              <td class="px-3 py-3 align-top">
+                <span
+                  class="inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                  :class="resultBadgeClass(log)"
+                >
+                  {{ resultLabel(log) }}
+                </span>
+                <p v-if="log.processed_result?.points_awarded" class="mt-1 text-xs text-emerald-600 dark:text-emerald-300">
+                  {{ log.processed_result.points_awarded }} points
+                </p>
+              </td>
+              <td class="px-3 py-3 align-top text-xs">
+                <a v-if="log.order_id" :href="`/admin/orders/${log.order_id}`" class="font-semibold text-indigo-600 hover:underline dark:text-indigo-300">#{{ log.order_id }}</a>
+                <span v-else class="text-slate-500 dark:text-slate-400">Not ours</span>
+              </td>
               <td class="px-3 py-3 align-top font-mono text-xs font-semibold text-slate-900 dark:text-white">{{ log.waybill_no || '-' }}</td>
               <td class="px-3 py-3 align-top text-slate-700 dark:text-slate-200">{{ log.status_key || '-' }}</td>
               <td class="px-3 py-3 align-top text-slate-700 dark:text-slate-200">{{ log.status || '-' }}</td>
@@ -116,6 +133,10 @@
                 <details class="max-w-xl">
                   <summary class="cursor-pointer text-xs font-semibold text-indigo-600 dark:text-indigo-300">View payload</summary>
                   <pre class="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{{ formatJson(log.raw_data) }}</pre>
+                </details>
+                <details v-if="log.processed_result" class="mt-2 max-w-xl">
+                  <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">View processing</summary>
+                  <pre class="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{{ formatJson(log.processed_result) }}</pre>
                 </details>
               </td>
             </tr>
@@ -221,6 +242,26 @@ const formatJson = (value) => JSON.stringify(value || {}, null, 2)
 const formatDate = (value) => {
   if (!value) return '-'
   return new Date(value).toLocaleString()
+}
+
+const resultLabel = (log) => {
+  const result = log.processed_result || {}
+  if (!log.is_matched) return 'Ignored'
+  if (result.error) return 'Error'
+  if (result.completed) return 'Completed'
+  if (result.cancelled) return 'Cancelled'
+  if (result.updated) return 'Updated'
+  return 'Matched'
+}
+
+const resultBadgeClass = (log) => {
+  const result = log.processed_result || {}
+  if (!log.is_matched) return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+  if (result.error) return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+  if (result.completed) return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+  if (result.cancelled) return 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300'
+  if (result.updated) return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
+  return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
 }
 
 onMounted(loadAll)

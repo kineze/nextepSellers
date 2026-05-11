@@ -199,6 +199,43 @@ class OrderTrackingSyncService
             ];
         }
 
+        return $this->applyTrackingStatus($order, trim($latestStatus));
+    }
+
+    public function syncOrderStatusByWaybill(string $waybillNo, string $latestStatus): array
+    {
+        $waybillNo = trim($waybillNo);
+        $latestStatus = trim($latestStatus);
+
+        $order = Order::query()
+            ->where('waybill_no', $waybillNo)
+            ->first();
+
+        if (!$order) {
+            return [
+                'matched' => false,
+                'order_id' => null,
+                'waybill_no' => $waybillNo,
+                'courier_status' => $latestStatus,
+                'local_status' => $this->mapLocalStatus($latestStatus),
+                'order_status' => null,
+                'updated' => false,
+                'completed' => false,
+                'cancelled' => false,
+                'points_awarded' => 0,
+                'level_upgraded' => false,
+                'error' => null,
+            ];
+        }
+
+        return [
+            'matched' => true,
+            ...$this->applyTrackingStatus($order, $latestStatus),
+        ];
+    }
+
+    private function applyTrackingStatus(Order $order, string $latestStatus): array
+    {
         $localStatus = $this->mapLocalStatus($latestStatus);
 
         $fresh = Order::query()->find($order->id);
@@ -296,6 +333,7 @@ class OrderTrackingSyncService
             'CANCELLED',
             'FAILED TO DELIVER',
             'RETURN TO CLIENT',
+            'RETURN TO MERCHANT',
             'RETURNED TO MERCHANT',
             'RECEIVED FAILED ORDER',
             'UNDELIVERED',

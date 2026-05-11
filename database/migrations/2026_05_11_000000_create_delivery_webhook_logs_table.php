@@ -13,10 +13,14 @@ return new class extends Migration
     {
         Schema::create('delivery_webhook_logs', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
             $table->string('waybill_no')->nullable()->index();
             $table->json('raw_data')->nullable();
             $table->string('status_key')->nullable()->index();
             $table->string('status')->nullable()->index();
+            $table->boolean('is_matched')->default(false)->index();
+            $table->json('processed_result')->nullable();
+            $table->timestamp('processed_at')->nullable()->index();
             $table->timestamps();
 
             $table->index(['waybill_no', 'created_at']);

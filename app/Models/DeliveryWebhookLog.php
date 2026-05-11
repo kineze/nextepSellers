@@ -10,13 +10,25 @@ class DeliveryWebhookLog extends Model
     use HasFactory;
 
     protected $fillable = [
+        'order_id',
         'waybill_no',
         'raw_data',
         'status_key',
         'status',
+        'is_matched',
+        'processed_result',
+        'processed_at',
     ];
 
     protected $casts = [
         'raw_data' => 'array',
+        'is_matched' => 'boolean',
+        'processed_result' => 'array',
+        'processed_at' => 'datetime',
     ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class);
+    }
 }

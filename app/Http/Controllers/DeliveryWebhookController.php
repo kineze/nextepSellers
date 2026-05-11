@@ -74,29 +74,33 @@ class DeliveryWebhookController extends Controller
             'status' => ['required', 'string', 'max:255'],
         ]);
 
-        $log = DeliveryWebhookLog::create([
-            'waybill_no' => $validated['waybill_no'],
-            'raw_data' => $request->all(),
-            'status_key' => $validated['status_key'],
-            'status' => $validated['status'],
-        ]);
-
         $result = $trackingSync->syncOrderStatusByWaybill(
             $validated['waybill_no'],
             $validated['status']
         );
 
-        $log->update([
+        if (!($result['matched'] ?? false)) {
+            return response()->json([
+                'message' => 'Webhook ignored. No matching order found.',
+                'data' => [
+                    'waybill_no' => $validated['waybill_no'],
+                    'is_matched' => false,
+                ],
+            ]);
+        }
+
+        $log = DeliveryWebhookLog::create([
             'order_id' => $result['order_id'] ?? null,
-            'is_matched' => (bool) ($result['matched'] ?? false),
+            'waybill_no' => $validated['waybill_no'],
+            'status_key' => $validated['status_key'],
+            'status' => $validated['status'],
+            'is_matched' => true,
             'processed_result' => $result,
             'processed_at' => now(),
         ]);
 
         return response()->json([
-            'message' => ($result['matched'] ?? false)
-                ? 'Delivery webhook logged and order updated successfully.'
-                : 'Delivery webhook logged. No matching order found.',
+            'message' => 'Delivery webhook logged and order updated successfully.',
             'data' => [
                 'id' => $log->id,
                 'order_id' => $log->order_id,

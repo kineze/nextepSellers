@@ -99,7 +99,7 @@
               <th class="px-3 py-3 text-left">Waybill</th>
               <th class="px-3 py-3 text-left">Status Key</th>
               <th class="px-3 py-3 text-left">Status</th>
-              <th class="px-3 py-3 text-left">Raw Data</th>
+              <th class="px-3 py-3 text-left">Processing</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
@@ -130,14 +130,11 @@
               <td class="px-3 py-3 align-top text-slate-700 dark:text-slate-200">{{ log.status_key || '-' }}</td>
               <td class="px-3 py-3 align-top text-slate-700 dark:text-slate-200">{{ log.status || '-' }}</td>
               <td class="px-3 py-3 align-top">
-                <details class="max-w-xl">
-                  <summary class="cursor-pointer text-xs font-semibold text-indigo-600 dark:text-indigo-300">View payload</summary>
-                  <pre class="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{{ formatJson(log.raw_data) }}</pre>
-                </details>
-                <details v-if="log.processed_result" class="mt-2 max-w-xl">
-                  <summary class="cursor-pointer text-xs font-semibold text-slate-600 dark:text-slate-300">View processing</summary>
+                <details v-if="log.processed_result" class="max-w-xl">
+                  <summary class="cursor-pointer text-xs font-semibold text-indigo-600 dark:text-indigo-300">View result</summary>
                   <pre class="mt-2 max-h-56 overflow-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-100">{{ formatJson(log.processed_result) }}</pre>
                 </details>
+                <span v-else class="text-xs text-slate-500 dark:text-slate-400">Pending</span>
               </td>
             </tr>
           </tbody>

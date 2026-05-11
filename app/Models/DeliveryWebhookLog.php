@@ -12,7 +12,6 @@ class DeliveryWebhookLog extends Model
     protected $fillable = [
         'order_id',
         'waybill_no',
-        'raw_data',
         'status_key',
         'status',
         'is_matched',
@@ -21,7 +20,6 @@ class DeliveryWebhookLog extends Model
     ];
 
     protected $casts = [
-        'raw_data' => 'array',
         'is_matched' => 'boolean',
         'processed_result' => 'array',
         'processed_at' => 'datetime',

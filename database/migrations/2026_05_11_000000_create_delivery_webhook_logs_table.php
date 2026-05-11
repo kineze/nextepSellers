@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
             $table->string('waybill_no')->nullable()->index();
-            $table->json('raw_data')->nullable();
             $table->string('status_key')->nullable()->index();
             $table->string('status')->nullable()->index();
             $table->boolean('is_matched')->default(false)->index();

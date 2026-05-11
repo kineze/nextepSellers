@@ -4,7 +4,7 @@
 <body class="m-0 font-sans antialiased text-slate-600 dark:bg-slate-950 dark:text-white">
   <div id="app" class="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
     <header class="sticky top-0 z-[1100] border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-      <div class="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-6">
+      <div class="flex h-16 w-full items-center justify-between px-6">
         <a href="{{ route('sellerDashboard') }}" class="inline-flex items-center gap-3">
           <img src="{{ asset('assets/img/nextep-icon.webp') }}" alt="Nextep" class="h-8 w-8 rounded-lg object-cover">
           <div>
@@ -55,15 +55,15 @@
       </div>
     </header>
 
-    <main class="mx-auto w-full max-w-screen-2xl flex-1 px-6 py-8">
-      <div class="flex gap-6">
+    <main class="w-full flex-1 px-6 py-8">
+      <div class="flex w-full gap-6">
         <aside id="sellerDesktopSidebar" class="hidden shrink-0 transition-all duration-300 lg:sticky lg:top-20 lg:block lg:w-72 lg:self-start">
           <div id="sellerDesktopSidebarShell">
             @include('dashboards.seller.includes.sidebar', ['mode' => 'desktop'])
           </div>
         </aside>
 
-        <section class="min-w-0 flex-1">
+        <section class="min-w-0 w-full flex-1">
           @yield('content')
         </section>
       </div>
@@ -102,29 +102,75 @@
 
   <style>
     #sellerDesktopSidebar.is-compact {
-      width: 5.5rem;
+      width: 3.55rem;
+      z-index: 1200;
     }
 
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-shell {
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+      border-radius: 1.15rem;
     }
 
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-item {
+      width: 2.2rem;
+      height: 2.2rem;
       justify-content: center;
       gap: 0;
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding: 0;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-label {
       display: none;
     }
 
+    #sellerDesktopSidebar #sellerDesktopSidebarShell .seller-sidebar-tooltip {
+      display: none;
+    }
+
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-tooltip {
+      position: absolute;
+      left: calc(100% + 0.55rem);
+      top: 50%;
+      z-index: 1300;
+      display: block;
+      max-width: 10rem;
+      transform: translateY(-50%) translateX(-0.25rem);
+      border-radius: 0.6rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: rgba(15, 23, 42, 0.96);
+      color: white;
+      font-size: 0.68rem;
+      font-weight: 700;
+      line-height: 1;
+      opacity: 0;
+      padding: 0.45rem 0.55rem;
+      pointer-events: none;
+      white-space: nowrap;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.22);
+      transition: opacity 0.16s ease, transform 0.16s ease;
+    }
+
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-item:hover .seller-sidebar-tooltip,
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-item:focus-visible .seller-sidebar-tooltip {
+      opacity: 1;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-floating-toggle {
+      right: -0.6rem;
+      top: 0.9rem;
+    }
+
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-cart-link {
+      width: 2.2rem;
+      height: 2.2rem;
       justify-content: center;
-      padding-left: 0.5rem;
-      padding-right: 0.5rem;
+      padding: 0;
+      margin-left: auto;
+      margin-right: auto;
       position: relative;
     }
 

@@ -34,6 +34,8 @@ import SellerMyOrders from './components/SellerMyOrders.vue';
 import SellerOrderShow from './components/SellerOrderShow.vue';
 import SellerPayments from './components/SellerPayments.vue';
 import SellerProfileManager from './components/SellerProfileManager.vue';
+import SellerAffiliateManager from './components/SellerAffiliateManager.vue';
+import SellerDashboardAnalytics from './components/SellerDashboardAnalytics.vue';
 import AdminDraftOrders from './components/AdminDraftOrders.vue';
 import AdminBulkOrderRequests from './components/AdminBulkOrderRequests.vue';
 import AdminApprovedOrders from './components/AdminApprovedOrders.vue';
@@ -98,6 +100,8 @@ app.use(Toast, {
 .component('seller-order-show', SellerOrderShow)
 .component('seller-payments', SellerPayments)
 .component('seller-profile-manager', SellerProfileManager)
+.component('seller-affiliate-manager', SellerAffiliateManager)
+.component('seller-dashboard-analytics', SellerDashboardAnalytics)
 .component('admin-draft-orders', AdminDraftOrders)
 .component('admin-bulk-order-requests', AdminBulkOrderRequests)
 .component('admin-approved-orders', AdminApprovedOrders)

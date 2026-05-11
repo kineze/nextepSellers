@@ -120,59 +120,7 @@ class DashboardController extends Controller
 
     public function getSellerDashboard()
     {
-        $seller = auth()->user()?->seller?->loadMissing('level');
-
-        $currentPoints = (int) ($seller?->points ?? 0);
-        $level = $seller?->level;
-        $nextLevel = null;
-
-        if ($level) {
-            $nextLevel = Level::query()
-                ->where('points', '>', (int) ($level->points ?? 0))
-                ->orderBy('points')
-                ->first(['id', 'level_no', 'level_name', 'points']);
-        } else {
-            $nextLevel = Level::query()
-                ->orderBy('points')
-                ->first(['id', 'level_no', 'level_name', 'points']);
-        }
-
-        $lkrPerPoint = (float) config('seller.lkr_per_point', 100);
-        if ($lkrPerPoint <= 0) {
-            $lkrPerPoint = 100;
-        }
-
-        $pendingBaseAmount = 0.0;
-        if ($seller) {
-            $pendingBaseAmount = (float) Order::query()
-                ->where('seller_id', $seller->id)
-                ->whereIn('status', ['draft', 'approved', 'confirmed', 'packed', 'shipped'])
-                ->selectRaw('COALESCE(SUM(GREATEST(net_total - total_discount, 0)), 0) as pending_amount')
-                ->value('pending_amount');
-        }
-
-        $pendingPoints = (int) floor($pendingBaseAmount / $lkrPerPoint);
-        $projectedPoints = $currentPoints + $pendingPoints;
-
-        $pointsToNextLevel = null;
-        if ($nextLevel) {
-            $pointsToNextLevel = max(0, (int) $nextLevel->points - $projectedPoints);
-        }
-
-        return view('dashboards.seller.dashboard', [
-            'sellerStats' => [
-                'level_name' => $level?->level_name,
-                'level_no' => $level?->level_no,
-                'current_points' => $currentPoints,
-                'pending_points' => $pendingPoints,
-                'projected_points' => $projectedPoints,
-                'next_level_name' => $nextLevel?->level_name,
-                'next_level_no' => $nextLevel?->level_no,
-                'next_level_points' => $nextLevel?->points,
-                'points_to_next_level' => $pointsToNextLevel,
-                'lkr_per_point' => $lkrPerPoint,
-            ],
-        ]);
+        return view('dashboards.seller.dashboard');
     }
 
     public function getSellerProducts(Request $request)
@@ -269,68 +217,7 @@ class DashboardController extends Controller
 
     public function getSellerAffiliate()
     {
-        $seller = auth()->user()?->seller;
-        $referredSellers = collect();
-        $stats = [
-            'total_referrals' => 0,
-            'active_referrals' => 0,
-            'orders_from_referrals' => 0,
-            'available_commission_lkr' => 0,
-            'paid_commission_lkr' => 0,
-            'total_commission_lkr' => 0,
-        ];
-
-        if ($seller) {
-            $referredSellers = Seller::query()
-                ->select('id', 'first_name', 'last_name', 'email', 'phone', 'status', 'created_at')
-                ->where('affiliate_seller_id', $seller->id)
-                ->withCount('orders')
-                ->latest('id')
-                ->get();
-
-            $commissionSummaryBySeller = AffiliateCommission::query()
-                ->selectRaw('seller_id')
-                ->selectRaw('COALESCE(SUM(amount), 0) as total_amount')
-                ->selectRaw("COALESCE(SUM(CASE WHEN status = 'available' THEN amount ELSE 0 END), 0) as available_amount")
-                ->selectRaw("COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as paid_amount")
-                ->where('affiliate_seller_id', $seller->id)
-                ->groupBy('seller_id')
-                ->get()
-                ->keyBy('seller_id');
-
-            $referredSellers->transform(function ($item) use ($commissionSummaryBySeller) {
-                $summary = $commissionSummaryBySeller->get((int) $item->id);
-                $item->affiliate_total_amount = (float) ($summary->total_amount ?? 0);
-                $item->affiliate_available_amount = (float) ($summary->available_amount ?? 0);
-                $item->affiliate_paid_amount = (float) ($summary->paid_amount ?? 0);
-                return $item;
-            });
-
-            $availableCommission = (float) AffiliateCommission::query()
-                ->where('affiliate_seller_id', $seller->id)
-                ->where('status', 'available')
-                ->sum('amount');
-
-            $paidCommission = (float) AffiliateCommission::query()
-                ->where('affiliate_seller_id', $seller->id)
-                ->where('status', 'paid')
-                ->sum('amount');
-
-            $stats = [
-                'total_referrals' => $referredSellers->count(),
-                'active_referrals' => $referredSellers->where('status', 'approved')->count(),
-                'orders_from_referrals' => (int) $referredSellers->sum('orders_count'),
-                'available_commission_lkr' => round($availableCommission, 2),
-                'paid_commission_lkr' => round($paidCommission, 2),
-                'total_commission_lkr' => round($availableCommission + $paidCommission, 2),
-            ];
-        }
-
-        return view('dashboards.seller.affiliate', [
-            'seller' => $seller,
-            'referredSellers' => $referredSellers,
-            'affiliateStats' => $stats,
-        ]);
+        return view('dashboards.seller.affiliate');
     }
 
     public function postSellerAffiliateGenerate(Request $request)

@@ -21,6 +21,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DispatchNoteController;
 use App\Http\Controllers\DeliveryFeeController;
 use App\Http\Controllers\SellerPaymentController;
+use App\Http\Controllers\SellerAffiliateController;
+use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\AdminFinanceController;
 use App\Http\Controllers\AdminOrderTrackingController;
 use App\Http\Controllers\LabelSettingController;
@@ -224,6 +226,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
+    Route::get('/seller/dashboard/analytics', [SellerDashboardController::class, 'analytics']);
     Route::get('/seller/cities', [SellerOrderController::class, 'cities']);
     Route::post('/seller/cities/resolve', [SellerOrderController::class, 'resolveCities']);
     Route::get('/seller/order-products', [SellerOrderController::class, 'productOptions']);
@@ -238,6 +241,8 @@ Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/profile/bank-details', [SellerProfileController::class, 'bankDetails']);
     Route::put('/seller/profile/bank-details', [SellerProfileController::class, 'updateBankDetails']);
     Route::get('/seller/payments', [SellerPaymentController::class, 'index']);
+    Route::get('/seller/affiliate', [SellerAffiliateController::class, 'show']);
+    Route::post('/seller/affiliate/generate', [SellerAffiliateController::class, 'generate']);
     Route::get('/seller/orders/{order}/delivery-timeline', [SellerOrderController::class, 'sellerDeliveryTimeline'])->whereNumber('order');
     Route::get('/seller/orders/{order}/logs/{logId}', [SellerOrderController::class, 'sellerOrderLogShow'])
         ->whereNumber('order')

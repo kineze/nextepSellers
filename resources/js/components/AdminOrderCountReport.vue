@@ -58,22 +58,7 @@
           </div>
 
           <div class="relative mx-auto mt-4 h-56 w-56">
-            <svg viewBox="0 0 120 120" class="h-full w-full -rotate-90">
-              <circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-width="14" class="text-slate-200 dark:text-slate-700" />
-              <circle
-                v-for="segment in chartSegments"
-                :key="segment.key"
-                cx="60"
-                cy="60"
-                r="44"
-                fill="none"
-                stroke-width="14"
-                stroke-linecap="round"
-                :stroke="segment.color"
-                :stroke-dasharray="`${segment.length} ${circumference - segment.length}`"
-                :stroke-dashoffset="segment.offset"
-              />
-            </svg>
+            <canvas ref="deliveryChartCanvas" class="h-full w-full"></canvas>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
               <p class="text-4xl font-black text-slate-900 dark:text-white">{{ report.delivery.success_ratio }}%</p>
               <p class="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Success</p>
@@ -103,8 +88,9 @@
 </template>
 
 <script setup>
-import { computed, h, reactive, ref } from 'vue'
+import { computed, h, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import axios from 'axios'
+import Chart from 'chart.js/auto'
 import { useToast } from 'vue-toastification'
 
 const StatusCard = {
@@ -155,6 +141,8 @@ const LegendPill = {
 
 const toast = useToast()
 const loading = ref(false)
+const deliveryChartCanvas = ref(null)
+let deliveryChart = null
 
 const filters = reactive({
   search: '',
@@ -188,33 +176,10 @@ const rightStatuses = [
   { value: 'rejected', label: 'Rejected', tone: 'rose', icon: 'fa-circle-xmark' },
 ]
 
-const circumference = 2 * Math.PI * 44
 const deliveryTotal = computed(() => {
   return Number(report.delivery.completed || 0)
     + Number(report.delivery.unsuccessful || 0)
     + Number(report.delivery.in_transit || 0)
-})
-
-const chartSegments = computed(() => {
-  const total = deliveryTotal.value
-  if (total <= 0) return []
-
-  let consumed = 0
-  return [
-    { key: 'completed', value: report.delivery.completed, color: '#10b981' },
-    { key: 'in_transit', value: report.delivery.in_transit, color: '#3b82f6' },
-    { key: 'unsuccessful', value: report.delivery.unsuccessful, color: '#f43f5e' },
-  ].filter((segment) => Number(segment.value || 0) > 0)
-    .map((segment) => {
-      const length = (Number(segment.value || 0) / total) * circumference
-      const item = {
-        ...segment,
-        length,
-        offset: -consumed,
-      }
-      consumed += length
-      return item
-    })
 })
 
 const deliveryLabel = computed(() => {
@@ -222,8 +187,64 @@ const deliveryLabel = computed(() => {
   return `${formatNumber(report.delivery.completed)} completed from ${formatNumber(deliveryTotal.value)} delivery-stage orders`
 })
 
+const chartValues = computed(() => [
+  Number(report.delivery.completed || 0),
+  Number(report.delivery.in_transit || 0),
+  Number(report.delivery.unsuccessful || 0),
+])
+
 const statusCount = (status) => Number(report.status_counts?.[status] || 0)
 const formatNumber = (value) => Number(value || 0).toLocaleString()
+
+const renderDeliveryChart = async () => {
+  await nextTick()
+  if (!deliveryChartCanvas.value) return
+
+  const data = chartValues.value.some((value) => value > 0)
+    ? chartValues.value
+    : [1, 0, 0]
+
+  if (!deliveryChart) {
+    deliveryChart = new Chart(deliveryChartCanvas.value, {
+      type: 'doughnut',
+      data: {
+        labels: ['Completed', 'In Transit', 'Failed'],
+        datasets: [{
+          data,
+          backgroundColor: ['#10b981', '#3b82f6', '#f43f5e'],
+          borderColor: '#ffffff',
+          borderWidth: 4,
+          hoverOffset: 8,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '72%',
+        animation: {
+          duration: 550,
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const value = Number(context.raw || 0)
+                return `${context.label}: ${formatNumber(value)}`
+              },
+            },
+          },
+        },
+      },
+    })
+    return
+  }
+
+  deliveryChart.data.datasets[0].data = data
+  deliveryChart.update()
+}
 
 const onFiltersChanged = (payload) => {
   filters.search = payload?.search || ''
@@ -251,10 +272,22 @@ const fetchReport = async () => {
     report.delivery.unsuccessful = Number(data?.delivery?.unsuccessful || 0)
     report.delivery.in_transit = Number(data?.delivery?.in_transit || 0)
     report.delivery.success_ratio = Number(data?.delivery?.success_ratio || 0)
+    renderDeliveryChart()
   } catch (error) {
     toast.error(error?.response?.data?.message || 'Failed to load order count report.')
   } finally {
     loading.value = false
   }
 }
+
+watch(chartValues, renderDeliveryChart)
+
+onMounted(renderDeliveryChart)
+
+onBeforeUnmount(() => {
+  if (deliveryChart) {
+    deliveryChart.destroy()
+    deliveryChart = null
+  }
+})
 </script>

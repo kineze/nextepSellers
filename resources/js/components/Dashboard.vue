@@ -1,5 +1,5 @@
 <template>
-  <section class="mx-3 mt-3 mb-8 space-y-5">
+  <section class=" mt-3 mb-8 space-y-5">
     <div class="relative overflow-hidden rounded-3xl border border-pink-200/70 bg-gradient-to-br from-rose-100 via-pink-50 to-sky-100 p-6 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
       <div class="pointer-events-none absolute -top-10 -right-10 h-40 w-40 rounded-full bg-pink-300/30 blur-3xl"></div>
       <div class="pointer-events-none absolute -bottom-12 -left-8 h-36 w-36 rounded-full bg-sky-300/30 blur-3xl"></div>

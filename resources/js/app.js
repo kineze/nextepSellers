@@ -48,6 +48,7 @@ import AdminRejectedOrders from './components/AdminRejectedOrders.vue';
 import AdminDispatchNotes from './components/AdminDispatchNotes.vue';
 import AdminDispatchNoteShow from './components/AdminDispatchNoteShow.vue';
 import AdminOrderShow from './components/AdminOrderShow.vue';
+import AdminOrderHeaderSearch from './components/AdminOrderHeaderSearch.vue';
 import AdminGlobalFilterBar from './components/AdminGlobalFilterBar.vue';
 import AdminFinancePendingPayments from './components/AdminFinancePendingPayments.vue';
 import AdminFinanceAvailablePayments from './components/AdminFinanceAvailablePayments.vue';
@@ -115,6 +116,7 @@ app.use(Toast, {
 .component('admin-dispatch-notes', AdminDispatchNotes)
 .component('admin-dispatch-note-show', AdminDispatchNoteShow)
 .component('admin-order-show', AdminOrderShow)
+.component('admin-order-header-search', AdminOrderHeaderSearch)
 .component('admin-global-filter-bar', AdminGlobalFilterBar)
 .component('admin-finance-pending-payments', AdminFinancePendingPayments)
 .component('admin-finance-available-payments', AdminFinanceAvailablePayments)

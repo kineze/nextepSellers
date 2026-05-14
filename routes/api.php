@@ -25,6 +25,7 @@ use App\Http\Controllers\SellerAffiliateController;
 use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\AdminFinanceController;
 use App\Http\Controllers\AdminOrderTrackingController;
+use App\Http\Controllers\AdminOrderSearchController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
 
@@ -37,6 +38,8 @@ Route::middleware(['auth:sanctum', 'permission:Manage Webhooks and API'])->group
 });
 
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
+
+    Route::get('/admin/orders/search', AdminOrderSearchController::class);
 
     Route::get('/roles', [RolePermissionController::class, 'index']);
     Route::post('/roles', [RolePermissionController::class, 'store']);

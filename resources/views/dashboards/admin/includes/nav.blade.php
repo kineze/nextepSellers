@@ -1,7 +1,7 @@
 <nav navbar-main class=" flex bg-green dark:bg-transparent flex-wrap items-center justify-between px-0   duration-250 ease-soft-in border-none backdrop-blur-xl   lg:flex-nowrap lg:justify-start sticky top-0 z-[990] " navbar-scroll="true">
   <div class="flex items-center justify-between w-full px-4 py-3  flex-wrap-inherit">
 
-    <div class="flex pr-4 w-6/12 items-center">
+    <div class="flex min-w-0 flex-1 items-center gap-3 pr-4">
       <button id="toggleSidebar"
               class="flex items-center justify-center h-9 w-9 rounded
                     bg-white dark:bg-slate-800 shadow dark:border-slate-700
@@ -9,6 +9,7 @@
               aria-label="Toggle sidebar">
           <i class="fa-solid fa-bars-staggered"></i>
       </button>
+      <admin-order-header-search></admin-order-header-search>
     </div>
 
     <div class="flex items-center justify-end mt-2 grow sm:mt-0 sm:mr-6 md:mr-0 lg:flex lg:basis-auto" id="navbar">  

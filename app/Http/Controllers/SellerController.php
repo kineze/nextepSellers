@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Level;
+use App\Models\Invoice;
+use App\Models\Order;
 use App\Models\Seller;
 use App\Models\User;
 use RuntimeException;
@@ -80,6 +82,153 @@ class SellerController extends Controller
         $seller->load(['businessInformation', 'level']);
 
         return response()->json($seller);
+    }
+
+    public function profileOrders(Request $request, Seller $seller)
+    {
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:all,draft,approved,confirmed,packed,shipped,completed,cancelled,rejected'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $status = (string) ($validated['status'] ?? 'all');
+        $search = trim((string) ($validated['search'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $query = Order::query()
+            ->where('seller_id', (int) $seller->id)
+            ->withCount('items')
+            ->latest('order_datetime')
+            ->latest('id');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('order_datetime', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('order_datetime', '<=', $validated['date_to']);
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhere('customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%')
+                    ->orWhere('additional_phone', 'like', '%' . $search . '%')
+                    ->orWhere('waybill_no', 'like', '%' . $search . '%')
+                    ->orWhere('delivery_status', 'like', '%' . $search . '%');
+            });
+        }
+
+        $orders = $query->paginate($perPage);
+        $summaryQuery = Order::query()->where('seller_id', (int) $seller->id);
+
+        return response()->json([
+            'orders' => collect($orders->items())->map(function (Order $order) {
+                return [
+                    'id' => (int) $order->id,
+                    'order_datetime' => $order->order_datetime,
+                    'customer_name' => $order->customer_name,
+                    'phone' => $order->phone ?: $order->additional_phone,
+                    'waybill_no' => $order->waybill_no,
+                    'status' => $order->status,
+                    'delivery_status' => $order->delivery_status,
+                    'payment_status' => $order->payment_status,
+                    'total_collectable_amount' => (float) ($order->total_collectable_amount ?? 0),
+                    'commission_amount' => (float) ($order->commission_amount ?? 0),
+                    'items_count' => (int) ($order->items_count ?? 0),
+                    'invoice_id' => $order->invoice_id ? (int) $order->invoice_id : null,
+                ];
+            })->values(),
+            'summary' => [
+                'total_orders' => (int) (clone $summaryQuery)->count(),
+                'total_collectable_amount' => round((float) (clone $summaryQuery)->sum('total_collectable_amount'), 2),
+                'total_commission_amount' => round((float) (clone $summaryQuery)->sum('commission_amount'), 2),
+                'status_counts' => (clone $summaryQuery)
+                    ->selectRaw('status, COUNT(*) as total')
+                    ->groupBy('status')
+                    ->pluck('total', 'status'),
+            ],
+            'meta' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    public function profileInvoices(Request $request, Seller $seller)
+    {
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:all,draft,paid,cancelled'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $status = (string) ($validated['status'] ?? 'all');
+        $search = trim((string) ($validated['search'] ?? ''));
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $query = Invoice::query()
+            ->where('seller_id', (int) $seller->id)
+            ->withCount('orders')
+            ->latest('invoice_date')
+            ->latest('id');
+
+        if ($status !== 'all') {
+            $query->where('status', $status);
+        }
+
+        if (!empty($validated['date_from'])) {
+            $query->whereDate('invoice_date', '>=', $validated['date_from']);
+        }
+        if (!empty($validated['date_to'])) {
+            $query->whereDate('invoice_date', '<=', $validated['date_to']);
+        }
+
+        if ($search !== '') {
+            $query->where('id', $search);
+        }
+
+        $invoices = $query->paginate($perPage);
+        $summaryQuery = Invoice::query()->where('seller_id', (int) $seller->id);
+
+        return response()->json([
+            'invoices' => collect($invoices->items())->map(function (Invoice $invoice) {
+                return [
+                    'id' => (int) $invoice->id,
+                    'invoice_date' => $invoice->invoice_date,
+                    'invoice_time' => $invoice->invoice_time,
+                    'total_commission_value' => (float) ($invoice->total_commission_value ?? 0),
+                    'status' => (string) ($invoice->status ?? 'draft'),
+                    'orders_count' => (int) ($invoice->orders_count ?? 0),
+                    'created_at' => $invoice->created_at,
+                ];
+            })->values(),
+            'summary' => [
+                'invoice_count' => (int) (clone $summaryQuery)->count(),
+                'total_commission_value' => round((float) (clone $summaryQuery)->sum('total_commission_value'), 2),
+                'status_counts' => (clone $summaryQuery)
+                    ->selectRaw('status, COUNT(*) as total')
+                    ->groupBy('status')
+                    ->pluck('total', 'status'),
+            ],
+            'meta' => [
+                'current_page' => $invoices->currentPage(),
+                'last_page' => $invoices->lastPage(),
+                'per_page' => $invoices->perPage(),
+                'total' => $invoices->total(),
+            ],
+        ]);
     }
 
     public function uploadImage(Request $request, Seller $seller)

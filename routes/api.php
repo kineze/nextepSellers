@@ -66,6 +66,8 @@ Route::middleware(['auth:sanctum', 'permission:Manage Sellers'])->group(function
     Route::get('/sellers', [SellerController::class, 'index']);
     Route::get('/sellers/approval-options', [SellerController::class, 'approvalOptions']);
     Route::get('/sellers/{seller}', [SellerController::class, 'show']);
+    Route::get('/sellers/{seller}/orders', [SellerController::class, 'profileOrders'])->whereNumber('seller');
+    Route::get('/sellers/{seller}/invoices', [SellerController::class, 'profileInvoices'])->whereNumber('seller');
     Route::post('/sellers/{seller}/image', [SellerController::class, 'uploadImage']);
     Route::post('/sellers/{seller}/block', [SellerController::class, 'block']);
     Route::get('/active-sellers', [SellerController::class, 'activeIndex']);

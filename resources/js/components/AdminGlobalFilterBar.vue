@@ -116,6 +116,7 @@ const props = defineProps({
   contextKey: { type: String, required: true },
   showSellerFilter: { type: Boolean, default: true },
   searchPlaceholder: { type: String, default: 'Search order/customer/seller' },
+  defaultDatePreset: { type: String, default: 'today' },
 })
 
 const emit = defineEmits(['filters-changed'])
@@ -127,7 +128,7 @@ const sellers = ref([])
 
 const state = reactive({
   search: '',
-  date_preset: 'today',
+  date_preset: props.defaultDatePreset,
   date_from: '',
   date_to: '',
   seller_id: '',
@@ -277,7 +278,7 @@ const clearFilters = () => {
   state.search = ''
   state.seller_id = ''
   sellerSearch.value = ''
-  state.date_preset = 'today'
+  state.date_preset = props.defaultDatePreset
   applyPresetDates()
   emitNow()
 }

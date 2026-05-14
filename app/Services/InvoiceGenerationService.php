@@ -118,11 +118,11 @@ class InvoiceGenerationService
             ->get()
             ->keyBy('id');
 
-        $firstInvoiceDates = Invoice::query()
-            ->selectRaw('seller_id, MIN(invoice_date) as first_invoice_date')
+        $latestInvoiceDates = Invoice::query()
+            ->selectRaw('seller_id, MAX(invoice_date) as latest_invoice_date')
             ->whereIn('seller_id', $sellerIds)
             ->groupBy('seller_id')
-            ->pluck('first_invoice_date', 'seller_id');
+            ->pluck('latest_invoice_date', 'seller_id');
 
         $createdCount = 0;
         $totalOrdersAssigned = 0;
@@ -135,24 +135,22 @@ class InvoiceGenerationService
                 continue;
             }
 
-            $anchorDate = null;
-            $firstInvoiceDate = $firstInvoiceDates->get((int) $sellerId);
+            $dueDate = null;
+            $latestInvoiceDate = $latestInvoiceDates->get((int) $sellerId);
 
-            if (!empty($firstInvoiceDate)) {
-                $anchorDate = Carbon::parse((string) $firstInvoiceDate)->startOfDay();
+            if (!empty($latestInvoiceDate)) {
+                $invoiceCycleDays = max(1, (int) config('seller.invoice_cycle_days', 7));
+                $dueDate = Carbon::parse((string) $latestInvoiceDate)
+                    ->addDays($invoiceCycleDays)
+                    ->startOfDay();
             } elseif (!empty($seller->first_success_order_date)) {
                 $firstInvoiceDelayDays = max(0, (int) config('seller.first_invoice_delay_days', 7));
-                $anchorDate = Carbon::parse((string) $seller->first_success_order_date)
+                $dueDate = Carbon::parse((string) $seller->first_success_order_date)
                     ->addDays($firstInvoiceDelayDays)
                     ->startOfDay();
             }
 
-            if (!$anchorDate) {
-                continue;
-            }
-
-            $daysFromAnchor = $anchorDate->diffInDays($today, false);
-            if ($daysFromAnchor < 0 || ($daysFromAnchor % 7) !== 0) {
+            if (!$dueDate || $today->lt($dueDate)) {
                 continue;
             }
 

@@ -6,4 +6,7 @@ return [
 
     // Days after the seller's first successful order before the first auto invoice.
     'first_invoice_delay_days' => (int) env('SELLER_FIRST_INVOICE_DELAY_DAYS', 7),
+
+    // Days between automatic invoices after the seller's first invoice.
+    'invoice_cycle_days' => (int) env('SELLER_INVOICE_CYCLE_DAYS', 7),
 ];

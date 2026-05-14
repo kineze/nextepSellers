@@ -266,13 +266,13 @@ class OrderTrackingSyncService
 
         if ($localStatus === 'completed' && $fresh->status !== 'completed') {
             $fresh->status = 'completed';
-            $fresh->completed_at = now();
+            $fresh->completed_at = now('Asia/Colombo');
             $fresh->cancelled_at = null;
             $completed = true;
             $changed = true;
         } elseif ($localStatus === 'cancelled' && $fresh->status !== 'cancelled') {
             $fresh->status = 'cancelled';
-            $fresh->cancelled_at = now();
+            $fresh->cancelled_at = now('Asia/Colombo');
             $cancelled = true;
             $changed = true;
         }
@@ -386,7 +386,7 @@ class OrderTrackingSyncService
 
             if (!$seller) {
                 $order->points_awarded = 0;
-                $order->points_awarded_at = now();
+                $order->points_awarded_at = now('Asia/Colombo');
                 $order->save();
 
                 return [
@@ -404,7 +404,7 @@ class OrderTrackingSyncService
             }
 
             if (empty($seller->first_success_order_date)) {
-                $seller->first_success_order_date = optional($order->completed_at)->toDateString() ?? now()->toDateString();
+                $seller->first_success_order_date = optional($order->completed_at)->toDateString() ?? now('Asia/Colombo')->toDateString();
             }
 
             $newLevel = Level::query()
@@ -422,7 +422,7 @@ class OrderTrackingSyncService
             $seller->save();
 
             $order->points_awarded = $points;
-            $order->points_awarded_at = now();
+            $order->points_awarded_at = now('Asia/Colombo');
             $order->save();
 
             return [
@@ -453,8 +453,8 @@ class OrderTrackingSyncService
         }
 
         $amount = (float) ($order->total_collectable_amount ?? 0);
-        $availableAt = $order->completed_at ?? now();
-        $paidAt = $paymentStatus === 'paid' ? ($order->updated_at ?? now()) : null;
+        $availableAt = $order->completed_at ?? now('Asia/Colombo');
+        $paidAt = $paymentStatus === 'paid' ? ($order->updated_at ?? now('Asia/Colombo')) : null;
 
         Payment::query()->updateOrCreate(
             ['order_id' => (int) $order->id],
@@ -575,8 +575,8 @@ class OrderTrackingSyncService
         }
 
         $status = ($existing && (string) $existing->status === 'paid') ? 'paid' : 'available';
-        $availableAt = $order->completed_at ?? now();
-        $paidAt = $status === 'paid' ? ($existing?->paid_at ?? ($order->updated_at ?? now())) : null;
+        $availableAt = $order->completed_at ?? now('Asia/Colombo');
+        $paidAt = $status === 'paid' ? ($existing?->paid_at ?? ($order->updated_at ?? now('Asia/Colombo'))) : null;
 
         AffiliateCommission::query()->updateOrCreate(
             ['order_id' => (int) $order->id],

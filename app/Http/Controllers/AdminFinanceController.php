@@ -587,7 +587,7 @@ class AdminFinanceController extends Controller
 
         DB::transaction(function () use ($sellerIds, $validated, &$createdCount, &$totalOrdersAssigned, &$invoiceIds) {
             foreach ($sellerIds as $sellerId) {
-                $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $sellerId, $validated, now());
+                $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $sellerId, $validated, now('Asia/Colombo'));
                 if ($result['invoice_id']) {
                     $createdCount++;
                     $totalOrdersAssigned += (int) $result['orders_assigned'];
@@ -620,7 +620,7 @@ class AdminFinanceController extends Controller
             'date_to' => ['nullable', 'date'],
         ]);
 
-        $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $seller->id, $validated, now());
+        $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $seller->id, $validated, now('Asia/Colombo'));
 
         if (!(int) (($result['orders_assigned'] ?? 0) + ($result['affiliate_commissions_assigned'] ?? 0))) {
             return response()->json([

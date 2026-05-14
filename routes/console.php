@@ -40,7 +40,7 @@ Artisan::command('tracking:fetch', function (OrderTrackingSyncService $service) 
 })->purpose('Dispatch tracking sync jobs for shipped orders and seller progression updates.');
 
 Schedule::command('tracking:fetch')
-    ->dailyAt('09:00')
+    ->dailyAt('21:00')
     ->timezone('Asia/Colombo')
     ->withoutOverlapping()
     ->runInBackground();

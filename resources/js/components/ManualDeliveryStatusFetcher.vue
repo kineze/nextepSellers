@@ -5,7 +5,7 @@
         <p class="text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">System</p>
         <h1 class="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Delivery Status Fetcher</h1>
         <p class="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-          Manually fetch Royal Express tracking for shipped orders and let the order tracking sync service update delivered orders to completed.
+          Queue Royal Express tracking jobs for shipped orders and let the worker update delivered orders in the background.
         </p>
       </div>
 
@@ -31,7 +31,7 @@
           @click="fetchTracking"
         >
           <i class="fas fa-rotate" :class="{ 'fa-spin': fetching }" aria-hidden="true"></i>
-          Fetch Status
+          Queue Fetch
         </button>
       </div>
     </div>
@@ -66,10 +66,10 @@
         </thead>
         <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
           <tr v-if="fetching">
-            <td colspan="8" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Fetching tracking statuses...</td>
+            <td colspan="8" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Queueing tracking jobs...</td>
           </tr>
           <tr v-else-if="!results.length">
-            <td colspan="8" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Run a manual fetch to see order tracking results.</td>
+            <td colspan="8" class="px-3 py-8 text-center text-slate-500 dark:text-slate-400">Queue a manual fetch. Jobs will update orders in the background.</td>
           </tr>
           <tr v-for="row in results" :key="row.order_id" class="bg-white dark:bg-slate-900/40">
             <td class="px-3 py-3 align-top font-semibold text-slate-900 dark:text-white">
@@ -117,15 +117,16 @@ const summary = reactive({
   completed_count: 0,
   cancelled_count: 0,
   error_count: 0,
+  queued_count: 0,
   remaining_shipped_count: 0,
 })
 
 const cards = computed(() => [
   { label: 'Ready Shipped', value: summary.shipped_count },
-  { label: 'Processed', value: summary.processed },
+  { label: 'Queued', value: summary.queued_count },
+  { label: 'Processed Now', value: summary.processed },
   { label: 'Updated', value: summary.updated_count },
   { label: 'Completed', value: summary.completed_count },
-  { label: 'Errors', value: summary.error_count },
 ])
 
 const loadSummary = async () => {
@@ -134,6 +135,7 @@ const loadSummary = async () => {
     summary.ready = Boolean(data?.ready)
     summary.message = data?.message || ''
     summary.shipped_count = Number(data?.shipped_count || 0)
+    summary.queued_count = Number(data?.queued_count || 0)
     summary.remaining_shipped_count = summary.shipped_count
   } catch (error) {
     toast.error(error?.response?.data?.message || 'Failed to load tracking summary.')
@@ -149,7 +151,8 @@ const fetchTracking = async () => {
 
     results.value = Array.isArray(data?.results) ? data.results : []
     summary.ready = Boolean(data?.ready)
-    summary.message = ''
+    summary.message = data?.message || ''
+    summary.queued_count = Number(data?.queued_count || 0)
     summary.processed = Number(data?.processed || 0)
     summary.updated_count = Number(data?.updated_count || 0)
     summary.completed_count = Number(data?.completed_count || 0)
@@ -158,7 +161,8 @@ const fetchTracking = async () => {
     summary.remaining_shipped_count = Number(data?.remaining_shipped_count || 0)
     summary.shipped_count = summary.remaining_shipped_count
 
-    toast.success(`Fetched ${summary.processed} shipped order status${summary.processed === 1 ? '' : 'es'}.`)
+    toast.success(`Queued ${summary.queued_count} tracking job${summary.queued_count === 1 ? '' : 's'}.`)
+    await loadSummary()
   } catch (error) {
     summary.ready = false
     summary.message = error?.response?.data?.message || 'Failed to fetch tracking statuses.'

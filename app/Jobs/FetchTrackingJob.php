@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Services\OrderTrackingSyncService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
@@ -11,12 +12,13 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-class FetchTrackingJob implements ShouldQueue
+class FetchTrackingJob implements ShouldQueue, ShouldBeUnique
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
     public int $backoff = 60;
+    public int $uniqueFor = 1800;
 
     public function __construct(public int $orderId)
     {
@@ -32,6 +34,11 @@ class FetchTrackingJob implements ShouldQueue
                 'error' => $result['error'],
             ]);
         }
+    }
+
+    public function uniqueId(): string
+    {
+        return (string) $this->orderId;
     }
 
     public function failed(Throwable $e): void

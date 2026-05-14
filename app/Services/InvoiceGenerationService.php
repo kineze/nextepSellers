@@ -141,7 +141,10 @@ class InvoiceGenerationService
             if (!empty($firstInvoiceDate)) {
                 $anchorDate = Carbon::parse((string) $firstInvoiceDate)->startOfDay();
             } elseif (!empty($seller->first_success_order_date)) {
-                $anchorDate = Carbon::parse((string) $seller->first_success_order_date)->addDays(7)->startOfDay();
+                $firstInvoiceDelayDays = max(0, (int) config('seller.first_invoice_delay_days', 7));
+                $anchorDate = Carbon::parse((string) $seller->first_success_order_date)
+                    ->addDays($firstInvoiceDelayDays)
+                    ->startOfDay();
             }
 
             if (!$anchorDate) {

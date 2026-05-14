@@ -148,12 +148,22 @@
               {{ formatDate(order.order_datetime) }}
             </td>
             <td class="px-3 py-3 align-top text-right">
-              <a
-                :href="`/admin/orders/${order.id}`"
-                class="rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                View
-              </a>
+              <div class="flex flex-wrap justify-end gap-2">
+                <a
+                  :href="`/admin/orders/${order.id}`"
+                  class="rounded-lg border border-slate-300 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                >
+                  View
+                </a>
+                <button
+                  type="button"
+                  class="rounded-lg border border-rose-300 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/40"
+                  :disabled="cancellingOrderId === order.id"
+                  @click="cancelApprovedOrder(order)"
+                >
+                  {{ cancellingOrderId === order.id ? 'Cancelling...' : 'Cancel' }}
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -245,6 +255,7 @@ const toast = useToast()
 
 const loading = ref(false)
 const creatingDispatch = ref(false)
+const cancellingOrderId = ref(null)
 const orders = ref([])
 const selectedIds = ref([])
 const showDispatchModal = ref(false)
@@ -437,6 +448,26 @@ const createDispatchNote = async () => {
     toast.error(error?.response?.data?.message || 'Failed to create dispatch note.')
   } finally {
     creatingDispatch.value = false
+  }
+}
+
+const cancelApprovedOrder = async (order) => {
+  const id = Number(order?.id || 0)
+  if (!id || cancellingOrderId.value) return
+
+  const confirmed = window.confirm(`Cancel approved order #${id}? This will move it to Cancelled Orders.`)
+  if (!confirmed) return
+
+  cancellingOrderId.value = id
+  try {
+    const { data } = await axios.post(`/api/admin/orders/${id}/cancel-approved`)
+    toast.success(data?.message || 'Order cancelled successfully.')
+    selectedIds.value = selectedIds.value.filter((selectedId) => Number(selectedId) !== id)
+    await fetchOrders()
+  } catch (error) {
+    toast.error(error?.response?.data?.message || 'Failed to cancel order.')
+  } finally {
+    cancellingOrderId.value = null
   }
 }
 

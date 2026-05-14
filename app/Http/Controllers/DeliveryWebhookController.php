@@ -76,7 +76,8 @@ class DeliveryWebhookController extends Controller
 
         $result = $trackingSync->syncOrderStatusByWaybill(
             $validated['waybill_no'],
-            $validated['status']
+            $validated['status'],
+            $validated['status_key']
         );
 
         if (!($result['matched'] ?? false)) {

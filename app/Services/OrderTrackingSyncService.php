@@ -202,10 +202,11 @@ class OrderTrackingSyncService
         return $this->applyTrackingStatus($order, trim($latestStatus));
     }
 
-    public function syncOrderStatusByWaybill(string $waybillNo, string $latestStatus): array
+    public function syncOrderStatusByWaybill(string $waybillNo, string $latestStatus, ?string $statusKey = null): array
     {
         $waybillNo = trim($waybillNo);
         $latestStatus = trim($latestStatus);
+        $statusKey = $statusKey !== null ? trim($statusKey) : null;
 
         $order = Order::query()
             ->where('waybill_no', $waybillNo)
@@ -217,7 +218,7 @@ class OrderTrackingSyncService
                 'order_id' => null,
                 'waybill_no' => $waybillNo,
                 'courier_status' => $latestStatus,
-                'local_status' => $this->mapLocalStatus($latestStatus),
+                'local_status' => $this->mapLocalStatus($statusKey) ?? $this->mapLocalStatus($latestStatus),
                 'order_status' => null,
                 'updated' => false,
                 'completed' => false,
@@ -230,13 +231,13 @@ class OrderTrackingSyncService
 
         return [
             'matched' => true,
-            ...$this->applyTrackingStatus($order, $latestStatus),
+            ...$this->applyTrackingStatus($order, $latestStatus, $statusKey),
         ];
     }
 
-    private function applyTrackingStatus(Order $order, string $latestStatus): array
+    private function applyTrackingStatus(Order $order, string $latestStatus, ?string $statusKey = null): array
     {
-        $localStatus = $this->mapLocalStatus($latestStatus);
+        $localStatus = $this->mapLocalStatus($statusKey) ?? $this->mapLocalStatus($latestStatus);
 
         $fresh = Order::query()->find($order->id);
         if (!$fresh) {
@@ -315,9 +316,15 @@ class OrderTrackingSyncService
         ];
     }
 
-    private function mapLocalStatus(string $courierStatus): ?string
+    private function mapLocalStatus(?string $courierStatus): ?string
     {
-        $status = Str::upper(trim($courierStatus));
+        $status = Str::upper(trim((string) $courierStatus));
+        if ($status === '') {
+            return null;
+        }
+
+        $status = preg_replace('/[^A-Z0-9]+/', ' ', $status) ?: $status;
+        $status = trim(preg_replace('/\s+/', ' ', $status) ?: $status);
 
         $completedStatuses = [
             'DELIVERED',
@@ -330,11 +337,15 @@ class OrderTrackingSyncService
         }
 
         $cancelledStatuses = [
+            'CANCEL',
+            'CANCELED',
             'CANCELLED',
+            'ORDER CANCELLED',
             'FAILED TO DELIVER',
             'RETURN TO CLIENT',
             'RETURN TO MERCHANT',
             'RETURNED TO MERCHANT',
+            'RETURNED',
             'RECEIVED FAILED ORDER',
             'UNDELIVERED',
         ];

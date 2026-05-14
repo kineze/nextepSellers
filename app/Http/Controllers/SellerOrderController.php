@@ -976,6 +976,34 @@ class SellerOrderController extends Controller
         ]);
     }
 
+    public function adminCancelApproved(Request $request, Order $order)
+    {
+        $order = DB::transaction(function () use ($order) {
+            $fresh = Order::query()
+                ->lockForUpdate()
+                ->findOrFail($order->id);
+
+            if ($fresh->status !== 'approved' || $fresh->is_draft) {
+                abort(422, 'Only approved orders can be cancelled from this list.');
+            }
+
+            $fresh->update([
+                'status' => 'cancelled',
+                'cancelled_at' => now(),
+                'delivery_status' => $fresh->delivery_status ?: 'Manually Cancelled',
+                'payment_status' => 'pending',
+            ]);
+
+            return $fresh;
+        });
+
+        return response()->json([
+            'message' => 'Order cancelled successfully.',
+            'order_id' => $order->id,
+            'status' => $order->status,
+        ]);
+    }
+
     public function adminBulkApprove(Request $request)
     {
         $validated = $request->validate([

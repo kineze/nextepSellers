@@ -91,8 +91,7 @@ Artisan::command('finance:auto-generate-invoices', function (InvoiceGenerationSe
 })->purpose('Auto-generate seller invoices every 7 days and include affiliate commissions.');
 
 Schedule::command('finance:auto-generate-invoices')
-    ->everyThirtyMinutes()
+    ->dailyAt('04:30')
     ->timezone('Asia/Colombo')
-    ->between('04:30', '06:30')
     ->withoutOverlapping()
     ->runInBackground();

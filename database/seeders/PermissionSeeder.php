@@ -25,6 +25,7 @@ class PermissionSeeder extends Seeder
             'Manage Finance',
             'Manage Learning',
             'Manage Webhooks and API',
+            'Access Reports',
             'View Reports',
         ];
 

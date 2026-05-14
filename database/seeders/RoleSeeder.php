@@ -25,6 +25,7 @@ class RoleSeeder extends Seeder
             'Manage Finance',
             'Manage Learning',
             'Manage Webhooks and API',
+            'Access Reports',
         ]);
     }
 }

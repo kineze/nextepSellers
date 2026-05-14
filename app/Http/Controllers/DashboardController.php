@@ -383,6 +383,11 @@ class DashboardController extends Controller
         return view('dashboards.admin.finance.paymentManager');
     }
 
+    public function getAdminOrderCountReport()
+    {
+        return view('dashboards.admin.reports.orderCount');
+    }
+
     public function getAdminOrderShow(Order $order)
     {
         return view('dashboards.admin.orders.showOrder', [

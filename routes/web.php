@@ -57,6 +57,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/finance/affiliate-payments', 'getAdminFinanceAffiliatePayments')->middleware('permission:Manage Finance')->name('adminFinanceAffiliatePayments');
         Route::get('/finance/invoices', 'getAdminFinanceInvoices')->middleware('permission:Manage Finance')->name('adminFinanceInvoices');
         Route::get('/finance/payment-manager', 'getAdminFinancePaymentManager')->middleware('permission:Manage Finance')->name('adminFinancePaymentManager');
+        Route::get('/reports/order-count', 'getAdminOrderCountReport')->middleware('permission:Access Reports')->name('adminReportsOrderCount');
         Route::get('/orders/{order}', 'getAdminOrderShow')->name('adminOrderShow');
     });
  

@@ -26,6 +26,7 @@ use App\Http\Controllers\SellerDashboardController;
 use App\Http\Controllers\AdminFinanceController;
 use App\Http\Controllers\AdminOrderTrackingController;
 use App\Http\Controllers\AdminOrderSearchController;
+use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
 
@@ -120,6 +121,10 @@ Route::middleware(['auth:sanctum', 'permission:Manage Learning'])->group(functio
     Route::post('/learning/content-blocks/{contentBlock}/videos', [LearningContentController::class, 'storeVideo'])->whereNumber('contentBlock');
     Route::put('/learning/content-blocks/{contentBlock}/videos/{video}', [LearningContentController::class, 'updateVideo'])->whereNumber('contentBlock')->whereNumber('video');
     Route::delete('/learning/content-blocks/{contentBlock}/videos/{video}', [LearningContentController::class, 'destroyVideo'])->whereNumber('contentBlock')->whereNumber('video');
+});
+
+Route::middleware(['auth:sanctum', 'permission:Access Reports'])->group(function () {
+    Route::get('/admin/reports/order-count', [AdminReportController::class, 'orderCount']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {

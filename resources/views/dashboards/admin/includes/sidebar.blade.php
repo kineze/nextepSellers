@@ -332,6 +332,33 @@
         </div>
         @endcan
 
+        @can('Access Reports')
+        <!-- Reports -->
+        <div class="relative sidebar-dropdown"
+            data-subtitle="Reports"
+            data-links='[
+              {"label":"Order Count Report","href":"{{ route('adminReportsOrderCount') }}"}
+            ]'>
+
+          <button class="dropdown-toggle dark:border-violet-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
+            <div class="sidebar-icon-box">
+              <i class="fas fa-chart-pie" aria-hidden="true"></i>
+              <span class="sr-only">Reports</span>
+            </div>
+            <span class="sidebar-label flex-1 text-sm font-medium text-violet-700 dark:text-white text-left">
+              Reports
+            </span>
+            <i class="fas fa-chevron-down text-xs text-violet-500 sidebar-label"></i>
+          </button>
+
+          <div class="expanded-only hidden py-1 ml-4 space-y-1">
+            <a href="{{ route('adminReportsOrderCount') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
+              Order Count Report
+            </a>
+          </div>
+        </div>
+        @endcan
+
         @can('Manage Learning')
         <!-- Learning -->
         <div class="relative sidebar-dropdown"

@@ -261,6 +261,8 @@ Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/profile/bank-details', [SellerProfileController::class, 'bankDetails']);
     Route::put('/seller/profile/bank-details', [SellerProfileController::class, 'updateBankDetails']);
     Route::get('/seller/payments', [SellerPaymentController::class, 'index']);
+    Route::get('/seller/invoices', [SellerPaymentController::class, 'invoices']);
+    Route::get('/seller/invoices/{invoice}/pdf-data', [SellerPaymentController::class, 'invoicePdfData'])->whereNumber('invoice');
     Route::get('/seller/affiliate', [SellerAffiliateController::class, 'show']);
     Route::post('/seller/affiliate/generate', [SellerAffiliateController::class, 'generate']);
     Route::get('/seller/orders/{order}/delivery-timeline', [SellerOrderController::class, 'sellerDeliveryTimeline'])->whereNumber('order');

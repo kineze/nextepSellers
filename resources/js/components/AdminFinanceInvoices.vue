@@ -461,11 +461,35 @@ const loadImageAsDataUrl = async (url) => {
   }
 }
 
-const imageTypeFromDataUrl = (dataUrl) => {
-  const value = String(dataUrl || '').toLowerCase()
-  if (value.startsWith('data:image/png')) return 'PNG'
-  if (value.startsWith('data:image/webp')) return 'WEBP'
-  return 'JPEG'
+const loadLogoForPdf = async (url) => {
+  const dataUrl = await loadImageAsDataUrl(url)
+  if (!dataUrl) return null
+
+  return await new Promise((resolve) => {
+    const image = new Image()
+    image.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = image.naturalWidth || image.width
+      canvas.height = image.naturalHeight || image.height
+      const context = canvas.getContext('2d')
+
+      if (!context || !canvas.width || !canvas.height) {
+        resolve(null)
+        return
+      }
+
+      context.clearRect(0, 0, canvas.width, canvas.height)
+      context.drawImage(image, 0, 0)
+
+      resolve({
+        dataUrl: canvas.toDataURL('image/png'),
+        width: canvas.width,
+        height: canvas.height,
+      })
+    }
+    image.onerror = () => resolve(null)
+    image.src = dataUrl
+  })
 }
 
 const generateInvoicePdfBlob = async (data) => {
@@ -478,7 +502,7 @@ const generateInvoicePdfBlob = async (data) => {
   const affiliateCommissions = Array.isArray(data?.affiliate_commissions) ? data.affiliate_commissions : []
   const sellerDisplayName = sellerName(seller)
   const generatedAt = new Date().toLocaleString()
-  const logoDataUrl = await loadImageAsDataUrl(system.logo_url)
+  const logoImage = await loadLogoForPdf(system.logo_url)
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -581,11 +605,22 @@ const generateInvoicePdfBlob = async (data) => {
 
   let companyTextX = margin
   let companyTextWidth = 300
-  if (logoDataUrl) {
+  if (logoImage) {
     try {
-      doc.addImage(logoDataUrl, imageTypeFromDataUrl(logoDataUrl), margin, y - 4, 58, 36, undefined, 'FAST')
-      companyTextX = margin + 72
-      companyTextWidth = 240
+      const maxLogoHeight = 64
+      const maxLogoWidth = 112
+      const ratio = logoImage.width / logoImage.height
+      let logoHeight = maxLogoHeight
+      let logoWidth = logoHeight * ratio
+
+      if (logoWidth > maxLogoWidth) {
+        logoWidth = maxLogoWidth
+        logoHeight = logoWidth / ratio
+      }
+
+      doc.addImage(logoImage.dataUrl, 'PNG', margin, y - 8, logoWidth, logoHeight, undefined, 'FAST')
+      companyTextX = margin + logoWidth + 14
+      companyTextWidth = Math.max(190, pageWidth - companyTextX - margin - 210)
     } catch {
       companyTextX = margin
       companyTextWidth = 300

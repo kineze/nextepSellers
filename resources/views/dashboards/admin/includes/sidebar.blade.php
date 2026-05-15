@@ -268,6 +268,7 @@
               {"label":"Royal Express","href":"{{ route('royalExpress') }}"},
               {"label":"Delivery Status Fetcher","href":"{{ route('manualDeliveryStatusFetcher') }}"},
               {"label":"Delivery Fees","href":"{{ route('deliveryFees') }}"},
+              {"label":"System Data","href":"{{ route('systemData') }}"},
               {"label":"Label Settings","href":"{{ route('labelSettings') }}"}
             ]'>
 
@@ -297,6 +298,9 @@
             </a>
             <a href="{{ route('deliveryFees') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Delivery Fees
+            </a>
+            <a href="{{ route('systemData') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
+              System Data
             </a>
             <a href="{{ route('labelSettings') }}" class="block px-4 py-2 text-xs font-semibold text-amber-600 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-slate-700 rounded-md">
               Label Settings

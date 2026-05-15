@@ -29,6 +29,7 @@ use App\Http\Controllers\AdminOrderSearchController;
 use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
+use App\Http\Controllers\SystemDataController;
 
 Route::post('/delivery/webhook', [DeliveryWebhookController::class, 'store'])
     ->name('delivery.webhook.store');
@@ -110,6 +111,12 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::put('/label-settings/{labelSetting}', [LabelSettingController::class, 'update']);
     Route::post('/label-settings/{labelSetting}/toggle-active', [LabelSettingController::class, 'toggleActive']);
     Route::delete('/label-settings/{labelSetting}', [LabelSettingController::class, 'destroy']);
+
+    Route::get('/system-data', [SystemDataController::class, 'index']);
+    Route::post('/system-data', [SystemDataController::class, 'store']);
+    Route::put('/system-data/{systemData}', [SystemDataController::class, 'update']);
+    Route::post('/system-data/{systemData}', [SystemDataController::class, 'update']);
+    Route::delete('/system-data/{systemData}', [SystemDataController::class, 'destroy']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Learning'])->group(function () {
@@ -229,6 +236,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/finance/affiliate-payments', [AdminFinanceController::class, 'affiliatePayments'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/invoices', [AdminFinanceController::class, 'invoices'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/invoices/export-bank-document', [AdminFinanceController::class, 'exportInvoicesBankDocument'])->middleware('permission:Manage Finance');
+    Route::get('/admin/finance/invoices/{invoice}/pdf-data', [AdminFinanceController::class, 'invoicePdfData'])->whereNumber('invoice')->middleware('permission:Manage Finance');
     Route::post('/admin/finance/invoices/{invoice}/mark-paid', [AdminFinanceController::class, 'markInvoicePaid'])->whereNumber('invoice')->middleware('permission:Manage Finance');
     Route::get('/admin/finance/payment-manager/sellers', [AdminFinanceController::class, 'paymentManagerSellers'])->middleware('permission:Manage Finance');
     Route::get('/admin/finance/payment-manager/sellers/{seller}/orders', [AdminFinanceController::class, 'paymentManagerSellerOrders'])->whereNumber('seller')->middleware('permission:Manage Finance');

@@ -15,6 +15,7 @@ use App\Http\Controllers\GenaralController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerRegistrationController;
 use App\Http\Controllers\LabelSettingController;
+use App\Http\Controllers\SystemDataController;
 
 Route::controller(GenaralController::class)->group(function () {
     Route::get('/', 'index')->name('index');
@@ -106,6 +107,10 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
 
     Route::controller(LabelSettingController::class)->group(function () {
         Route::get('/label-settings', 'indexView')->name('labelSettings');
+    });
+
+    Route::controller(SystemDataController::class)->group(function () {
+        Route::get('/system-data', 'indexView')->name('systemData');
     });
 
     Route::controller(DashboardController::class)->group(function () {

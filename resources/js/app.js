@@ -64,6 +64,7 @@ import ManualDeliveryStatusFetcher from './components/ManualDeliveryStatusFetche
 import DeliveryWebhookManager from './components/DeliveryWebhookManager.vue';
 import BankManager from './components/BankManager.vue';
 import LearningContentManager from './components/LearningContentManager.vue';
+import SystemDataManager from './components/SystemDataManager.vue';
 
 const app = createApp({})
 
@@ -133,5 +134,6 @@ app.use(Toast, {
 .component('delivery-webhook-manager', DeliveryWebhookManager)
 .component('bank-manager', BankManager)
 .component('learning-content-manager', LearningContentManager)
+.component('system-data-manager', SystemDataManager)
 
 .mount('#app')

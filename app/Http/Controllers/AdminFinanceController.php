@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Seller;
+use App\Models\SystemData;
 use App\Services\InvoiceGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -336,6 +337,123 @@ class AdminFinanceController extends Controller
             fclose($output);
         }, $fileName, [
             'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function invoicePdfData(Invoice $invoice)
+    {
+        $invoice->load([
+            'seller:id,first_name,last_name,email,phone',
+            'seller.bankDetail:id,seller_id,bank_id,bank,account_no,swift_code,name,branch',
+            'seller.bankDetail.bank:id,name',
+            'orders' => fn ($query) => $query
+                ->select([
+                    'id',
+                    'invoice_id',
+                    'order_datetime',
+                    'completed_at',
+                    'customer_name',
+                    'phone',
+                    'waybill_no',
+                    'total_collectable_amount',
+                    'delivery_charge',
+                    'net_total',
+                    'total_discount',
+                    'commission_amount',
+                    'payment_status',
+                ])
+                ->orderBy('completed_at')
+                ->orderBy('id'),
+            'affiliateCommissions' => fn ($query) => $query
+                ->select([
+                    'id',
+                    'invoice_id',
+                    'seller_id',
+                    'order_id',
+                    'amount',
+                    'status',
+                    'available_at',
+                    'paid_at',
+                ])
+                ->with(['seller:id,first_name,last_name,email,phone', 'order:id,waybill_no,customer_name'])
+                ->orderBy('available_at')
+                ->orderBy('id'),
+        ]);
+
+        $systemData = SystemData::query()->latest()->first();
+        $orders = $invoice->orders->map(function (Order $order) {
+            $netSaleAmount = max(0, (float) ($order->net_total ?? 0) - (float) ($order->total_discount ?? 0));
+
+            return [
+                'id' => (int) $order->id,
+                'order_datetime' => $order->order_datetime,
+                'completed_at' => $order->completed_at,
+                'customer_name' => $order->customer_name,
+                'phone' => $order->phone,
+                'waybill_no' => $order->waybill_no,
+                'payment_status' => (string) ($order->payment_status ?? ''),
+                'total_collectable_amount' => (float) ($order->total_collectable_amount ?? 0),
+                'delivery_charge' => (float) ($order->delivery_charge ?? 0),
+                'net_sale_amount' => $netSaleAmount,
+                'commission_amount' => (float) ($order->commission_amount ?? 0),
+            ];
+        })->values();
+
+        $affiliateCommissions = $invoice->affiliateCommissions->map(function (AffiliateCommission $commission) {
+            $sellerName = trim(((string) ($commission->seller?->first_name ?? '')) . ' ' . ((string) ($commission->seller?->last_name ?? '')));
+
+            return [
+                'id' => (int) $commission->id,
+                'order_id' => (int) ($commission->order_id ?? 0),
+                'order_waybill_no' => $commission->order?->waybill_no,
+                'seller_name' => $sellerName !== '' ? $sellerName : ($commission->seller?->email ?? '-'),
+                'amount' => (float) ($commission->amount ?? 0),
+                'status' => (string) ($commission->status ?? ''),
+                'available_at' => $commission->available_at,
+                'paid_at' => $commission->paid_at,
+            ];
+        })->values();
+
+        $orderCommissionValue = round((float) $orders->sum('commission_amount'), 2);
+        $affiliateCommissionValue = round((float) $affiliateCommissions->sum('amount'), 2);
+
+        return response()->json([
+            'system_data' => $systemData ? [
+                'company_name' => $systemData->company_name,
+                'address' => $systemData->address,
+                'country' => $systemData->country,
+                'phone_number' => $systemData->phone_number,
+                'fax' => $systemData->fax,
+                'logo' => $systemData->logo,
+                'logo_url' => $systemData->logo ? \Illuminate\Support\Facades\Storage::disk('public')->url($systemData->logo) : null,
+            ] : null,
+            'invoice' => [
+                'id' => (int) $invoice->id,
+                'invoice_date' => $invoice->invoice_date,
+                'invoice_time' => $invoice->invoice_time,
+                'total_commission_value' => (float) ($invoice->total_commission_value ?? 0),
+                'status' => (string) ($invoice->status ?? 'draft'),
+                'created_at' => $invoice->created_at,
+            ],
+            'seller' => $invoice->seller,
+            'payment_information' => [
+                'bank_name' => $invoice->seller?->bankDetail?->bank,
+                'account_name' => $invoice->seller?->bankDetail?->name,
+                'account_number' => $invoice->seller?->bankDetail?->account_no,
+                'branch' => $invoice->seller?->bankDetail?->branch,
+                'swift_code' => $invoice->seller?->bankDetail?->swift_code,
+            ],
+            'orders' => $orders,
+            'affiliate_commissions' => $affiliateCommissions,
+            'summary' => [
+                'payment_status' => (string) ($invoice->status ?? 'draft'),
+                'orders_count' => $orders->count(),
+                'affiliate_commissions_count' => $affiliateCommissions->count(),
+                'order_commission_value' => $orderCommissionValue,
+                'affiliate_commission_value' => $affiliateCommissionValue,
+                'total_commission_value' => (float) ($invoice->total_commission_value ?? ($orderCommissionValue + $affiliateCommissionValue)),
+            ],
+            'disclaimer' => 'This invoice is system generated from completed payment records. Please verify bank details before processing payment. Any discrepancy must be reported before payment release.',
         ]);
     }
 

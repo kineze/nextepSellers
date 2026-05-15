@@ -1,14 +1,45 @@
 @extends('layouts.site.app')
 
 @section('content')
-<section class="relative left-1/2 right-1/2 -mx-[50vw] w-screen -mt-20 overflow-hidden bg-gradient-to-br from-sky-100 via-cyan-100 to-emerald-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 sm:pt-20">
+@once
+    <style>
+        @keyframes heroFloatA {
+            0%, 100% { transform: translate3d(0, 0, 0) rotate(-3deg); }
+            50% { transform: translate3d(0, -18px, 0) rotate(4deg); }
+        }
+
+        @keyframes heroFloatB {
+            0%, 100% { transform: translate3d(0, 0, 0) rotate(4deg); }
+            50% { transform: translate3d(0, 16px, 0) rotate(-3deg); }
+        }
+
+        @keyframes heroFloatC {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(0, -12px, 0) scale(1.04); }
+        }
+
+        .hero-float-a { animation: heroFloatA 7s ease-in-out infinite; }
+        .hero-float-b { animation: heroFloatB 8.5s ease-in-out infinite; }
+        .hero-float-c { animation: heroFloatC 6.5s ease-in-out infinite; }
+    </style>
+@endonce
+
+<section class="relative left-1/2 right-1/2 -mx-[50vw] min-h-screen w-screen -mt-20 overflow-hidden bg-gradient-to-br from-sky-100 via-cyan-100 to-emerald-100 dark:from-slate-950 dark:via-slate-950 dark:to-slate-900 sm:pt-20">
     <div class="pointer-events-none absolute -left-16 -top-10 h-72 w-72 rounded-full bg-fuchsia-300/35 blur-3xl dark:bg-fuchsia-600/20"></div>
     <div class="pointer-events-none absolute -right-12 top-28 h-80 w-80 rounded-full bg-cyan-300/35 blur-3xl dark:bg-cyan-500/20"></div>
     <div class="pointer-events-none absolute bottom-10 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-emerald-300/35 blur-3xl dark:bg-emerald-500/15"></div>
     <div class="pointer-events-none absolute inset-0 opacity-20 [background:radial-gradient(circle_at_20%_30%,#38bdf8_0,transparent_40%),radial-gradient(circle_at_80%_20%,#f472b6_0,transparent_35%),radial-gradient(circle_at_50%_85%,#34d399_0,transparent_35%)]"></div>
+    <div class="pointer-events-none absolute inset-x-0 top-0 z-0 h-screen overflow-hidden">
+        <img src="{{ asset('/assets/img/user-01.webp') }}" alt="" class="hero-float-a absolute left-[4vw] top-[18dvh] hidden h-24 w-24 rounded-full border-[10px] border-white/85 object-cover opacity-80 shadow-2xl dark:border-slate-800/85 md:block lg:h-32 lg:w-32">
+        <img src="{{ asset('/assets/img/user-02.webp') }}" alt="" class="hero-float-b absolute right-[4vw] top-[18dvh] hidden h-24 w-24 rounded-full border-[10px] border-white/85 object-cover opacity-80 shadow-2xl dark:border-slate-800/85 md:block lg:h-32 lg:w-32">
+        <img src="{{ asset('/assets/img/user-03.webp') }}" alt="" class="hero-float-b absolute left-[8vw] top-[48dvh] hidden h-28 w-28 rounded-full border-[10px] border-white/85 object-cover opacity-75 shadow-2xl dark:border-slate-800/85 lg:block xl:h-36 xl:w-36">
+        <img src="{{ asset('/assets/img/user-4.webp') }}" alt="" class="hero-float-a absolute right-[8vw] top-[48dvh] hidden h-28 w-28 rounded-full border-[10px] border-white/85 object-cover opacity-75 shadow-2xl dark:border-slate-800/85 lg:block xl:h-36 xl:w-36">
+        <img src="{{ asset('/assets/img/user-05.webp') }}" alt="" class="hero-float-c absolute left-[18vw] top-[72dvh] hidden h-16 w-16 rounded-full border-8 border-white/85 object-cover opacity-70 shadow-xl dark:border-slate-800/85 xl:block">
+        <img src="{{ asset('/assets/img/user-06.webp') }}" alt="" class="hero-float-c absolute right-[18vw] top-[72dvh] hidden h-16 w-16 rounded-full border-8 border-white/85 object-cover opacity-70 shadow-xl dark:border-slate-800/85 xl:block">
+    </div>
 
-    <div class="mx-auto w-full max-w-screen-2xl px-6 pb-16 pt-28 sm:pt-32">
-        <div class="grid items-center gap-10 lg:grid-cols-2">
+    <div class="relative z-10 mx-auto w-full max-w-screen-2xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-16">
+        <div class="mx-auto max-w-5xl text-center">
             <div class="reveal">
                 <div class="inline-flex items-center gap-2 rounded-full border border-sky-200/70 bg-white/80 px-4 py-2 text-xs font-bold uppercase tracking-wide text-sky-700 shadow-sm backdrop-blur dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
                     <span class="relative flex h-2 w-2">
@@ -18,15 +49,15 @@
                     Join 2,000+ Active Sellers
                 </div>
 
-                <h1 class="mt-6 max-w-2xl text-5xl font-extrabold leading-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
+                <h1 class="mx-auto mt-6 max-w-4xl text-4xl font-extrabold uppercase leading-tight text-slate-900 dark:text-white sm:text-6xl lg:text-7xl">
                     Smart Selling,
-                    <span class="bg-gradient-to-r from-sky-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:via-cyan-300 dark:to-emerald-300">Made Simple</span>
+                    <span class="bg-gradient-to-r  from-sky-600 via-cyan-600 to-emerald-600 bg-clip-text text-transparent dark:from-sky-400 dark:via-cyan-300 dark:to-emerald-300">Made Simple</span>
                 </h1>
-                <p class="mt-6 max-w-2xl text-lg leading-relaxed text-slate-700 dark:text-slate-300 sm:text-xl">
+                <p class="mx-auto mt-5 max-w-2xl text-base leading-relaxed text-slate-700 dark:text-slate-300 sm:mt-6 sm:text-xl">
                     Explore products, learn with practical video guides, and grow faster with reliable fulfillment and weekly payouts.
                 </p>
 
-                <div class="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div class="mt-8 flex flex-col justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center">
                     <a href="{{ route('sellerRegistration') }}" class="rounded-2xl bg-slate-900 px-7 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/25 hover:-translate-y-0.5 hover:bg-black dark:bg-white dark:text-slate-900">
                         Join as Seller
                     </a>
@@ -35,7 +66,7 @@
                     </a>
                 </div>
 
-                <div class="mt-8 grid max-w-xl gap-3 sm:grid-cols-3">
+                <div class="mx-auto mt-7 grid max-w-xl gap-3 sm:mt-8 sm:grid-cols-3">
                     <div class="rounded-2xl border border-white/60 bg-white/80 p-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
                         <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Active Sellers</p>
                         <p class="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">2,000+</p>
@@ -51,27 +82,9 @@
                 </div>
             </div>
 
-            <div class="reveal relative mx-auto w-full max-w-xl lg:max-w-none">
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 sm:col-span-2">
-                        <img src="{{asset('/assets/img/conversion-growth.webp')}}" alt="Seller reviewing product catalog on laptop" class="h-56 w-full object-cover sm:h-64" loading="eager">
-                    </article>
-                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-                        <img src="{{asset('/assets/img/accelerate_sales_growth.webp')}}" alt="Packed orders ready for dispatch" class="h-44 w-full object-cover sm:h-52" loading="lazy">
-                    </article>
-                    <article class="overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70">
-                        <img src="{{asset('/assets/img/counting money.webp')}}" alt="Business growth analytics dashboard" class="h-44 w-full object-cover sm:h-52" loading="lazy">
-                    </article>
-                </div>
-
-                <div class="absolute -bottom-4 -left-4 rounded-2xl border border-emerald-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur dark:border-emerald-500/30 dark:bg-slate-900/80">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-300">Conversion Lift</p>
-                    <p class="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">+24%</p>
-                </div>
-                <div class="absolute -right-4 top-6 rounded-2xl border border-sky-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur dark:border-sky-500/30 dark:bg-slate-900/80">
-                    <p class="text-[10px] font-semibold uppercase tracking-[0.16em] text-sky-700 dark:text-sky-300">Repeat Customers</p>
-                    <p class="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">41%</p>
-                </div>
+            <div class="reveal mx-auto mt-8 w-full max-w-6xl overflow-hidden rounded-3xl border border-white/70 bg-white/80 shadow-2xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 sm:mt-12 sm:rounded-[2rem]">
+                <img src="{{ asset('/assets/img/Hero0img-light.webp') }}" alt="nextepSellers dashboard preview" class="h-auto w-full object-contain dark:hidden sm:h-[28rem] sm:object-cover lg:h-[34rem]" loading="eager">
+                <img src="{{ asset('/assets/img/hero-img-dark.webp') }}" alt="nextepSellers dashboard preview" class="hidden h-auto w-full object-contain dark:block sm:h-[28rem] sm:object-cover lg:h-[34rem]" loading="eager">
             </div>
         </div>
 

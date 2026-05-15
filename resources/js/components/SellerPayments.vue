@@ -43,12 +43,8 @@
       </div>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <article class="rounded-xl border border-amber-200 bg-amber-50/70 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
-        <p class="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Order Pending Value</p>
-        <p class="mt-1 text-lg font-bold text-amber-800 dark:text-amber-200">LKR {{ toMoney(summary.total_pending_order_value) }}</p>
-      </article>
-       <article class="rounded-xl border border-purple-200 bg-purple-50/70 p-3 dark:border-purple-500/30 dark:bg-purple-500/10">
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <article class="rounded-xl border border-purple-200 bg-purple-50/70 p-3 dark:border-purple-500/30 dark:bg-purple-500/10">
         <p class="text-[11px] font-semibold uppercase tracking-wide text-purple-700 dark:text-purple-300">Pending Payments Value</p>
         <p class="mt-1 text-lg font-bold text-purple-800 dark:text-purple-200">LKR {{ toMoney(summary.pending_payments_value) }}</p>
       </article>
@@ -145,11 +141,11 @@ const toast = useToast()
 
 const loading = ref(false)
 const payments = ref([])
-const activeTab = ref('payments')
+const activeTab = ref('invoices')
 
 const tabs = [
-  { value: 'payments', label: 'Payments', icon: 'fa-wallet' },
   { value: 'invoices', label: 'Invoices', icon: 'fa-file-invoice-dollar' },
+  { value: 'payments', label: 'Payments', icon: 'fa-wallet' },
 ]
 
 const filters = reactive({

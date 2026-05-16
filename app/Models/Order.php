@@ -140,6 +140,10 @@ class Order extends Model
             $meaningful = $order->extractMeaningfulValues($order->getAttributes());
             $changes = $order->buildChangePairs([], $meaningful);
 
+            if ($order->hasDeliveryScoreStatus($order->status)) {
+                $order->refreshSellerDeliveryScores([$order->seller_id]);
+            }
+
             if (empty($changes)) {
                 return;
             }
@@ -168,6 +172,11 @@ class Order extends Model
             if (!$snapshot) {
                 return;
             }
+
+            $order->refreshSellerDeliveryScoresForStatusChange(
+                $snapshot['original'] ?? [],
+                $snapshot['dirty'] ?? []
+            );
 
             $dirty = collect($snapshot['dirty'] ?? [])
                 ->except(['updated_at'])
@@ -247,5 +256,43 @@ class Order extends Model
         }
 
         return $changes;
+    }
+
+    private function refreshSellerDeliveryScoresForStatusChange(array $original, array $dirty): void
+    {
+        $statusChanged = array_key_exists('status', $dirty);
+        $sellerChanged = array_key_exists('seller_id', $dirty);
+
+        if (!$statusChanged && !$sellerChanged) {
+            return;
+        }
+
+        $fromStatus = (string) ($original['status'] ?? '');
+        $toStatus = (string) $this->status;
+
+        if (!$this->hasDeliveryScoreStatus($fromStatus) && !$this->hasDeliveryScoreStatus($toStatus)) {
+            return;
+        }
+
+        $this->refreshSellerDeliveryScores([
+            $original['seller_id'] ?? null,
+            $this->seller_id,
+        ]);
+    }
+
+    private function refreshSellerDeliveryScores(array $sellerIds): void
+    {
+        collect($sellerIds)
+            ->filter()
+            ->map(fn ($sellerId) => (int) $sellerId)
+            ->unique()
+            ->each(function (int $sellerId) {
+                Seller::query()->find($sellerId)?->recalculateDeliveryScore();
+            });
+    }
+
+    private function hasDeliveryScoreStatus(?string $status): bool
+    {
+        return in_array(strtolower((string) $status), ['completed', 'cancelled'], true);
     }
 }

@@ -42,6 +42,7 @@ Route::middleware(['auth:sanctum', 'permission:Manage Webhooks and API'])->group
 Route::middleware(['auth:sanctum', 'role:Admin'])->group(function () {
 
     Route::get('/admin/orders/search', AdminOrderSearchController::class);
+    Route::get('/admin/cities', [SellerOrderController::class, 'cities']);
 
     Route::get('/roles', [RolePermissionController::class, 'index']);
     Route::post('/roles', [RolePermissionController::class, 'store']);
@@ -213,6 +214,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->whereNumber('logId');
     Route::get('/admin/orders/{order}/delivery-timeline', [SellerOrderController::class, 'adminDeliveryTimeline'])->whereNumber('order');
     Route::get('/admin/orders/filter-options', [SellerOrderController::class, 'adminOrderFilterOptions']);
+    Route::put('/admin/orders/{order}/city', [SellerOrderController::class, 'adminUpdateDraftOrderCity'])->whereNumber('order');
     Route::post('/admin/orders/{order}/approve', [SellerOrderController::class, 'adminApprove']);
     Route::post('/admin/orders/{order}/reject', [SellerOrderController::class, 'adminReject']);
     Route::post('/admin/orders/{order}/cancel-approved', [SellerOrderController::class, 'adminCancelApproved'])->whereNumber('order');

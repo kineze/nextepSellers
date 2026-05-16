@@ -48,6 +48,8 @@ class SellerDashboardController extends Controller
                 'id' => (int) $seller->id,
                 'name' => $this->sellerName($seller, $request->user()?->name),
                 'status' => $seller->status,
+                'delivery_score' => (int) ($seller->dilivery_score ?? 100),
+                'delivery_score_penalty_limit' => (int) config('seller.penalty_limit_start_for_failed_to_delivery', 60),
             ],
             'points' => [
                 'level_name' => $level?->level_name,

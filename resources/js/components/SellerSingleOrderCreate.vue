@@ -200,6 +200,9 @@
                 <div class="min-w-0 flex-1">
                   <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ product.title }}</p>
                   <p class="truncate text-xs text-slate-500 dark:text-slate-300">{{ product.product_code || 'No code' }}</p>
+                  <p class="mt-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">
+                    Commission: {{ commissionRuleLabel(product.commission_rule) }}
+                  </p>
                 </div>
                 <span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {{ product.variants?.length || 0 }}
@@ -242,6 +245,9 @@
                   </button>
                 </div>
                 <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ item.variant_label }}</p>
+                <p class="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">
+                  Commission earning: LKR {{ toMoney(lineCommission(item)) }}
+                </p>
               </div>
             </div>
 
@@ -290,6 +296,7 @@
             <div class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
               <p class="flex items-center justify-between"><span>Subtotal</span><span class="font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(subtotal) }}</span></p>
               <p class="flex items-center justify-between"><span>Delivery</span><span class="font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(deliveryCharge) }}</span></p>
+              <p class="flex items-center justify-between"><span>Commission Earning</span><span class="font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(totalCommission) }}</span></p>
             </div>
 
             <div class="mt-4 rounded-2xl bg-blue-50 p-4 dark:bg-blue-500/10">
@@ -349,6 +356,7 @@
                 <th class="px-3 py-2 text-center">Add</th>
                 <th class="px-3 py-2">Variant</th>
                 <th class="px-3 py-2 text-right">Price</th>
+                <th class="px-3 py-2 text-right">Commission</th>
                 <th class="px-3 py-2 text-center">Qty</th>
               </tr>
             </thead>
@@ -359,6 +367,7 @@
                 </td>
                 <td class="px-3 py-2 font-semibold text-slate-800 dark:text-slate-100">{{ formatVariantLabel(variant) }}</td>
                 <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-200">LKR {{ toMoney(variant.price) }}</td>
+                <td class="px-3 py-2 text-right font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(variantCommission(variant, modalProduct)) }}</td>
                 <td class="px-3 py-2">
                   <input v-model.number="variant.quantity" type="number" min="1" class="mx-auto block w-20 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" :disabled="!variant.selected" />
                 </td>
@@ -768,6 +777,7 @@ const addItemToCart = (product, variant, quantity = 1) => {
     price: Number(variant.price || 0),
     delivery_fee: Number(product.delivery_fee || 0),
     is_free_shipping: Boolean(product.is_free_shipping),
+    commission_rule: product.commission_rule || null,
   })
 }
 
@@ -784,8 +794,24 @@ const clampItem = (item) => {
 }
 
 const lineTotal = (item) => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0))
+const commissionFor = (price, quantity, rule) => {
+  if (!rule) return 0
+
+  const qty = Math.max(0, Number(quantity || 0))
+  const unitPrice = Math.max(0, Number(price || 0))
+  const value = Math.max(0, Number(rule.value || 0))
+
+  if (rule.type === 'percentage') {
+    return (unitPrice * (value / 100)) * qty
+  }
+
+  return value * qty
+}
+const lineCommission = (item) => commissionFor(item.price, item.quantity, item.commission_rule)
+const variantCommission = (variant, product) => commissionFor(variant?.price, variant?.quantity || 1, product?.commission_rule)
 const subtotal = computed(() => items.value.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 0)), 0))
 const totalQty = computed(() => items.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
+const totalCommission = computed(() => items.value.reduce((sum, item) => sum + lineCommission(item), 0))
 const deliveryCharge = computed(() => items.value.reduce((max, item) => {
   if (item.is_free_shipping) return max
   return Math.max(max, Number(item.delivery_fee || 0))
@@ -793,6 +819,17 @@ const deliveryCharge = computed(() => items.value.reduce((max, item) => {
 const grandTotal = computed(() => Math.max(0, subtotal.value + deliveryCharge.value))
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
+
+const commissionRuleLabel = (rule) => {
+  if (!rule) return 'LKR 0.00'
+
+  const value = Math.max(0, Number(rule.value || 0))
+  if (rule.type === 'percentage') {
+    return `${value.toFixed(2).replace(/\.00$/, '')}%`
+  }
+
+  return `LKR ${toMoney(value)} per item`
+}
 
 const resetOrder = () => {
   clearCustomer()

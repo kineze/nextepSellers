@@ -700,6 +700,7 @@ class SellerOrderController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
         $limit = max(5, min((int) $request->query('limit', 20), 100));
+        $sellerLevelId = (int) ($request->user()?->seller?->seller_level_id ?? 0);
 
         $query = Product::query()
             ->select('id', 'title', 'product_code', 'delivery_fee', 'is_free_shipping', 'has_varients')
@@ -713,6 +714,10 @@ class SellerOrderController extends Controller
                     $q->select('id', 'product_id', 'sku', 'attributes', 'price', 'is_active')
                         ->where('is_active', true)
                         ->orderBy('id');
+                },
+                'productLevels' => function ($q) use ($sellerLevelId) {
+                    $q->select('id', 'product_id', 'level_id', 'type', 'value')
+                        ->where('level_id', $sellerLevelId);
                 },
             ])
             ->where('is_active', true)
@@ -739,6 +744,10 @@ class SellerOrderController extends Controller
                 'delivery_fee' => (float) ($product->delivery_fee ?? 0),
                 'is_free_shipping' => (bool) ($product->is_free_shipping ?? false),
                 'has_varients' => (bool) ($product->has_varients ?? false),
+                'commission_rule' => $product->productLevels->first() ? [
+                    'type' => (string) $product->productLevels->first()->type,
+                    'value' => (float) $product->productLevels->first()->value,
+                ] : null,
                 'variants' => $product->varients->map(function ($variant) {
                     return [
                         'id' => (int) $variant->id,
@@ -973,6 +982,34 @@ class SellerOrderController extends Controller
         return response()->json([
             'message' => 'Order rejected successfully.',
             'order_id' => $order->id,
+        ]);
+    }
+
+    public function adminUpdateDraftOrderCity(Request $request, Order $order)
+    {
+        $validated = $request->validate([
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
+        ]);
+
+        if (!$this->isDraftOrder($order)) {
+            return response()->json([
+                'message' => 'Only draft orders can be updated.',
+            ], 422);
+        }
+
+        $order->update([
+            'city_id' => (int) $validated['city_id'],
+        ]);
+
+        $order->load('city:id,name_en');
+
+        return response()->json([
+            'message' => 'Order city updated successfully.',
+            'order' => [
+                'id' => (int) $order->id,
+                'city_id' => $order->city_id ? (int) $order->city_id : null,
+                'city' => $order->city,
+            ],
         ]);
     }
 

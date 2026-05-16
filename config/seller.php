@@ -9,4 +9,7 @@ return [
 
     // Days between automatic invoices after the seller's first invoice.
     'invoice_cycle_days' => (int) env('SELLER_INVOICE_CYCLE_DAYS', 7),
+
+    // Delivery score percentage where failed-delivery penalties begin.
+    'penalty_limit_start_for_failed_to_delivery' => (int) env('PENALTY_LIMIT_START_FOR_FAILED_TO_DELIVERY', 60),
 ];

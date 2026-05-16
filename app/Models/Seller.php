@@ -24,6 +24,7 @@ class Seller extends Model
         'seller_level_id',
         'points',
         'first_success_order_date',
+        'dilivery_score',
         'referral_code',
         'referral_link',
         'email_verified',
@@ -37,6 +38,7 @@ class Seller extends Model
         'agreement_accepted' => 'boolean',
         'points' => 'integer',
         'first_success_order_date' => 'date',
+        'dilivery_score' => 'integer',
     ];
 
     public function user()
@@ -72,6 +74,28 @@ class Seller extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function recalculateDeliveryScore(): int
+    {
+        $completedOrders = $this->orders()
+            ->where('status', 'completed')
+            ->count();
+
+        $cancelledOrders = $this->orders()
+            ->where('status', 'cancelled')
+            ->count();
+
+        $totalDeliveryAttempts = $completedOrders + $cancelledOrders;
+        $score = $totalDeliveryAttempts > 0
+            ? (int) round(($completedOrders / $totalDeliveryAttempts) * 100)
+            : 100;
+
+        $this->forceFill([
+            'dilivery_score' => $score,
+        ])->saveQuietly();
+
+        return $score;
     }
 
     public function payments()

@@ -30,9 +30,16 @@
         </button>
       </div>
 
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard label="Current Level" :value="levelLabel" icon="fa-medal" />
         <MetricCard label="Current Points" :value="formatNumber(data.points.current_points)" icon="fa-star" />
+        <MetricCard
+          label="Delivery Score"
+          :value="`${deliveryScore}%`"
+          :subtext="`Penalty starts below ${deliveryScorePenaltyLimit}%`"
+          icon="fa-truck-fast"
+          :tone="deliveryScoreTone"
+        />
         <MetricCard
           label="Pending Points"
           :value="formatNumber(data.points.pending_points)"
@@ -200,7 +207,7 @@ const loading = ref(false)
 const error = ref('')
 
 const data = reactive({
-  seller: { id: null, name: '', status: '' },
+  seller: { id: null, name: '', status: '', delivery_score: 100, delivery_score_penalty_limit: 60 },
   points: {
     level_name: '',
     level_no: null,
@@ -310,6 +317,15 @@ const nextLevelLabel = computed(() => {
 })
 
 const maxTrendOrders = computed(() => Math.max(1, ...data.trend.map((day) => Number(day.orders_count || 0))))
+
+const deliveryScore = computed(() => Math.min(100, Math.max(0, Number(data.seller.delivery_score ?? 100))))
+
+const deliveryScorePenaltyLimit = computed(() => Math.min(100, Math.max(0, Number(data.seller.delivery_score_penalty_limit ?? 60))))
+
+const deliveryScoreTone = computed(() => {
+  if (deliveryScore.value < deliveryScorePenaltyLimit.value) return 'amber'
+  return 'emerald'
+})
 
 const applyPayload = (payload) => {
   Object.assign(data.seller, payload?.seller || {})

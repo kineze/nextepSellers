@@ -91,7 +91,47 @@
                 </div>
               </div>
             </td>
-            <td class="px-3 py-3 text-slate-700 dark:text-slate-200">{{ order.city?.name_en || '-' }}</td>
+            <td class="px-3 py-3 align-top">
+              <div class="relative min-w-48">
+                <input
+                  v-model="cityInputs[order.id]"
+                  type="text"
+                  class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                  placeholder="Search city"
+                  :disabled="savingCityId === order.id"
+                  @focus="openCityDropdown(order)"
+                  @input="onCityInput(order)"
+                  @blur="closeCityDropdownWithDelay"
+                />
+                <button
+                  v-if="order.city?.name_en && cityInputs[order.id] !== order.city.name_en"
+                  type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-1.5 py-0.5 text-[10px] font-semibold text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                  @mousedown.prevent="resetCityInput(order)"
+                >
+                  Reset
+                </button>
+
+                <div
+                  v-if="cityDropdownOrderId === order.id"
+                  class="absolute z-40 mt-1 max-h-56 w-full overflow-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+                >
+                  <div v-if="loadingCityOrderId === order.id" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">Searching cities...</div>
+                  <button
+                    v-for="city in cityOptions[order.id] || []"
+                    :key="city.id"
+                    type="button"
+                    class="block w-full rounded-lg px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-blue-50 dark:text-slate-200 dark:hover:bg-blue-500/10"
+                    @mousedown.prevent="selectCity(order, city)"
+                  >
+                    {{ city.name_en }}
+                  </button>
+                  <div v-if="loadingCityOrderId !== order.id && !(cityOptions[order.id] || []).length" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                    No matching cities.
+                  </div>
+                </div>
+              </div>
+            </td>
             <td class="px-3 py-3 text-right font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(order.total_collectable_amount) }}</td>
             <td class="px-3 py-3 text-slate-600 dark:text-slate-300">{{ formatDate(order.order_datetime) }}</td>
             <td class="px-3 py-3 text-right">
@@ -158,8 +198,14 @@ const loading = ref(false)
 const approvingBulk = ref(false)
 const approvingSingleId = ref(null)
 const rejectingSingleId = ref(null)
+const savingCityId = ref(null)
+const loadingCityOrderId = ref(null)
+const cityDropdownOrderId = ref(null)
 const orders = ref([])
 const selectedIds = ref([])
+const cityInputs = reactive({})
+const cityOptions = reactive({})
+const citySearchTimers = {}
 
 const filters = reactive({
   search: '',
@@ -232,6 +278,10 @@ const fetchOrders = async () => {
     })
 
     orders.value = Array.isArray(data?.orders) ? data.orders : []
+    orders.value.forEach((order) => {
+      cityInputs[order.id] = order.city?.name_en || ''
+      cityOptions[order.id] = []
+    })
     meta.current_page = Number(data?.meta?.current_page || 1)
     meta.last_page = Number(data?.meta?.last_page || 1)
     meta.per_page = Number(data?.meta?.per_page || filters.per_page)
@@ -243,6 +293,69 @@ const fetchOrders = async () => {
     toast.error(error?.response?.data?.message || 'Failed to load draft orders.')
   } finally {
     loading.value = false
+  }
+}
+
+const fetchCityOptions = async (orderId, search = '') => {
+  loadingCityOrderId.value = orderId
+  try {
+    const { data } = await axios.get('/api/admin/cities', {
+      params: { search: search || undefined, limit: 20 },
+    })
+    cityOptions[orderId] = Array.isArray(data?.cities) ? data.cities : []
+  } catch (error) {
+    cityOptions[orderId] = []
+    toast.error(error?.response?.data?.message || 'Failed to load cities.')
+  } finally {
+    if (loadingCityOrderId.value === orderId) {
+      loadingCityOrderId.value = null
+    }
+  }
+}
+
+const openCityDropdown = (order) => {
+  cityDropdownOrderId.value = order.id
+  fetchCityOptions(order.id, cityInputs[order.id] || '')
+}
+
+const closeCityDropdownWithDelay = () => {
+  window.setTimeout(() => {
+    cityDropdownOrderId.value = null
+  }, 140)
+}
+
+const onCityInput = (order) => {
+  cityDropdownOrderId.value = order.id
+  window.clearTimeout(citySearchTimers[order.id])
+  citySearchTimers[order.id] = window.setTimeout(() => {
+    fetchCityOptions(order.id, cityInputs[order.id] || '')
+  }, 220)
+}
+
+const resetCityInput = (order) => {
+  cityInputs[order.id] = order.city?.name_en || ''
+  cityOptions[order.id] = []
+  cityDropdownOrderId.value = null
+}
+
+const selectCity = async (order, city) => {
+  savingCityId.value = order.id
+  try {
+    const { data } = await axios.put(`/api/admin/orders/${order.id}/city`, {
+      city_id: city.id,
+    })
+
+    order.city = data?.order?.city || { id: city.id, name_en: city.name_en }
+    order.city_id = Number(data?.order?.city_id || city.id)
+    cityInputs[order.id] = order.city?.name_en || city.name_en || ''
+    cityOptions[order.id] = []
+    cityDropdownOrderId.value = null
+    toast.success(data?.message || 'Order city updated.')
+  } catch (error) {
+    toast.error(error?.response?.data?.message || 'Failed to update order city.')
+    resetCityInput(order)
+  } finally {
+    savingCityId.value = null
   }
 }
 

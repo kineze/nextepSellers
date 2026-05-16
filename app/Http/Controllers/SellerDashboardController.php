@@ -36,6 +36,12 @@ class SellerDashboardController extends Controller
         $projectedPoints = $currentPoints + $pendingPoints;
         $currentLevelPoints = $level ? (int) ($level->points ?? 0) : 0;
         $nextLevelPoints = $nextLevel ? (int) $nextLevel->points : null;
+        $currentPointsToNextLevel = $nextLevelPoints ? max(0, $nextLevelPoints - $currentPoints) : null;
+        $currentLevelProgressPoints = $nextLevelPoints ? max(0, $currentPoints - $currentLevelPoints) : 0;
+        $currentLevelProgressTarget = $nextLevelPoints ? max(1, $nextLevelPoints - $currentLevelPoints) : null;
+        $currentProgressPct = $currentLevelProgressTarget
+            ? min(100, max(0, (int) floor(($currentLevelProgressPoints / $currentLevelProgressTarget) * 100)))
+            : 100;
         $pointsToNextLevel = $nextLevelPoints ? max(0, $nextLevelPoints - $projectedPoints) : null;
         $levelProgressPoints = $nextLevelPoints ? max(0, $projectedPoints - $currentLevelPoints) : 0;
         $levelProgressTarget = $nextLevelPoints ? max(1, $nextLevelPoints - $currentLevelPoints) : null;
@@ -62,6 +68,10 @@ class SellerDashboardController extends Controller
                 'next_level_name' => $nextLevel?->level_name,
                 'next_level_no' => $nextLevel?->level_no,
                 'next_level_points' => $nextLevelPoints,
+                'current_points_to_next_level' => $currentPointsToNextLevel,
+                'current_level_progress_points' => $currentLevelProgressPoints,
+                'current_level_progress_target' => $currentLevelProgressTarget,
+                'current_progress_pct' => $currentProgressPct,
                 'points_to_next_level' => $pointsToNextLevel,
                 'level_progress_points' => $levelProgressPoints,
                 'level_progress_target' => $levelProgressTarget,

@@ -56,28 +56,64 @@
         />
       </div>
 
-      <div class="mt-3 rounded-2xl border border-slate-200/80 bg-white/90 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/70">
-        <div class="flex items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-          <span>Projected Progress</span>
-          <span>{{ data.points.progress_pct }}%</span>
+      <div class="mt-3 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm ring-1 ring-blue-500/5 dark:border-blue-500/20 dark:bg-slate-900/80 dark:ring-blue-400/10">
+        <div class="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+          <div class="p-5 sm:p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">Progress</p>
+                <h2 class="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">
+                  {{ nextLevelLabel ? `On the way to ${nextLevelLabel}` : 'Top seller level active' }}
+                </h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  Current level: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ levelLabel }}</span>
+                </p>
+              </div>
+
+              <div class="rounded-2xl bg-blue-50 px-4 py-3 text-right dark:bg-blue-500/10">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Current Points</p>
+                <p class="mt-1 text-2xl font-black text-slate-950 dark:text-white">{{ formatNumber(data.points.current_points) }}</p>
+              </div>
+            </div>
+
+            <div class="mt-5">
+              <div class="flex items-center justify-between gap-3 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                <span>{{ formatNumber(data.points.current_level_progress_points) }} earned in this level</span>
+                <span>{{ currentProgressPct }}%</span>
+              </div>
+              <div class="mt-2 h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+                <div
+                  class="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-500"
+                  :style="{ width: `${currentProgressPct}%` }"
+                ></div>
+              </div>
+              <div class="mt-2 flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-400">
+                <span>{{ formatNumber(data.points.current_level_points) }} pts</span>
+                <span v-if="data.points.next_level_points">{{ formatNumber(data.points.next_level_points) }} pts target</span>
+                <span v-else>Highest level</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60 sm:p-6 lg:border-l lg:border-t-0">
+            <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Next Level</p>
+                <p class="mt-1 text-base font-bold text-slate-900 dark:text-white">{{ nextLevelLabel || 'Completed' }}</p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Points Needed</p>
+                <p class="mt-1 text-base font-bold text-emerald-600 dark:text-emerald-300">
+                  {{ data.points.next_level_points ? formatNumber(data.points.current_points_to_next_level) : '0' }}
+                </p>
+              </div>
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Conversion</p>
+                <p class="mt-1 text-base font-bold text-slate-900 dark:text-white">LKR {{ toMoney(data.points.lkr_per_point, 0) }} = 1 pt</p>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-          <div
-            class="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all duration-300"
-            :style="{ width: `${data.points.progress_pct || 0}%` }"
-          ></div>
-        </div>
-        <p class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
-          <template v-if="data.points.next_level_points">
-            {{ formatNumber(data.points.level_progress_points) }} / {{ formatNumber(data.points.level_progress_target) }} points from {{ levelLabel }} to {{ nextLevelLabel }}
-          </template>
-          <template v-else>
-            Highest seller level is active.
-          </template>
-        </p>
-        <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-          Point conversion: LKR {{ toMoney(data.points.lkr_per_point, 0) }} = 1 point
-        </p>
       </div>
     </section>
 
@@ -219,6 +255,10 @@ const data = reactive({
     next_level_name: '',
     next_level_no: null,
     next_level_points: null,
+    current_points_to_next_level: null,
+    current_level_progress_points: 0,
+    current_level_progress_target: null,
+    current_progress_pct: 0,
     points_to_next_level: null,
     level_progress_points: 0,
     level_progress_target: null,
@@ -314,6 +354,10 @@ const levelLabel = computed(() => {
 const nextLevelLabel = computed(() => {
   if (!data.points.next_level_name) return ''
   return data.points.next_level_no ? `${data.points.next_level_name} (L${data.points.next_level_no})` : data.points.next_level_name
+})
+
+const currentProgressPct = computed(() => {
+  return Math.min(100, Math.max(0, Number(data.points.current_progress_pct || 0)))
 })
 
 const maxTrendOrders = computed(() => Math.max(1, ...data.trend.map((day) => Number(day.orders_count || 0))))

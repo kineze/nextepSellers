@@ -12,7 +12,7 @@
           <p class="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">Bulk Orders</p>
           <h1 class="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white">Bulk Order Creation</h1>
           <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
-            Select a product and variant, generate customer rows, fill details, then submit everything at once.
+            Build one product list, generate customer rows, then submit similar multi-product orders at once.
           </p>
         </div>
 
@@ -121,6 +121,70 @@
         </div>
 
         <div class="lg:col-span-2">
+          <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Product List</label>
+          <button
+            type="button"
+            class="w-full rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="!canAddDraftItem"
+            @click="addSelectedProductToDraft"
+          >
+            Add Product
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950/50">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">Order Product List</p>
+            <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">These products will be copied to every generated or imported customer row.</p>
+          </div>
+          <div class="text-sm font-bold text-slate-900 dark:text-white">
+            LKR {{ toMoney(draftTotal) }}
+            <span class="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">Commission: LKR {{ toMoney(draftCommission) }}</span>
+          </div>
+        </div>
+
+        <div v-if="!draftItems.length" class="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+          Search a product, choose a variant, then add it here before generating rows.
+        </div>
+
+        <div v-else class="mt-4 grid gap-3 lg:grid-cols-2">
+          <div
+            v-for="(item, itemIndex) in draftItems"
+            :key="item.id"
+            class="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"
+          >
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ item.product_title }}</p>
+                <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ item.variant_label }}</p>
+                <p class="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">Commission: LKR {{ toMoney(rowItemCommission(item)) }}</p>
+              </div>
+              <button
+                type="button"
+                class="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                title="Remove product"
+                @click="removeDraftItem(itemIndex)"
+              >
+                <i class="fas fa-trash text-xs" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <input
+                v-model.number="item.quantity"
+                type="number"
+                min="1"
+                class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-xs text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                @change="clampRowItemQty(item)"
+              />
+              <span class="text-sm font-bold text-slate-900 dark:text-white">LKR {{ toMoney(rowItemTotal(item)) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
+          <div>
           <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Rows</label>
           <div class="flex gap-2">
             <input
@@ -136,8 +200,9 @@
               :disabled="!canCreateBatch"
               @click="createBatch"
             >
-              Add
+              Generate
             </button>
+          </div>
           </div>
           <div class="mt-2">
             <input
@@ -150,20 +215,20 @@
             <button
               type="button"
               class="w-full rounded-xl border border-slate-300 px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-              :disabled="!draftProduct || !selectedVariant || importingCsv"
+              :disabled="!draftItems.length || importingCsv"
               @click="openCsvPicker"
             >
               <span v-if="importingCsv">Importing...</span>
               <span v-else>Import CSV</span>
             </button>
-            <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">CSV headers: name, phone, address, city, quantity, notes</p>
+            <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">CSV headers: name, phone, address, city, notes</p>
           </div>
         </div>
       </div>
     </div>
 
     <div v-if="!batches.length" class="rounded-2xl border border-dashed border-slate-300 bg-white/80 p-10 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-400">
-      Add a product batch to start bulk order creation.
+      Build a product list, then generate or import customer rows.
     </div>
 
     <div v-else class="space-y-5">
@@ -175,7 +240,9 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p class="text-sm font-bold text-slate-900 dark:text-white">{{ batch.product_title }}</p>
-            <p class="text-xs text-slate-500 dark:text-slate-400">{{ batch.variant_label }} | Price: LKR {{ toMoney(batch.price) }}</p>
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+              {{ batch.items_template.length }} product(s) | Total: LKR {{ toMoney(batchTemplateTotal(batch)) }} | Commission: LKR {{ toMoney(batchTemplateCommission(batch)) }}
+            </p>
           </div>
           <div class="flex items-center gap-2">
             <button
@@ -195,8 +262,23 @@
           </div>
         </div>
 
+        <div class="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          <div
+            v-for="item in batch.items_template"
+            :key="item.id"
+            class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-950/60"
+          >
+            <p class="truncate text-xs font-bold text-slate-900 dark:text-white">{{ item.product_title }}</p>
+            <p class="truncate text-[11px] text-slate-500 dark:text-slate-400">{{ item.variant_label }}</p>
+            <p class="mt-1 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+              {{ item.quantity }} x LKR {{ toMoney(item.price) }}
+              <span class="text-emerald-600 dark:text-emerald-300"> | LKR {{ toMoney(rowItemCommission(item)) }} commission</span>
+            </p>
+          </div>
+        </div>
+
         <div class="mt-4 overflow-x-auto">
-          <table class="min-w-[1100px] w-full text-left">
+          <table class="min-w-[900px] w-full text-left">
             <thead>
               <tr class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 <th class="px-2 py-2">#</th>
@@ -205,7 +287,6 @@
                 <th class="px-2 py-2">Additional Phone</th>
                 <th class="px-2 py-2">Address</th>
                 <th class="px-2 py-2">City</th>
-                <th class="px-2 py-2">Qty</th>
                 <th class="px-2 py-2">Notes</th>
                 <th class="px-2 py-2">Actions</th>
               </tr>
@@ -266,9 +347,6 @@
                   </div>
                 </td>
                 <td class="px-2 py-2">
-                  <input v-model.number="row.quantity" type="number" min="1" :class="cellClass" />
-                </td>
-                <td class="px-2 py-2">
                   <input v-model.trim="row.notes" type="text" :class="cellClass" placeholder="Notes (optional)" />
                 </td>
                 <td class="px-2 py-2">
@@ -287,16 +365,18 @@
     <aside class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
       <div class="grid gap-3 sm:grid-cols-3">
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Product Batches</p>
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Order Groups</p>
           <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ batches.length }}</p>
         </div>
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
           <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Total Orders</p>
-          <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ totalRows }}</p>
+          <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ validRows }} / {{ totalRows }}</p>
+          <p class="mt-1 text-[10px] text-slate-500 dark:text-slate-400">Ready rows counted</p>
         </div>
         <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
           <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Estimated Value</p>
           <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">LKR {{ toMoney(estimatedValue) }}</p>
+          <p class="mt-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-300">Commission: LKR {{ toMoney(estimatedCommission) }}</p>
         </div>
       </div>
 
@@ -341,6 +421,7 @@ let productSearchTimer = null
 const csvFileInput = ref(null)
 const products = ref([])
 const batches = ref([])
+const draftItems = ref([])
 
 const draft = reactive({
   productId: null,
@@ -404,7 +485,8 @@ const selectedVariant = computed(() => {
     return keys.every((key) => (attrs[key]?.value || '') === (selectedAttributes[key] || ''))
   }) || null
 })
-const canCreateBatch = computed(() => !!draftProduct.value && !!selectedVariant.value && Number(draft.rowsToGenerate || 0) > 0)
+const canAddDraftItem = computed(() => !!draftProduct.value && !!selectedVariant.value)
+const canCreateBatch = computed(() => draftItems.value.length > 0 && Number(draft.rowsToGenerate || 0) > 0)
 const suggestedProducts = computed(() => {
   const q = productQuery.value.trim().toLowerCase()
   if (!q) return products.value.slice(0, 60)
@@ -419,13 +501,37 @@ const suggestedProducts = computed(() => {
 })
 
 const totalRows = computed(() => batches.value.reduce((sum, batch) => sum + batch.rows.length, 0))
-const estimatedValue = computed(() => batches.value.reduce((sum, batch) => {
-  return sum + batch.rows.reduce((batchSum, row) => batchSum + (Number(row.quantity || 0) * Number(batch.price || 0)), 0)
+const validRows = computed(() => batches.value.reduce((sum, batch) => {
+  return sum + batch.rows.filter((row) => isRowReady(row)).length
 }, 0))
+const estimatedValue = computed(() => batches.value.reduce((sum, batch) => {
+  return sum + batch.rows.reduce((batchSum, row) => {
+    return isRowReady(row) ? batchSum + rowTotal(row) : batchSum
+  }, 0)
+}, 0))
+const estimatedCommission = computed(() => batches.value.reduce((sum, batch) => {
+  return sum + batch.rows.reduce((batchSum, row) => {
+    return isRowReady(row) ? batchSum + rowCommission(row) : batchSum
+  }, 0)
+}, 0))
+const draftTotal = computed(() => draftItems.value.reduce((sum, item) => sum + rowItemTotal(item), 0))
+const draftCommission = computed(() => draftItems.value.reduce((sum, item) => sum + rowItemCommission(item), 0))
 
 const rowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
-const createEmptyRow = () => ({
+const createRowItem = (selectedProduct, chosenVariant, quantity = 1) => ({
+  id: rowId(),
+  product_id: Number(selectedProduct.id),
+  product_title: selectedProduct.title,
+  product_code: selectedProduct.product_code || '',
+  variant_id: Number(chosenVariant.id),
+  variant_label: formatVariantLabel(chosenVariant),
+  price: Number(chosenVariant.price || 0),
+  quantity: Math.max(1, Number(quantity || 1)),
+  commission_rule: selectedProduct.commission_rule || null,
+})
+
+const createEmptyRow = (items = []) => ({
   id: rowId(),
   customer_name: '',
   phone: '',
@@ -434,7 +540,7 @@ const createEmptyRow = () => ({
   address: '',
   city_id: null,
   city: '',
-  quantity: 1,
+  items,
   notes: '',
   _cityOpen: false,
   _cityLoading: false,
@@ -444,6 +550,41 @@ const createEmptyRow = () => ({
 })
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
+
+const commissionFor = (price, quantity, rule) => {
+  if (!rule) return 0
+
+  const qty = Math.max(0, Number(quantity || 0))
+  const unitPrice = Math.max(0, Number(price || 0))
+  const value = Math.max(0, Number(rule.value || 0))
+
+  if (rule.type === 'percentage') {
+    return (unitPrice * (value / 100)) * qty
+  }
+
+  return value * qty
+}
+
+const rowItemTotal = (item) => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0))
+const rowItemCommission = (item) => commissionFor(item.price, item.quantity, item.commission_rule)
+const rowTotal = (row) => (row.items || []).reduce((sum, item) => sum + rowItemTotal(item), 0)
+const rowCommission = (row) => (row.items || []).reduce((sum, item) => sum + rowItemCommission(item), 0)
+
+const isRowReady = (row) => {
+  const customerName = String(row.customer_name || '').trim()
+  const phone = normalizePhone(row.phone)
+  const address = String(row.address || '').trim()
+  const cityId = Number(row.city_id || 0)
+  const items = Array.isArray(row.items) ? row.items : []
+
+  return customerName.length >= 2
+    && /^\+?[0-9]{8,15}$/.test(phone)
+    && address.length >= 6
+    && Number.isInteger(cityId)
+    && cityId > 0
+    && items.length > 0
+    && items.every((item) => Number(item.quantity || 0) >= 1)
+}
 
 const isColorAttribute = (key) => {
   const options = variantAttributeOptions.value[key] || []
@@ -526,35 +667,66 @@ const onProductInput = () => {
   }, 220)
 }
 
+const addSelectedProductToDraft = () => {
+  const selectedProduct = draftProduct.value
+  const chosenVariant = selectedVariant.value
+
+  if (!selectedProduct || !chosenVariant) {
+    toast.error('Select product and variant first.')
+    return
+  }
+
+  const existing = draftItems.value.find((item) => Number(item.variant_id) === Number(chosenVariant.id))
+  if (existing) {
+    existing.quantity = Math.max(1, Number(existing.quantity || 1) + 1)
+    return
+  }
+
+  draftItems.value.push(createRowItem(selectedProduct, chosenVariant))
+}
+
+const removeDraftItem = (itemIndex) => {
+  draftItems.value.splice(itemIndex, 1)
+}
+
 const createBatch = () => {
   if (!canCreateBatch.value) return
 
   const count = Math.max(1, Number(draft.rowsToGenerate || 1))
-  const selectedProduct = draftProduct.value
-  const chosenVariant = selectedVariant.value
+  const items = cloneItems(draftItems.value)
 
   batches.value.push({
-    ...buildBatchHeader(selectedProduct, chosenVariant),
-    rows: Array.from({ length: count }, () => createEmptyRow()),
+    ...buildBatchHeader(items),
+    rows: Array.from({ length: count }, () => createEmptyRow(cloneItems(items))),
   })
 
   draft.rowsToGenerate = 5
 }
 
-const buildBatchHeader = (selectedProduct, chosenVariant) => ({
+const buildBatchHeader = (items) => ({
   id: rowId(),
-  product_id: selectedProduct.id,
-  product_title: selectedProduct.title,
-  product_code: selectedProduct.product_code || '',
-  variant_id: chosenVariant.id,
-  variant_label: formatVariantLabel(chosenVariant),
-  price: Number(chosenVariant.price || 0),
+  product_title: items.length === 1 ? items[0].product_title : `${items.length} products`,
+  variant_label: items.length === 1 ? items[0].variant_label : 'Multi-product order template',
+  items_template: cloneItems(items),
 })
 
+const cloneItems = (items = []) => items.map((item) => ({
+  ...item,
+  id: rowId(),
+  quantity: Math.max(1, Number(item.quantity || 1)),
+}))
+
 const appendRows = (batch, count = 1) => {
-  const rows = Array.from({ length: Math.max(1, Number(count || 1)) }, () => createEmptyRow())
+  const rows = Array.from({ length: Math.max(1, Number(count || 1)) }, () => createEmptyRow(cloneItems(batch.items_template || [])))
   batch.rows.push(...rows)
 }
+
+const clampRowItemQty = (item) => {
+  item.quantity = Math.max(1, Number.parseInt(item.quantity || 1, 10))
+}
+
+const batchTemplateTotal = (batch) => (batch.items_template || []).reduce((sum, item) => sum + rowItemTotal(item), 0)
+const batchTemplateCommission = (batch) => (batch.items_template || []).reduce((sum, item) => sum + rowItemCommission(item), 0)
 
 const removeBatch = (batchIndex) => {
   batches.value.splice(batchIndex, 1)
@@ -563,7 +735,7 @@ const removeBatch = (batchIndex) => {
 const removeRow = (batch, rowIndex) => {
   batch.rows.splice(rowIndex, 1)
   if (!batch.rows.length) {
-    batch.rows.push(createEmptyRow())
+    batch.rows.push(createEmptyRow(cloneItems(batch.items_template || [])))
   }
 }
 
@@ -571,6 +743,7 @@ const duplicateRow = (batch, sourceRow) => {
   batch.rows.push({
     ...sourceRow,
     id: rowId(),
+    items: cloneItems(sourceRow.items || []),
     _cityOpen: false,
     _cityLoading: false,
     _cityOptions: [],
@@ -628,8 +801,8 @@ const selectCityForRow = (row, cityOption) => {
 }
 
 const openCsvPicker = () => {
-  if (!draftProduct.value || !selectedVariant.value) {
-    toast.error('Select product and variant first.')
+  if (!draftItems.value.length) {
+    toast.error('Add at least one product to the order product list first.')
     return
   }
   csvFileInput.value?.click()
@@ -703,11 +876,6 @@ const parseDelimited = (text, delimiter) => {
   return rows
 }
 
-const parseQuantity = (value) => {
-  const parsed = Number.parseInt(String(value || '').replace(/[^0-9-]/g, ''), 10)
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
-}
-
 const extractByAliases = (cells, indexByHeader, aliases, fallbackIndex = -1) => {
   const headerIdx = aliases.map((alias) => indexByHeader[alias]).find((idx) => Number.isInteger(idx) && idx >= 0)
   if (Number.isInteger(headerIdx) && headerIdx >= 0) return String(cells[headerIdx] || '').trim()
@@ -738,8 +906,8 @@ const mapCsvRows = (matrix) => {
       const email = extractByAliases(cells, indexByHeader, ['email', 'mail'], 3)
       const address = extractByAliases(cells, indexByHeader, ['address', 'customeraddress'], 4)
       const city = extractByAliases(cells, indexByHeader, ['city', 'town'], 5)
-      const quantityRaw = extractByAliases(cells, indexByHeader, ['quantity', 'qty', 'q'], 6)
-      const notes = extractByAliases(cells, indexByHeader, ['notes', 'note', 'remark', 'remarks'], 7)
+      const notes = extractByAliases(cells, indexByHeader, ['notes', 'note', 'remark', 'remarks'])
+        || String(cells[7] || cells[6] || '').trim()
 
       if (!customerName && !phone && !address) return null
 
@@ -751,7 +919,6 @@ const mapCsvRows = (matrix) => {
         email,
         address,
         city,
-        quantity: parseQuantity(quantityRaw),
         notes,
       }
     })
@@ -794,8 +961,8 @@ const onCsvSelected = async (event) => {
   const file = event?.target?.files?.[0]
   if (!file) return
 
-  if (!draftProduct.value || !selectedVariant.value) {
-    toast.error('Select product and variant first.')
+  if (!draftItems.value.length) {
+    toast.error('Add at least one product to the order product list first.')
     event.target.value = ''
     return
   }
@@ -814,16 +981,16 @@ const onCsvSelected = async (event) => {
 
     await resolveCitiesForImportedRows(importedRows)
 
-    const selectedProduct = draftProduct.value
-    const chosenVariant = selectedVariant.value
-    let batch = batches.value.find((b) => Number(b.product_id) === Number(selectedProduct.id) && Number(b.variant_id) === Number(chosenVariant.id))
-    if (!batch) {
-      batch = {
-        ...buildBatchHeader(selectedProduct, chosenVariant),
-        rows: [],
-      }
-      batches.value.push(batch)
+    const templateItems = cloneItems(draftItems.value)
+    importedRows.forEach((row) => {
+      row.items = cloneItems(templateItems)
+    })
+
+    const batch = {
+      ...buildBatchHeader(templateItems),
+      rows: [],
     }
+    batches.value.push(batch)
 
     batch.rows.push(...importedRows)
     const invalidCityCount = importedRows.filter((row) => row._cityInvalid).length
@@ -860,8 +1027,8 @@ const validateBeforeSubmit = () => {
       const customerName = String(row.customer_name || '').trim()
       const phone = normalizePhone(row.phone)
       const address = String(row.address || '').trim()
-      const qty = Number(row.quantity || 0)
       const cityId = Number(row.city_id || 0)
+      const items = Array.isArray(row.items) ? row.items : []
 
       if (customerName.length < 2) {
         toast.error(`Batch ${bi + 1}, Row ${ri + 1}: customer name is required.`)
@@ -875,9 +1042,16 @@ const validateBeforeSubmit = () => {
         toast.error(`Batch ${bi + 1}, Row ${ri + 1}: address is required.`)
         return false
       }
-      if (!Number.isFinite(qty) || qty < 1) {
-        toast.error(`Batch ${bi + 1}, Row ${ri + 1}: quantity must be at least 1.`)
+      if (!items.length) {
+        toast.error(`Batch ${bi + 1}, Row ${ri + 1}: add at least one product.`)
         return false
+      }
+      for (let ii = 0; ii < items.length; ii += 1) {
+        const qty = Number(items[ii].quantity || 0)
+        if (!Number.isFinite(qty) || qty < 1) {
+          toast.error(`Batch ${bi + 1}, Row ${ri + 1}, Product ${ii + 1}: quantity must be at least 1.`)
+          return false
+        }
       }
       if (!Number.isInteger(cityId) || cityId <= 0) {
         row.city = ''
@@ -907,14 +1081,13 @@ const buildPayload = () => {
           city: String(row.city || '').trim() || null,
           notes: String(row.notes || '').trim() || null,
         },
-        items: [
-          {
-            product_id: Number(batch.product_id),
-            product_variant_id: Number(batch.variant_id),
-            quantity: Math.max(1, Number(row.quantity || 1)),
-            price: Number(batch.price || 0),
-          },
-        ],
+        commission_amount: Number(rowCommission(row) || 0),
+        items: (row.items || []).map((item) => ({
+          product_id: Number(item.product_id),
+          product_variant_id: Number(item.variant_id),
+          quantity: Math.max(1, Number(item.quantity || 1)),
+          price: Number(item.price || 0),
+        })),
       })
     })
   })

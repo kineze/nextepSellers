@@ -100,14 +100,30 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, index) in uploadRows" :key="row._id" class="border-t border-slate-200 align-top dark:border-slate-700" :class="Object.keys(row.errors || {}).length ? 'bg-rose-50/70 dark:bg-rose-950/20' : ''">
+            <tr
+              v-for="(row, index) in uploadRows"
+              :key="row._id"
+              class="group/upload-row border-t border-slate-200 align-top dark:border-slate-700"
+              :class="Object.keys(row.errors || {}).length ? 'bg-rose-50/70 dark:bg-rose-950/20' : ''"
+            >
               <td class="px-2 py-2 font-semibold text-slate-500">{{ row.row_number }}</td>
               <td class="px-2 py-2"><input v-model.trim="row.order_ref" :class="cellClass" @input="row.group_key = row.order_ref || `row-${row.row_number}`" /></td>
-              <td class="px-2 py-2">
+              <td class="relative px-2 py-2">
                 <span class="rounded-full px-2 py-0.5 text-[11px] font-bold" :class="Object.keys(row.errors || {}).length ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'">
-                  {{ Object.keys(row.errors || {}).length ? 'Fix' : 'Ready' }}
+                  {{ Object.keys(row.errors || {}).length ? 'Error' : 'Ready' }}
                 </span>
-                <p v-for="message in Object.values(row.errors || {})" :key="message" class="mt-1 text-[10px] text-rose-600 dark:text-rose-300">{{ message }}</p>
+                <div
+                  v-if="Object.keys(row.errors || {}).length"
+                  class="pointer-events-none absolute left-2 top-8 z-50 hidden w-72 rounded-xl border border-rose-200 bg-white p-3 text-[11px] text-rose-700 shadow-xl group-hover/upload-row:block dark:border-rose-500/30 dark:bg-slate-950 dark:text-rose-200"
+                >
+                  <p class="mb-1 font-bold text-slate-900 dark:text-white">Validation errors</p>
+                  <ul class="space-y-1">
+                    <li v-for="message in Object.values(row.errors || {})" :key="message" class="flex gap-1.5">
+                      <span class="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-current"></span>
+                      <span>{{ message }}</span>
+                    </li>
+                  </ul>
+                </div>
               </td>
               <td class="px-2 py-2"><input v-model.trim="row.name" :class="cellClass" @input="validateUploadRow(row)" /></td>
               <td class="px-2 py-2"><input v-model.trim="row.phone" :class="cellClass" @input="validateUploadRow(row)" /></td>

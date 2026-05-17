@@ -253,6 +253,7 @@ Route::middleware(['auth:sanctum', 'role:Seller'])->group(function () {
     Route::get('/seller/customers/search', [SellerOrderController::class, 'customers']);
     Route::get('/seller/order-products', [SellerOrderController::class, 'productOptions']);
     Route::get('/seller/orders', [SellerOrderController::class, 'index']);
+    Route::post('/seller/orders/bulk/preview', [SellerOrderController::class, 'previewBulkUpload']);
     Route::post('/seller/orders/bulk', [SellerOrderController::class, 'storeBulk']);
     Route::get('/seller/orders/{order}', [SellerOrderController::class, 'sellerShow'])->whereNumber('order');
     Route::get('/seller/profile', [SellerProfileController::class, 'show']);

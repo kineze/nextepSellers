@@ -1,6 +1,0 @@
-name,phone,additional_phone,email,address,city,quantity,notes
-Nimal Perera,+94771234567,+94770111222,nimal.perera@example.com,"No 15, Galle Road, Mount Lavinia",Dehiwala,2,Valid city
-Sachini Fernando,+94775554433,,sachini.fernando@example.com,"221/4, Temple Road, Nugegoda",Nugegodaa,1,Invalid city typo
-Kasun Silva,+94766668899,+94761231234,kasun.silva@example.com,"44, Lake Drive, Battaramulla",Battaramulla,3,Valid city
-Dinithi Jayasinghe,+94778889900,,dinithi.j@example.com,"18/B, Station Road, Maharagama",Mahargama,1,Invalid city typo
-Ruwan Wijesinghe,+94712345678,+94719876543,ruwan.w@example.com,"77, Kandy Road, Kadawatha",Kadawatha,2,Valid city

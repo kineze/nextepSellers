@@ -27,6 +27,142 @@
       </div>
     </div>
 
+    <section class="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-300">Excel Upload</p>
+          <h2 class="mt-2 text-xl font-bold text-slate-900 dark:text-white">Upload orders with products from Excel</h2>
+          <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Headers: order_ref, name, phone, additional_phone, address, city, product_code or product_name, qty, price, notes.
+          </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <input ref="uploadFileInput" type="file" accept=".csv,.txt,.xlsx,.xls" class="hidden" @change="handleUploadFileChange" />
+          <button
+            type="button"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            :disabled="previewingUpload"
+            @click="uploadFileInput?.click()"
+          >
+            {{ previewingUpload ? 'Reading...' : 'Choose Excel / CSV' }}
+          </button>
+          <button
+            type="button"
+            class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="submittingUpload || !uploadCreatableOrders.length"
+            @click="submitUploadedOrders"
+          >
+            {{ submittingUpload ? 'Submitting...' : `Submit ${uploadCreatableOrders.length} Valid Orders` }}
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-4 grid gap-3 sm:grid-cols-5">
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Rows</p>
+          <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ uploadRows.length }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Valid Orders</p>
+          <p class="mt-1 text-xl font-bold text-emerald-600 dark:text-emerald-300">{{ uploadCreatableOrders.length }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Errors</p>
+          <p class="mt-1 text-xl font-bold text-rose-600 dark:text-rose-300">{{ uploadErrorRows }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Commission</p>
+          <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">LKR {{ toMoney(uploadCommission) }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+          <p class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Points</p>
+          <p class="mt-1 text-xl font-bold text-slate-900 dark:text-white">{{ uploadPoints }}</p>
+        </div>
+      </div>
+
+      <div v-if="uploadRows.length" class="mt-5 overflow-x-auto">
+        <table class="min-w-[1180px] w-full text-left text-xs">
+          <thead class="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <tr>
+              <th class="px-2 py-2">Row</th>
+              <th class="px-2 py-2">Ref</th>
+              <th class="px-2 py-2">Status</th>
+              <th class="px-2 py-2">Customer</th>
+              <th class="px-2 py-2">Phone</th>
+              <th class="px-2 py-2">Address</th>
+              <th class="px-2 py-2">City</th>
+              <th class="px-2 py-2">Product / SKU</th>
+              <th class="px-2 py-2">Qty</th>
+              <th class="px-2 py-2">Value</th>
+              <th class="px-2 py-2">Commission</th>
+              <th class="px-2 py-2">Points</th>
+              <th class="px-2 py-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in uploadRows" :key="row._id" class="border-t border-slate-200 align-top dark:border-slate-700" :class="Object.keys(row.errors || {}).length ? 'bg-rose-50/70 dark:bg-rose-950/20' : ''">
+              <td class="px-2 py-2 font-semibold text-slate-500">{{ row.row_number }}</td>
+              <td class="px-2 py-2"><input v-model.trim="row.order_ref" :class="cellClass" @input="row.group_key = row.order_ref || `row-${row.row_number}`" /></td>
+              <td class="px-2 py-2">
+                <span class="rounded-full px-2 py-0.5 text-[11px] font-bold" :class="Object.keys(row.errors || {}).length ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'">
+                  {{ Object.keys(row.errors || {}).length ? 'Fix' : 'Ready' }}
+                </span>
+                <p v-for="message in Object.values(row.errors || {})" :key="message" class="mt-1 text-[10px] text-rose-600 dark:text-rose-300">{{ message }}</p>
+              </td>
+              <td class="px-2 py-2"><input v-model.trim="row.name" :class="cellClass" @input="validateUploadRow(row)" /></td>
+              <td class="px-2 py-2"><input v-model.trim="row.phone" :class="cellClass" @input="validateUploadRow(row)" /></td>
+              <td class="px-2 py-2"><input v-model.trim="row.address" :class="cellClass" @input="validateUploadRow(row)" /></td>
+              <td class="px-2 py-2">
+                <div class="relative min-w-44">
+                  <input v-model.trim="row.city" :class="cellClass" placeholder="Search city" @focus="openCityDropdown(row)" @input="onCityInput(row)" @blur="closeCityDropdownWithDelay(row)" />
+                  <div v-if="row._cityOpen" class="absolute z-30 mt-1 max-h-52 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                    <button v-for="cityOption in row._cityOptions" :key="`upload-city-${row._id}-${cityOption.id}`" type="button" class="block w-full border-b border-slate-100 px-3 py-2 text-left text-xs last:border-b-0 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800" @mousedown.prevent="selectCityForRow(row, cityOption)">
+                      {{ cityOption.name_en }}
+                    </button>
+                    <div v-if="!row._cityLoading && !row._cityOptions.length" class="px-3 py-2 text-[11px] text-slate-500">No cities found</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-2 py-2">
+                <div class="relative min-w-64">
+                  <input v-model.trim="row.product_query" :class="cellClass" placeholder="Name, product code, or SKU" @focus="row._productOpen = true" @input="searchProductsForUploadRow(row)" @blur="closeProductForUploadWithDelay(row)" />
+                  <div v-if="row._productOpen" class="absolute z-40 mt-1 max-h-72 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                    <template v-if="row._variantOptions?.length">
+                      <button v-for="variant in row._variantOptions" :key="`upload-variant-${row._id}-${variant.id}`" type="button" class="block w-full border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800" @mousedown.prevent="selectVariantForUploadRow(row, row._pendingProduct, variant)">
+                        <span class="block font-semibold text-slate-900 dark:text-white">{{ row._pendingProduct?.title }}</span>
+                        <span class="block text-[11px] text-slate-500">{{ variant.sku }} | {{ formatVariantLabel(variant) }} | LKR {{ toMoney(variant.price) }}</span>
+                      </button>
+                    </template>
+                    <template v-else>
+                      <button v-for="product in row._productOptions" :key="`upload-product-${row._id}-${product.id}`" type="button" class="block w-full border-b border-slate-100 px-3 py-2 text-left last:border-b-0 hover:bg-slate-100 dark:border-slate-800 dark:hover:bg-slate-800" @mousedown.prevent="selectProductForUploadRow(row, product)">
+                        <span class="block font-semibold text-slate-900 dark:text-white">{{ product.title }}</span>
+                        <span class="block text-[11px] text-slate-500">{{ product.product_code || 'No code' }} | {{ product.variants?.length || 0 }} variants</span>
+                      </button>
+                      <div v-if="row._productLoading" class="px-3 py-2 text-[11px] text-slate-500">Searching...</div>
+                      <div v-if="!row._productLoading && !row._productOptions?.length" class="px-3 py-2 text-[11px] text-slate-500">No products found.</div>
+                    </template>
+                  </div>
+                  <p v-if="row.product_title" class="mt-1 text-[11px] text-slate-500">{{ row.product_title }} | {{ row.variant_label }}</p>
+                </div>
+              </td>
+              <td class="px-2 py-2"><input v-model.number="row.qty" min="1" type="number" :class="[cellClass, 'w-20']" @input="recalculateUploadRow(row)" /></td>
+              <td class="px-2 py-2 font-semibold">LKR {{ toMoney(uploadRowTotal(row)) }}</td>
+              <td class="px-2 py-2 font-semibold text-emerald-700 dark:text-emerald-300">LKR {{ toMoney(row.commission_amount) }}</td>
+              <td class="px-2 py-2 font-semibold">{{ row.points_earned || 0 }}</td>
+              <td class="px-2 py-2 text-right">
+                <button type="button" class="rounded-lg p-2 text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10" @click="uploadRows.splice(index, 1)">
+                  <i class="fas fa-trash text-xs" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div v-else class="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950/50 dark:text-slate-400">
+        Upload an Excel or CSV file to preview valid orders, commission, and points before submitting.
+      </div>
+    </section>
+
     <div class="rounded-3xl border border-slate-200/70 bg-white/90 p-6 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
       <div class="grid gap-4 lg:grid-cols-12">
         <div class="lg:col-span-5">
@@ -414,14 +550,19 @@ const isFullscreen = ref(false)
 const loadingProducts = ref(false)
 const importingCsv = ref(false)
 const submitting = ref(false)
+const previewingUpload = ref(false)
+const submittingUpload = ref(false)
 const productQuery = ref('')
 const productDdOpen = ref(false)
 const activeProductIndex = ref(-1)
 let productSearchTimer = null
 const csvFileInput = ref(null)
+const uploadFileInput = ref(null)
 const products = ref([])
 const batches = ref([])
 const draftItems = ref([])
+const uploadRows = ref([])
+const uploadFileName = ref('')
 
 const draft = reactive({
   productId: null,
@@ -516,6 +657,19 @@ const estimatedCommission = computed(() => batches.value.reduce((sum, batch) => 
 }, 0))
 const draftTotal = computed(() => draftItems.value.reduce((sum, item) => sum + rowItemTotal(item), 0))
 const draftCommission = computed(() => draftItems.value.reduce((sum, item) => sum + rowItemCommission(item), 0))
+const uploadErrorRows = computed(() => uploadRows.value.filter((row) => Object.keys(row.errors || {}).length > 0).length)
+const uploadCreatableOrders = computed(() => {
+  const groups = new Map()
+  uploadRows.value.forEach((row) => {
+    const key = row.group_key || `row-${row.row_number}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(row)
+  })
+
+  return Array.from(groups.values()).filter((rows) => rows.length && rows.every((row) => Object.keys(row.errors || {}).length === 0))
+})
+const uploadCommission = computed(() => uploadCreatableOrders.value.flat().reduce((sum, row) => sum + Number(row.commission_amount || 0), 0))
+const uploadPoints = computed(() => uploadCreatableOrders.value.flat().reduce((sum, row) => sum + Number(row.points_earned || 0), 0))
 
 const rowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
 
@@ -569,6 +723,27 @@ const rowItemTotal = (item) => Math.max(0, Number(item.price || 0) * Number(item
 const rowItemCommission = (item) => commissionFor(item.price, item.quantity, item.commission_rule)
 const rowTotal = (row) => (row.items || []).reduce((sum, item) => sum + rowItemTotal(item), 0)
 const rowCommission = (row) => (row.items || []).reduce((sum, item) => sum + rowItemCommission(item), 0)
+const uploadRowTotal = (row) => Math.max(0, Number(row.price || 0) * Number(row.qty || 0))
+
+const normalizeUploadPreviewRow = (row) => ({
+  ...row,
+  _id: rowId(),
+  _upload: true,
+  group_key: row.group_key || row.order_ref || `row-${row.row_number}`,
+  product_query: row.product_code || row.product_name || row.product_title || '',
+  _productOpen: false,
+  _productLoading: false,
+  _productOptions: [],
+  _variantOptions: [],
+  _pendingProduct: null,
+  _productTimer: null,
+  _cityOpen: false,
+  _cityLoading: false,
+  _cityOptions: [],
+  _cityTimer: null,
+  _cityInvalid: false,
+  errors: row.errors || {},
+})
 
 const isRowReady = (row) => {
   const customerName = String(row.customer_name || '').trim()
@@ -784,6 +959,7 @@ const onCityInput = (row) => {
   row.city_id = null
   row._cityInvalid = false
   row._cityOpen = true
+  if (row._upload) validateUploadRow(row)
 
   if (row._cityTimer) {
     window.clearTimeout(row._cityTimer)
@@ -798,6 +974,137 @@ const selectCityForRow = (row, cityOption) => {
   row.city = String(cityOption?.name_en || '').trim()
   row._cityInvalid = false
   row._cityOpen = false
+  if (row._upload) validateUploadRow(row)
+}
+
+const handleUploadFileChange = async (event) => {
+  const file = event?.target?.files?.[0]
+  if (!file) return
+
+  previewingUpload.value = true
+  const form = new FormData()
+  form.append('file', file)
+
+  try {
+    const { data } = await axios.post('/api/seller/orders/bulk/preview', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    uploadFileName.value = data?.upload_file_name || file.name
+    uploadRows.value = Array.isArray(data?.rows) ? data.rows.map(normalizeUploadPreviewRow) : []
+    toast.success(`${uploadRows.value.length} rows loaded for validation.`)
+  } catch (error) {
+    toast.error(error?.response?.data?.message || 'Failed to read upload file.')
+  } finally {
+    previewingUpload.value = false
+    if (event?.target) event.target.value = ''
+  }
+}
+
+const validateUploadRow = (row) => {
+  const errors = { ...(row.errors || {}) }
+  const phone = String(row.phone || '').replace(/\D+/g, '')
+
+  row.phone = phone.slice(0, 10)
+
+  if (!String(row.name || '').trim()) errors.name = 'Name is required.'
+  else delete errors.name
+
+  if (!row.phone) errors.phone = 'Phone is required.'
+  else if (!/^[0-9]{10}$/.test(row.phone)) errors.phone = 'Phone must be 10 digits.'
+  else delete errors.phone
+
+  if (!String(row.address || '').trim()) errors.address = 'Address is required.'
+  else delete errors.address
+
+  if (!Number(row.city_id || 0)) errors.city = 'Select a valid city.'
+  else delete errors.city
+
+  if (!Number(row.product_id || 0) || !Number(row.variant_id || 0)) errors.product = 'Select a valid product variant.'
+  else delete errors.product
+
+  if (!Number(row.qty || 0) || Number(row.qty || 0) < 1) errors.qty = 'Quantity must be at least 1.'
+  else delete errors.qty
+
+  row.errors = errors
+}
+
+const recalculateUploadRow = (row) => {
+  row.qty = Math.max(1, Number.parseInt(row.qty || 1, 10))
+  row.commission_amount = commissionFor(row.price, row.qty, row.commission_rule)
+  row.points_earned = Math.floor(uploadRowTotal(row) / Math.max(1, Number(row.points_rate || 100)))
+  validateUploadRow(row)
+}
+
+const searchProductsForUploadRow = (row) => {
+  row.product_id = null
+  row.variant_id = null
+  row.product_title = ''
+  row.variant_label = ''
+  row.commission_amount = 0
+  row.points_earned = 0
+  row._variantOptions = []
+  row._pendingProduct = null
+  row._productOpen = true
+  validateUploadRow(row)
+
+  if (row._productTimer) window.clearTimeout(row._productTimer)
+  row._productTimer = window.setTimeout(async () => {
+    const search = String(row.product_query || '').trim()
+    if (!search) {
+      row._productOptions = []
+      row._productLoading = false
+      return
+    }
+
+    row._productLoading = true
+    try {
+      const { data } = await axios.get('/api/seller/order-products', {
+        params: { search, limit: 20 },
+      })
+      row._productOptions = Array.isArray(data?.products) ? data.products : []
+    } catch {
+      row._productOptions = []
+    } finally {
+      row._productLoading = false
+    }
+  }, 220)
+}
+
+const selectProductForUploadRow = (row, product) => {
+  const variants = Array.isArray(product?.variants) ? product.variants : []
+  if (variants.length === 1) {
+    selectVariantForUploadRow(row, product, variants[0])
+    return
+  }
+
+  row._pendingProduct = product
+  row._variantOptions = variants
+  row._productOptions = []
+  row._productOpen = true
+}
+
+const selectVariantForUploadRow = (row, product, variant) => {
+  row.product_id = Number(product?.id || 0) || null
+  row.product_title = product?.title || ''
+  row.product_code = variant?.sku || product?.product_code || ''
+  row.product_query = row.product_code || row.product_title
+  row.variant_id = Number(variant?.id || 0) || null
+  row.variant_label = formatVariantLabel(variant)
+  row.price = Number(variant?.price || row.price || 0)
+  row.commission_rule = product?.commission_rule || null
+  row.commission_amount = commissionFor(row.price, row.qty, row.commission_rule)
+  row.points_earned = Math.floor(uploadRowTotal(row) / Math.max(1, Number(row.points_rate || 100)))
+  row._productOpen = false
+  row._productOptions = []
+  row._variantOptions = []
+  row._pendingProduct = null
+  validateUploadRow(row)
+}
+
+const closeProductForUploadWithDelay = (row) => {
+  window.setTimeout(() => {
+    row._productOpen = false
+  }, 120)
 }
 
 const openCsvPicker = () => {
@@ -1093,6 +1400,54 @@ const buildPayload = () => {
   })
 
   return { orders }
+}
+
+const buildUploadPayload = () => {
+  const orders = uploadCreatableOrders.value.map((rows) => {
+    const first = rows[0]
+
+    return {
+      customer: {
+        name: String(first.name || '').trim(),
+        phone: normalizePhone(first.phone),
+        additional_phone: String(first.additional_phone || '').trim() || null,
+        email: String(first.email || '').trim() || null,
+        address: String(first.address || '').trim(),
+        city_id: Number(first.city_id || 0) || null,
+        city: String(first.city || '').trim() || null,
+        notes: String(first.notes || '').trim() || null,
+      },
+      items: rows.map((row) => ({
+        product_id: Number(row.product_id),
+        product_variant_id: Number(row.variant_id),
+        quantity: Math.max(1, Number(row.qty || 1)),
+        price: Number(row.price || 0),
+      })),
+    }
+  })
+
+  return { orders }
+}
+
+const submitUploadedOrders = async () => {
+  uploadRows.value.forEach(validateUploadRow)
+
+  if (!uploadCreatableOrders.value.length) {
+    toast.error('No valid uploaded orders are ready to submit.')
+    return
+  }
+
+  submittingUpload.value = true
+  try {
+    const { data } = await axios.post('/api/seller/orders/bulk', buildUploadPayload())
+    toast.success(data?.message || `${Number(data?.created_count || 0)} uploaded orders submitted.`)
+    uploadRows.value = []
+    uploadFileName.value = ''
+  } catch (error) {
+    toast.error(error?.response?.data?.message || 'Failed to submit uploaded orders.')
+  } finally {
+    submittingUpload.value = false
+  }
 }
 
 const submitBulk = async () => {

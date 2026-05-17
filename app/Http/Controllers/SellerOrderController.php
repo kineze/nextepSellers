@@ -11,6 +11,7 @@ use App\Models\Seller;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductLevel;
+use App\Models\Varient;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -729,7 +730,10 @@ class SellerOrderController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('product_code', 'like', '%' . $search . '%');
+                    ->orWhere('product_code', 'like', '%' . $search . '%')
+                    ->orWhereHas('varients', function ($variantQuery) use ($search) {
+                        $variantQuery->where('sku', 'like', '%' . $search . '%');
+                    });
             });
         }
 
@@ -761,6 +765,44 @@ class SellerOrderController extends Controller
 
         return response()->json([
             'products' => $products,
+        ]);
+    }
+
+    public function previewBulkUpload(Request $request)
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt,xlsx,xls', 'max:5120'],
+        ]);
+
+        $seller = $request->user()?->seller;
+        if (!$seller) {
+            return response()->json([
+                'message' => 'Seller profile not found for this user.',
+            ], 422);
+        }
+
+        $file = $request->file('file');
+        $extension = strtolower((string) $file->getClientOriginalExtension());
+
+        if ($extension === 'xls') {
+            return response()->json([
+                'message' => 'Old .xls files are not supported yet. Please save the sheet as .xlsx or CSV and upload again.',
+            ], 422);
+        }
+
+        $rows = $this->readBulkUploadRows($file->getRealPath(), $extension);
+        $sellerLevelId = (int) ($seller->seller_level_id ?? 0);
+
+        $previewRows = collect($rows)
+            ->take(500)
+            ->values()
+            ->map(fn ($row, $index) => $this->validateBulkUploadRow($row, $index + 2, $sellerLevelId))
+            ->values();
+
+        return response()->json([
+            'upload_file_name' => $file->getClientOriginalName(),
+            'rows' => $previewRows,
+            'summary' => $this->bulkPreviewSummary($previewRows),
         ]);
     }
 
@@ -1186,6 +1228,354 @@ class SellerOrderController extends Controller
         );
 
         return $order;
+    }
+
+    private function readBulkUploadRows(string $path, string $extension): array
+    {
+        if ($extension === 'xlsx') {
+            return $this->readXlsxRows($path);
+        }
+
+        $handle = fopen($path, 'r');
+        if (!$handle) {
+            return [];
+        }
+
+        $headers = [];
+        $rows = [];
+        $line = 0;
+
+        while (($cells = fgetcsv($handle)) !== false) {
+            $line++;
+            if ($line === 1) {
+                $headers = $this->normalizeBulkHeaders($cells);
+                continue;
+            }
+
+            $row = [];
+            foreach ($cells as $index => $value) {
+                $key = $headers[$index] ?? null;
+                if ($key) {
+                    $row[$key] = is_string($value) ? trim($value) : $value;
+                }
+            }
+
+            if (collect($row)->filter(fn ($value) => trim((string) $value) !== '')->isNotEmpty()) {
+                $rows[] = $row;
+            }
+        }
+
+        fclose($handle);
+
+        return $rows;
+    }
+
+    private function readXlsxRows(string $path): array
+    {
+        if (!class_exists(\ZipArchive::class)) {
+            abort(422, 'XLSX uploads need the PHP Zip extension. Please upload CSV instead.');
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) {
+            abort(422, 'Unable to read the Excel file. Please check the file and try again.');
+        }
+
+        $sharedStrings = [];
+        $sharedXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($sharedXml !== false) {
+            $xml = simplexml_load_string($sharedXml);
+            foreach ($xml->si ?? [] as $si) {
+                $parts = [];
+                if (isset($si->t)) {
+                    $parts[] = (string) $si->t;
+                }
+                foreach ($si->r ?? [] as $run) {
+                    $parts[] = (string) ($run->t ?? '');
+                }
+                $sharedStrings[] = implode('', $parts);
+            }
+        }
+
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+
+        if ($sheetXml === false) {
+            abort(422, 'The Excel file does not contain a readable first sheet.');
+        }
+
+        $sheet = simplexml_load_string($sheetXml);
+        $matrix = [];
+
+        foreach ($sheet->sheetData->row ?? [] as $row) {
+            $cells = [];
+            foreach ($row->c ?? [] as $cell) {
+                $ref = (string) ($cell['r'] ?? '');
+                $column = $this->xlsxColumnIndex($ref);
+                $type = (string) ($cell['t'] ?? '');
+                $value = (string) ($cell->v ?? '');
+
+                if ($type === 's') {
+                    $value = $sharedStrings[(int) $value] ?? '';
+                } elseif ($type === 'inlineStr') {
+                    $value = (string) ($cell->is->t ?? '');
+                }
+
+                $cells[$column] = trim($value);
+            }
+
+            if (collect($cells)->filter(fn ($value) => trim((string) $value) !== '')->isNotEmpty()) {
+                ksort($cells);
+                $rowCells = [];
+                $maxColumn = max(array_keys($cells));
+                for ($index = 0; $index <= $maxColumn; $index++) {
+                    $rowCells[$index] = $cells[$index] ?? '';
+                }
+                $matrix[] = $rowCells;
+            }
+        }
+
+        if (empty($matrix)) {
+            return [];
+        }
+
+        $headers = $this->normalizeBulkHeaders(array_shift($matrix));
+        $rows = [];
+        foreach ($matrix as $cells) {
+            $row = [];
+            foreach ($cells as $index => $value) {
+                $key = $headers[$index] ?? null;
+                if ($key) {
+                    $row[$key] = trim((string) $value);
+                }
+            }
+            if (collect($row)->filter(fn ($value) => trim((string) $value) !== '')->isNotEmpty()) {
+                $rows[] = $row;
+            }
+        }
+
+        return $rows;
+    }
+
+    private function xlsxColumnIndex(string $cellReference): int
+    {
+        preg_match('/^[A-Z]+/i', $cellReference, $matches);
+        $letters = strtoupper($matches[0] ?? 'A');
+        $index = 0;
+        foreach (str_split($letters) as $letter) {
+            $index = ($index * 26) + (ord($letter) - 64);
+        }
+
+        return max(0, $index - 1);
+    }
+
+    private function normalizeBulkHeaders(array $headers): array
+    {
+        return collect($headers)
+            ->map(function ($heading) {
+                $key = strtolower(trim((string) $heading));
+                $key = trim(preg_replace('/[^a-z0-9]+/', '_', $key), '_');
+
+                return match ($key) {
+                    'ref', 'reference', 'order_ref', 'order_reference' => 'order_ref',
+                    'customer_name', 'full_name', 'name' => 'name',
+                    'customer_phone', 'mobile', 'phone_number', 'contact', 'contact_number' => 'phone',
+                    'additional_phone', 'secondary_phone', 'alt_phone' => 'additional_phone',
+                    'customer_address', 'shipping_address' => 'address',
+                    'town', 'city_name', 'delivery_city' => 'city',
+                    'sku', 'product_sku', 'product_code', 'variant_sku' => 'product_code',
+                    'product', 'product_name', 'product_title', 'item_name' => 'product_name',
+                    'quantity' => 'qty',
+                    'remark', 'remarks', 'note' => 'notes',
+                    default => $key,
+                };
+            })
+            ->all();
+    }
+
+    private function validateBulkUploadRow(array $row, int $rowNumber, int $sellerLevelId): array
+    {
+        $phone = $this->normalizeUploadPhone((string) ($row['phone'] ?? ''));
+        $cityName = trim((string) ($row['city'] ?? ''));
+        $city = $this->matchBulkCity($cityName);
+        $productCode = trim((string) ($row['product_code'] ?? ''));
+        $productName = trim((string) ($row['product_name'] ?? ''));
+        $variant = $this->findVariantForBulkUpload($productCode, $productName);
+        $product = $variant?->product;
+        $qty = max(1, (int) ($row['qty'] ?? 1));
+        $price = (float) ($row['price'] ?? $variant?->price ?? 0);
+        $errors = [];
+
+        foreach (['phone', 'name', 'address', 'city'] as $field) {
+            if (trim((string) ($row[$field] ?? '')) === '') {
+                $errors[$field] = ucfirst($field) . ' is required.';
+            }
+        }
+
+        if ($phone && !preg_match('/^[0-9]{10}$/', $phone)) {
+            $errors['phone'] = 'Phone must be 10 digits.';
+        }
+
+        if ($cityName !== '' && !$city) {
+            $errors['city'] = 'City was not found.';
+        }
+
+        if ($productCode === '' && $productName === '') {
+            $errors['product'] = 'Product code, SKU, or product name is required.';
+        } elseif (!$variant) {
+            $errors['product'] = 'Product was not found or needs a variant selection.';
+        }
+
+        if ($qty < 1) {
+            $errors['qty'] = 'Quantity must be at least 1.';
+        }
+
+        $commission = $variant && $product
+            ? $this->calculateCommissionForItems(collect([[
+                'product_id' => (int) $product->id,
+                'quantity' => $qty,
+                'price' => $price,
+            ]]), $sellerLevelId)
+            : 0.0;
+        $commissionRule = $product
+            ? ProductLevel::query()
+                ->where('level_id', $sellerLevelId)
+                ->where('product_id', $product->id)
+                ->first(['type', 'value'])
+            : null;
+        $pointRate = max(1, (float) config('seller.lkr_per_point', 100));
+        $points = (int) floor(max(0, $price * $qty) / $pointRate);
+
+        return [
+            'row_number' => $rowNumber,
+            'group_key' => trim((string) ($row['order_ref'] ?? '')) ?: 'row-' . $rowNumber,
+            'order_ref' => trim((string) ($row['order_ref'] ?? '')),
+            'name' => trim((string) ($row['name'] ?? '')),
+            'phone' => $phone,
+            'additional_phone' => $this->normalizeUploadPhone((string) ($row['additional_phone'] ?? '')),
+            'email' => trim((string) ($row['email'] ?? '')),
+            'address' => trim((string) ($row['address'] ?? '')),
+            'city' => $city ? (string) $city->name_en : $cityName,
+            'city_id' => $city?->id,
+            'product_code' => $productCode ?: ($variant?->sku ?? ''),
+            'product_name' => $productName,
+            'product_id' => $product?->id,
+            'product_title' => $product?->title ?? '',
+            'variant_id' => $variant?->id,
+            'variant_label' => $variant ? $this->bulkVariantLabel($variant) : '',
+            'price' => $price,
+            'qty' => $qty,
+            'notes' => trim((string) ($row['notes'] ?? '')),
+            'commission_rule' => $commissionRule ? [
+                'type' => (string) $commissionRule->type,
+                'value' => (float) $commissionRule->value,
+            ] : null,
+            'commission_amount' => $commission,
+            'points_earned' => $points,
+            'points_rate' => $pointRate,
+            'errors' => $errors,
+        ];
+    }
+
+    private function bulkPreviewSummary(Collection $rows): array
+    {
+        $readyRows = $rows->filter(fn ($row) => empty($row['errors']));
+        $readyGroups = $readyRows->groupBy('group_key')->filter(fn ($group) => $group->every(fn ($row) => empty($row['errors'])));
+
+        return [
+            'rows' => $rows->count(),
+            'valid_rows' => $readyRows->count(),
+            'error_rows' => $rows->count() - $readyRows->count(),
+            'valid_orders' => $readyGroups->count(),
+            'total_value' => round((float) $readyRows->sum(fn ($row) => (float) $row['price'] * (int) $row['qty']), 2),
+            'commission_amount' => round((float) $readyRows->sum('commission_amount'), 2),
+            'points_earned' => (int) $readyRows->sum('points_earned'),
+        ];
+    }
+
+    private function findVariantForBulkUpload(string $code, string $productName): ?Varient
+    {
+        if ($code !== '') {
+            $variant = Varient::query()
+                ->with('product:id,title,product_code,is_active')
+                ->where('sku', $code)
+                ->where('is_active', true)
+                ->whereHas('product', fn ($query) => $query->where('is_active', true))
+                ->first();
+
+            if ($variant) {
+                return $variant;
+            }
+
+            $variants = Varient::query()
+                ->with('product:id,title,product_code,is_active')
+                ->where('is_active', true)
+                ->whereHas('product', fn ($query) => $query
+                    ->where('is_active', true)
+                    ->where('product_code', $code))
+                ->limit(2)
+                ->get();
+
+            if ($variants->count() === 1) {
+                return $variants->first();
+            }
+        }
+
+        if ($productName !== '') {
+            $variants = Varient::query()
+                ->with('product:id,title,product_code,is_active')
+                ->where('is_active', true)
+                ->whereHas('product', fn ($query) => $query
+                    ->where('is_active', true)
+                    ->where('title', 'like', '%' . $productName . '%'))
+                ->limit(2)
+                ->get();
+
+            if ($variants->count() === 1) {
+                return $variants->first();
+            }
+        }
+
+        return null;
+    }
+
+    private function matchBulkCity(string $name): ?City
+    {
+        $needle = mb_strtolower(trim($name));
+        if ($needle === '') {
+            return null;
+        }
+
+        return City::query()
+            ->select('id', 'name_en')
+            ->whereRaw('LOWER(name_en) = ?', [$needle])
+            ->first();
+    }
+
+    private function normalizeUploadPhone(string $phone): string
+    {
+        $digits = preg_replace('/\D+/', '', $phone) ?? '';
+        if (strlen($digits) === 11 && str_starts_with($digits, '94')) {
+            return '0' . substr($digits, 2);
+        }
+
+        return $digits;
+    }
+
+    private function bulkVariantLabel(Varient $variant): string
+    {
+        $attributes = collect($variant->attributes ?? [])
+            ->map(function ($value, $key) {
+                if (is_array($value)) {
+                    $value = $value['label'] ?? $value['value'] ?? '';
+                }
+
+                return trim((string) $value) !== '' ? "{$key}: {$value}" : null;
+            })
+            ->filter()
+            ->implode(', ');
+
+        return $attributes ?: (string) $variant->sku;
     }
 
     private function generateBulkRequestNo(): string

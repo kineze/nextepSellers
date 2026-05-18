@@ -30,6 +30,7 @@ use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
 use App\Http\Controllers\SystemDataController;
+use App\Http\Controllers\PenaltyTypeController;
 
 Route::post('/delivery/webhook', [DeliveryWebhookController::class, 'store'])
     ->name('delivery.webhook.store');
@@ -103,6 +104,11 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::post('/delivery-fees', [DeliveryFeeController::class, 'store']);
     Route::put('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'update']);
     Route::delete('/delivery-fees/{deliveryFee}', [DeliveryFeeController::class, 'destroy']);
+
+    Route::get('/penalty-types', [PenaltyTypeController::class, 'index']);
+    Route::post('/penalty-types', [PenaltyTypeController::class, 'store']);
+    Route::put('/penalty-types/{penaltyType}', [PenaltyTypeController::class, 'update']);
+    Route::delete('/penalty-types/{penaltyType}', [PenaltyTypeController::class, 'destroy']);
 
     Route::get('/admin/tracking/manual-fetch/summary', [AdminOrderTrackingController::class, 'summary']);
     Route::post('/admin/tracking/manual-fetch', [AdminOrderTrackingController::class, 'fetchShipped']);

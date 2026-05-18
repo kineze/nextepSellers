@@ -101,6 +101,11 @@ class InvoiceGenerationService
             ->merge($affiliateSellerIds)
             ->filter()
             ->unique()
+            ->reject(function ($sellerId) {
+                $seller = Seller::query()->find((int) $sellerId);
+
+                return $seller && app(PenaltyApplicationService::class)->sellerHasRestriction($seller, 'block_withdrawals');
+            })
             ->values();
 
         if ($sellerIds->isEmpty()) {

@@ -12,6 +12,7 @@ use App\Models\Payment;
 use App\Models\Product;
 use App\Models\ProductLevel;
 use App\Models\Varient;
+use App\Services\PenaltyApplicationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,10 @@ use Illuminate\Support\Str;
 
 class SellerOrderController extends Controller
 {
+    public function __construct(private readonly PenaltyApplicationService $penaltyApplicationService)
+    {
+    }
+
     public function adminOrderFilterOptions()
     {
         $sellers = Seller::query()
@@ -839,6 +844,13 @@ class SellerOrderController extends Controller
             ], 422);
         }
 
+        $orderPermission = $this->penaltyApplicationService->sellerCanPlaceOrders($seller);
+        if (! $orderPermission['allowed']) {
+            return response()->json([
+                'message' => $orderPermission['message'],
+            ], 403);
+        }
+
         $order = $this->createSellerOrder($seller, $validated, null);
 
         return response()->json([
@@ -881,6 +893,13 @@ class SellerOrderController extends Controller
             return response()->json([
                 'message' => 'Seller profile not found for this user.',
             ], 422);
+        }
+
+        $orderPermission = $this->penaltyApplicationService->sellerCanPlaceOrders($seller, count($validated['orders']));
+        if (! $orderPermission['allowed']) {
+            return response()->json([
+                'message' => $orderPermission['message'],
+            ], 403);
         }
 
         $bulkOrderRequest = null;

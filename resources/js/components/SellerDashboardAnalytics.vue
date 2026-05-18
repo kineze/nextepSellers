@@ -7,6 +7,45 @@
       {{ error }}
     </div>
 
+    <div
+      v-if="data.seller.is_restrict"
+      class="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-rose-800 shadow-sm dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-100"
+    >
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p class="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-rose-600 dark:text-rose-300">Account Restricted</p>
+          <h2 class="mt-2 text-xl font-extrabold">Your account is restricted</h2>
+          <p class="mt-1 text-sm text-rose-700 dark:text-rose-200">
+            Some seller actions are currently limited due to active penalties on your account.
+          </p>
+        </div>
+        <span class="inline-flex w-fit rounded-full bg-white/80 px-3 py-1 text-xs font-bold uppercase tracking-wide text-rose-700 dark:bg-rose-950/40 dark:text-rose-200">
+          {{ restrictionLabel }}
+        </span>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+        <span
+          v-if="data.seller.restrictions.blocked_order_placing"
+          class="rounded-full bg-rose-100 px-3 py-1 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200"
+        >
+          Order placing blocked
+        </span>
+        <span
+          v-if="data.seller.restrictions.blocked_withdrawals"
+          class="rounded-full bg-rose-100 px-3 py-1 text-rose-700 dark:bg-rose-950/50 dark:text-rose-200"
+        >
+          Withdrawals blocked
+        </span>
+        <span
+          v-if="data.seller.restrictions.daily_order_limit !== null"
+          class="rounded-full bg-amber-100 px-3 py-1 text-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+        >
+          Daily order limit: {{ data.seller.restrictions.daily_order_limit }}
+        </span>
+      </div>
+    </div>
+
     <section class="rounded-3xl ">
       <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
         <div>
@@ -243,7 +282,20 @@ const loading = ref(false)
 const error = ref('')
 
 const data = reactive({
-  seller: { id: null, name: '', status: '', delivery_score: 100, delivery_score_penalty_limit: 60 },
+  seller: {
+    id: null,
+    name: '',
+    status: '',
+    is_restrict: false,
+    restrictions: {
+      blocked_withdrawals: false,
+      blocked_order_placing: false,
+      daily_order_limit: null,
+      active_penalties_count: 0,
+    },
+    delivery_score: 100,
+    delivery_score_penalty_limit: 60,
+  },
   points: {
     level_name: '',
     level_no: null,
@@ -369,6 +421,11 @@ const deliveryScorePenaltyLimit = computed(() => Math.min(100, Math.max(0, Numbe
 const deliveryScoreTone = computed(() => {
   if (deliveryScore.value < deliveryScorePenaltyLimit.value) return 'amber'
   return 'emerald'
+})
+
+const restrictionLabel = computed(() => {
+  const count = Number(data.seller.restrictions?.active_penalties_count || 0)
+  return count === 1 ? '1 Active Penalty' : `${count} Active Penalties`
 })
 
 const applyPayload = (payload) => {

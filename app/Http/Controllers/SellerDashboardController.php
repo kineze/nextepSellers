@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Level;
 use App\Models\Order;
 use App\Models\Seller;
+use App\Models\SellerPenalty;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,8 @@ class SellerDashboardController extends Controller
                 'id' => (int) $seller->id,
                 'name' => $this->sellerName($seller, $request->user()?->name),
                 'status' => $seller->status,
+                'is_restrict' => (bool) $seller->is_restrict,
+                'restrictions' => $this->restrictionSummary($seller),
                 'delivery_score' => (int) ($seller->dilivery_score ?? 100),
                 'delivery_score_penalty_limit' => (int) config('seller.penalty_limit_start_for_failed_to_delivery', 60),
             ],
@@ -116,6 +119,35 @@ class SellerDashboardController extends Controller
         $name = trim((string) $seller->first_name . ' ' . (string) $seller->last_name);
 
         return $name !== '' ? $name : (string) ($fallback ?: 'Seller');
+    }
+
+    private function restrictionSummary(Seller $seller): array
+    {
+        if (! $seller->is_restrict) {
+            return [
+                'blocked_withdrawals' => false,
+                'blocked_order_placing' => false,
+                'daily_order_limit' => null,
+                'active_penalties_count' => 0,
+            ];
+        }
+
+        $penalties = SellerPenalty::query()
+            ->where('seller_id', $seller->id)
+            ->where('is_active', true)
+            ->get();
+
+        $dailyLimits = $penalties
+            ->map(fn (SellerPenalty $penalty) => data_get($penalty->rules, 'orders.daily_order_limit'))
+            ->filter(fn ($limit) => $limit !== null)
+            ->map(fn ($limit) => (int) $limit);
+
+        return [
+            'blocked_withdrawals' => $penalties->contains(fn (SellerPenalty $penalty) => (bool) data_get($penalty->rules, 'account.block_withdrawals', false)),
+            'blocked_order_placing' => $penalties->contains(fn (SellerPenalty $penalty) => (bool) data_get($penalty->rules, 'account.block_order_placing', false)),
+            'daily_order_limit' => $dailyLimits->isEmpty() ? null : $dailyLimits->min(),
+            'active_penalties_count' => $penalties->count(),
+        ];
     }
 
     private function orderAnalytics(Seller $seller): array

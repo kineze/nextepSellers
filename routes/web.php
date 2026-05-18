@@ -16,6 +16,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\SellerRegistrationController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\SystemDataController;
+use App\Http\Controllers\PenaltyTypeController;
 
 Route::controller(GenaralController::class)->group(function () {
     Route::get('/', 'index')->name('index');
@@ -107,6 +108,10 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
 
     Route::controller(LabelSettingController::class)->group(function () {
         Route::get('/label-settings', 'indexView')->name('labelSettings');
+    });
+
+    Route::controller(PenaltyTypeController::class)->group(function () {
+        Route::get('/penalty-types', 'indexView')->name('penaltyTypes');
     });
 
     Route::controller(SystemDataController::class)->group(function () {

@@ -25,6 +25,7 @@ class Seller extends Model
         'points',
         'first_success_order_date',
         'dilivery_score',
+        'is_restrict',
         'referral_code',
         'referral_link',
         'email_verified',
@@ -39,6 +40,7 @@ class Seller extends Model
         'points' => 'integer',
         'first_success_order_date' => 'date',
         'dilivery_score' => 'integer',
+        'is_restrict' => 'boolean',
     ];
 
     public function user()
@@ -74,6 +76,11 @@ class Seller extends Model
     public function orders()
     {
         return $this->hasMany(Order::class);
+    }
+
+    public function penalties()
+    {
+        return $this->hasMany(SellerPenalty::class);
     }
 
     public function recalculateDeliveryScore(): int

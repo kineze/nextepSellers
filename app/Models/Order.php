@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use App\Services\PenaltyApplicationService;
 
 class Order extends Model
 {
@@ -144,6 +145,10 @@ class Order extends Model
                 $order->refreshSellerDeliveryScores([$order->seller_id]);
             }
 
+            if ($order->hasPenaltyTriggerStatus($order->status)) {
+                $order->applySellerPenalties();
+            }
+
             if (empty($changes)) {
                 return;
             }
@@ -178,7 +183,17 @@ class Order extends Model
                 $snapshot['dirty'] ?? []
             );
 
-            $dirty = collect($snapshot['dirty'] ?? [])
+            $original = $snapshot['original'] ?? [];
+            $dirty = $snapshot['dirty'] ?? [];
+            $fromStatus = array_key_exists('status', $original) ? $original['status'] : null;
+            $toStatus = $order->status;
+            $statusChanged = array_key_exists('status', $dirty) && $fromStatus !== $toStatus;
+
+            if ($statusChanged && $order->hasPenaltyTriggerStatus($toStatus)) {
+                $order->applySellerPenalties();
+            }
+
+            $dirty = collect($dirty)
                 ->except(['updated_at'])
                 ->only(self::LOGGABLE_FIELDS)
                 ->toArray();
@@ -186,11 +201,6 @@ class Order extends Model
             if (empty($dirty)) {
                 return;
             }
-
-            $original = $snapshot['original'] ?? [];
-            $fromStatus = array_key_exists('status', $original) ? $original['status'] : null;
-            $toStatus = $order->status;
-            $statusChanged = array_key_exists('status', $dirty) && $fromStatus !== $toStatus;
 
             $changes = $order->buildChangePairs($original, $dirty);
 
@@ -294,5 +304,22 @@ class Order extends Model
     private function hasDeliveryScoreStatus(?string $status): bool
     {
         return in_array(strtolower((string) $status), ['completed', 'cancelled'], true);
+    }
+
+    private function hasPenaltyTriggerStatus(?string $status): bool
+    {
+        return in_array(strtolower((string) $status), ['cancelled'], true);
+    }
+
+    private function applySellerPenalties(): void
+    {
+        try {
+            $seller = $this->seller()->first();
+            if ($seller) {
+                app(PenaltyApplicationService::class)->applyForCancelledOrder($seller, $this);
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

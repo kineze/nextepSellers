@@ -9,12 +9,16 @@ use App\Models\Payment;
 use App\Models\Seller;
 use App\Models\SystemData;
 use App\Services\InvoiceGenerationService;
+use App\Services\PenaltyApplicationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class AdminFinanceController extends Controller
 {
-    public function __construct(private readonly InvoiceGenerationService $invoiceGenerationService)
+    public function __construct(
+        private readonly InvoiceGenerationService $invoiceGenerationService,
+        private readonly PenaltyApplicationService $penaltyApplicationService
+    )
     {
     }
 
@@ -693,9 +697,17 @@ class AdminFinanceController extends Controller
             ->unique()
             ->values();
 
+        $sellerIds = $sellerIds
+            ->reject(function ($sellerId) {
+                $seller = Seller::query()->find((int) $sellerId);
+
+                return $seller && $this->penaltyApplicationService->sellerHasRestriction($seller, 'block_withdrawals');
+            })
+            ->values();
+
         if ($sellerIds->isEmpty()) {
             return response()->json([
-                'message' => 'No eligible sellers found to generate invoices.',
+                'message' => 'No eligible sellers found to generate invoices. Restricted sellers are skipped.',
             ], 422);
         }
 
@@ -738,6 +750,12 @@ class AdminFinanceController extends Controller
             'date_to' => ['nullable', 'date'],
         ]);
 
+        if ($this->penaltyApplicationService->sellerHasRestriction($seller, 'block_withdrawals')) {
+            return response()->json([
+                'message' => 'This seller is restricted from withdrawals.',
+            ], 403);
+        }
+
         $result = $this->invoiceGenerationService->generateDraftInvoiceForSeller((int) $seller->id, $validated, now('Asia/Colombo'));
 
         if (!(int) (($result['orders_assigned'] ?? 0) + ($result['affiliate_commissions_assigned'] ?? 0))) {
@@ -755,6 +773,14 @@ class AdminFinanceController extends Controller
 
     public function markInvoicePaid(Invoice $invoice)
     {
+        $invoice->loadMissing('seller');
+
+        if ($invoice->seller && $this->penaltyApplicationService->sellerHasRestriction($invoice->seller, 'block_withdrawals')) {
+            return response()->json([
+                'message' => 'This seller is restricted from withdrawals.',
+            ], 403);
+        }
+
         if ((string) $invoice->status === 'paid') {
             return response()->json([
                 'message' => 'Invoice is already marked as paid.',

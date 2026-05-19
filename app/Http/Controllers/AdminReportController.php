@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AffiliateCommission;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
@@ -417,6 +418,234 @@ class AdminReportController extends Controller
             ],
             'chart_products' => $chartProducts,
             'products' => $products,
+        ]);
+    }
+
+    public function financeReport(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+            'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
+            'offset' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $perPage = (int) ($validated['per_page'] ?? 15);
+        $offset = (int) ($validated['offset'] ?? 0);
+
+        $ordersQuery = Order::query()
+            ->leftJoin('sellers', 'orders.seller_id', '=', 'sellers.id')
+            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id');
+
+        if (!empty($validated['date_from'])) {
+            $ordersQuery->whereDate('orders.order_datetime', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $ordersQuery->whereDate('orders.order_datetime', '<=', $validated['date_to']);
+        }
+
+        if (!empty($validated['seller_id'])) {
+            $ordersQuery->where('orders.seller_id', (int) $validated['seller_id']);
+        }
+
+        $search = trim((string) ($validated['search'] ?? ''));
+        if ($search !== '') {
+            $ordersQuery->where(function ($q) use ($search) {
+                $q->where('orders.id', $search)
+                    ->orWhere('orders.customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('orders.phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.additional_phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.waybill_no', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.first_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.last_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.email', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.phone', 'like', '%' . $search . '%')
+                    ->orWhere('business_informations.business_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        $completedOrdersQuery = (clone $ordersQuery)->where('orders.status', 'completed');
+
+        $summary = (clone $completedOrdersQuery)
+            ->selectRaw('
+                COUNT(*) as completed_orders,
+                COALESCE(SUM(orders.total_collectable_amount), 0) as selling_total,
+                COALESCE(SUM(CASE WHEN (orders.net_total - orders.total_discount) > 0 THEN (orders.net_total - orders.total_discount) ELSE 0 END), 0) as net_sales_total,
+                COALESCE(SUM(orders.delivery_charge), 0) as delivery_total,
+                COALESCE(SUM(orders.total_discount), 0) as discount_total,
+                COALESCE(SUM(orders.commission_amount), 0) as commission_total
+            ')
+            ->first();
+
+        $affiliateQuery = AffiliateCommission::query()
+            ->join('orders', 'affiliate_commissions.order_id', '=', 'orders.id')
+            ->leftJoin('sellers', 'affiliate_commissions.seller_id', '=', 'sellers.id')
+            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id')
+            ->where('orders.status', 'completed');
+
+        if (!empty($validated['date_from'])) {
+            $affiliateQuery->whereDate('orders.order_datetime', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $affiliateQuery->whereDate('orders.order_datetime', '<=', $validated['date_to']);
+        }
+
+        if (!empty($validated['seller_id'])) {
+            $affiliateQuery->where('affiliate_commissions.seller_id', (int) $validated['seller_id']);
+        }
+
+        if ($search !== '') {
+            $affiliateQuery->where(function ($q) use ($search) {
+                $q->where('orders.id', $search)
+                    ->orWhere('orders.customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('orders.phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.additional_phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.waybill_no', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.first_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.last_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.email', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.phone', 'like', '%' . $search . '%')
+                    ->orWhere('business_informations.business_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        $affiliateTotal = (float) (clone $affiliateQuery)->sum('affiliate_commissions.amount');
+        $commissionTotal = (float) ($summary->commission_total ?? 0);
+        $sellingTotal = (float) ($summary->selling_total ?? 0);
+        $netProfit = $sellingTotal - $commissionTotal - $affiliateTotal;
+
+        $statusTotals = collect(self::ORDER_STATUSES)
+            ->mapWithKeys(fn ($status) => [$status => 0])
+            ->merge(
+                (clone $ordersQuery)
+                    ->select('orders.status', DB::raw('COUNT(*) as total'))
+                    ->groupBy('orders.status')
+                    ->pluck('total', 'status')
+                    ->map(fn ($total) => (int) $total)
+                    ->all()
+            )
+            ->only(self::ORDER_STATUSES)
+            ->all();
+
+        $productQuery = OrderItem::query()
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->leftJoin('sellers', 'orders.seller_id', '=', 'sellers.id')
+            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id')
+            ->where('orders.status', 'completed');
+
+        if (!empty($validated['date_from'])) {
+            $productQuery->whereDate('orders.order_datetime', '>=', $validated['date_from']);
+        }
+
+        if (!empty($validated['date_to'])) {
+            $productQuery->whereDate('orders.order_datetime', '<=', $validated['date_to']);
+        }
+
+        if (!empty($validated['seller_id'])) {
+            $productQuery->where('orders.seller_id', (int) $validated['seller_id']);
+        }
+
+        if ($search !== '') {
+            $productQuery->where(function ($q) use ($search) {
+                $q->where('orders.id', $search)
+                    ->orWhere('orders.customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('orders.phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.additional_phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.waybill_no', 'like', '%' . $search . '%')
+                    ->orWhere('products.title', 'like', '%' . $search . '%')
+                    ->orWhere('products.product_code', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.first_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.last_name', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.email', 'like', '%' . $search . '%')
+                    ->orWhere('sellers.phone', 'like', '%' . $search . '%')
+                    ->orWhere('business_informations.business_name', 'like', '%' . $search . '%');
+            });
+        }
+
+        $productCount = (int) (clone $productQuery)->distinct('order_items.product_id')->count('order_items.product_id');
+
+        $productsQuery = (clone $productQuery)
+            ->selectRaw('
+                order_items.product_id,
+                products.title,
+                products.product_code,
+                COUNT(DISTINCT orders.id) as completed_orders,
+                COALESCE(SUM(order_items.quantity), 0) as total_quantity,
+                COALESCE(SUM(order_items.quantity * order_items.price), 0) as selling_total,
+                COALESCE(SUM(
+                    CASE
+                        WHEN orders.net_total > 0
+                            THEN ((order_items.quantity * order_items.price) / orders.net_total) * orders.commission_amount
+                        ELSE 0
+                    END
+                ), 0) as commission_total
+            ')
+            ->groupBy('order_items.product_id', 'products.title', 'products.product_code')
+            ->orderByDesc('selling_total')
+            ->orderBy('products.title');
+
+        $mapProduct = function ($row, int $index) use ($offset) {
+            return [
+                'rank' => $offset + $index + 1,
+                'product_id' => (int) $row->product_id,
+                'product_name' => (string) $row->title,
+                'product_code' => $row->product_code,
+                'completed_orders' => (int) $row->completed_orders,
+                'total_quantity' => (int) $row->total_quantity,
+                'selling_total' => round((float) $row->selling_total, 2),
+                'commission_total' => round((float) $row->commission_total, 2),
+            ];
+        };
+
+        $products = (clone $productsQuery)
+            ->offset($offset)
+            ->limit($perPage)
+            ->get()
+            ->map($mapProduct)
+            ->values();
+
+        $chartProducts = (clone $productsQuery)
+            ->limit(10)
+            ->get()
+            ->map(function ($row, int $index) use ($mapProduct) {
+                $product = $mapProduct($row, $index);
+                $product['rank'] = $index + 1;
+                return $product;
+            })
+            ->values();
+
+        $winningProduct = $chartProducts->first();
+
+        return response()->json([
+            'total_orders' => array_sum($statusTotals),
+            'statuses' => self::ORDER_STATUSES,
+            'status_totals' => $statusTotals,
+            'summary' => [
+                'completed_orders' => (int) ($summary->completed_orders ?? 0),
+                'selling_total' => round($sellingTotal, 2),
+                'net_sales_total' => round((float) ($summary->net_sales_total ?? 0), 2),
+                'delivery_total' => round((float) ($summary->delivery_total ?? 0), 2),
+                'discount_total' => round((float) ($summary->discount_total ?? 0), 2),
+                'commission_total' => round($commissionTotal, 2),
+                'affiliate_total' => round($affiliateTotal, 2),
+                'company_net_profit' => round($netProfit, 2),
+                'profit_margin' => $sellingTotal > 0 ? round(($netProfit / $sellingTotal) * 100, 1) : 0,
+            ],
+            'winning_product' => $winningProduct,
+            'pagination' => [
+                'per_page' => $perPage,
+                'offset' => $offset,
+                'returned' => $products->count(),
+                'has_more' => ($offset + $products->count()) < $productCount,
+            ],
+            'chart_products' => $chartProducts,
+            'products' => $products,
+            'product_count' => $productCount,
         ]);
     }
 }

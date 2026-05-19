@@ -62,6 +62,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/reports/order-count', 'getAdminOrderCountReport')->middleware('permission:Access Reports')->name('adminReportsOrderCount');
         Route::get('/reports/seller-breakdown', 'getAdminSellerBreakdownReport')->middleware('permission:Access Reports')->name('adminReportsSellerBreakdown');
         Route::get('/reports/product-breakdown', 'getAdminProductBreakdownReport')->middleware('permission:Access Reports')->name('adminReportsProductBreakdown');
+        Route::get('/reports/finance', 'getAdminFinanceReport')->middleware('permission:Access Reports')->name('adminReportsFinance');
         Route::get('/orders/{order}', 'getAdminOrderShow')->name('adminOrderShow');
     });
  

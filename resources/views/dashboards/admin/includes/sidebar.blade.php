@@ -347,7 +347,8 @@
             data-links='[
               {"label":"Order Count Report","href":"{{ route('adminReportsOrderCount') }}"},
               {"label":"Seller Breakdown","href":"{{ route('adminReportsSellerBreakdown') }}"},
-              {"label":"Product Breakdown","href":"{{ route('adminReportsProductBreakdown') }}"}
+              {"label":"Product Breakdown","href":"{{ route('adminReportsProductBreakdown') }}"},
+              {"label":"Finance Report","href":"{{ route('adminReportsFinance') }}"}
             ]'>
 
           <button class="dropdown-toggle dark:border-violet-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
@@ -370,6 +371,9 @@
             </a>
             <a href="{{ route('adminReportsProductBreakdown') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
               Product Breakdown
+            </a>
+            <a href="{{ route('adminReportsFinance') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
+              Finance Report
             </a>
           </div>
         </div>

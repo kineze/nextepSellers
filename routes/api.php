@@ -139,6 +139,8 @@ Route::middleware(['auth:sanctum', 'permission:Manage Learning'])->group(functio
 
 Route::middleware(['auth:sanctum', 'permission:Access Reports'])->group(function () {
     Route::get('/admin/reports/order-count', [AdminReportController::class, 'orderCount']);
+    Route::get('/admin/reports/seller-breakdown', [AdminReportController::class, 'sellerBreakdown']);
+    Route::get('/admin/reports/product-breakdown', [AdminReportController::class, 'productBreakdown']);
 });
 
 Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(function () {

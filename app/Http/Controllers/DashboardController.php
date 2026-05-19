@@ -388,6 +388,16 @@ class DashboardController extends Controller
         return view('dashboards.admin.reports.orderCount');
     }
 
+    public function getAdminSellerBreakdownReport()
+    {
+        return view('dashboards.admin.reports.sellerBreakdown');
+    }
+
+    public function getAdminProductBreakdownReport()
+    {
+        return view('dashboards.admin.reports.productBreakdown');
+    }
+
     public function getAdminOrderShow(Order $order)
     {
         return view('dashboards.admin.orders.showOrder', [

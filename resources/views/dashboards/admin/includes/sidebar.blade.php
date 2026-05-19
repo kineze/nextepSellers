@@ -345,7 +345,9 @@
         <div class="relative sidebar-dropdown"
             data-subtitle="Reports"
             data-links='[
-              {"label":"Order Count Report","href":"{{ route('adminReportsOrderCount') }}"}
+              {"label":"Order Count Report","href":"{{ route('adminReportsOrderCount') }}"},
+              {"label":"Seller Breakdown","href":"{{ route('adminReportsSellerBreakdown') }}"},
+              {"label":"Product Breakdown","href":"{{ route('adminReportsProductBreakdown') }}"}
             ]'>
 
           <button class="dropdown-toggle dark:border-violet-600 w-full flex items-center gap-3 p-2 dark:hover:bg-slate-800 transition-all">
@@ -362,6 +364,12 @@
           <div class="expanded-only hidden py-1 ml-4 space-y-1">
             <a href="{{ route('adminReportsOrderCount') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
               Order Count Report
+            </a>
+            <a href="{{ route('adminReportsSellerBreakdown') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
+              Seller Breakdown
+            </a>
+            <a href="{{ route('adminReportsProductBreakdown') }}" class="block px-4 py-2 text-xs font-semibold text-violet-600 dark:text-violet-300 hover:bg-violet-100 dark:hover:bg-slate-700 rounded-md">
+              Product Breakdown
             </a>
           </div>
         </div>

@@ -60,6 +60,8 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'permission:Access Admin Das
         Route::get('/finance/invoices', 'getAdminFinanceInvoices')->middleware('permission:Manage Finance')->name('adminFinanceInvoices');
         Route::get('/finance/payment-manager', 'getAdminFinancePaymentManager')->middleware('permission:Manage Finance')->name('adminFinancePaymentManager');
         Route::get('/reports/order-count', 'getAdminOrderCountReport')->middleware('permission:Access Reports')->name('adminReportsOrderCount');
+        Route::get('/reports/seller-breakdown', 'getAdminSellerBreakdownReport')->middleware('permission:Access Reports')->name('adminReportsSellerBreakdown');
+        Route::get('/reports/product-breakdown', 'getAdminProductBreakdownReport')->middleware('permission:Access Reports')->name('adminReportsProductBreakdown');
         Route::get('/orders/{order}', 'getAdminOrderShow')->name('adminOrderShow');
     });
  

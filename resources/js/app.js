@@ -56,6 +56,8 @@ import AdminFinanceAffiliatePayments from './components/AdminFinanceAffiliatePay
 import AdminFinanceInvoices from './components/AdminFinanceInvoices.vue';
 import AdminFinancePaymentManager from './components/AdminFinancePaymentManager.vue';
 import AdminOrderCountReport from './components/AdminOrderCountReport.vue';
+import AdminSellerBreakdownReport from './components/AdminSellerBreakdownReport.vue';
+import AdminProductBreakdownReport from './components/AdminProductBreakdownReport.vue';
 import GrnManager from './components/GrnManager.vue';
 import LotManager from './components/LotManager.vue';
 import DeliveryFeeManager from './components/DeliveryFeeManager.vue';
@@ -127,6 +129,8 @@ app.use(Toast, {
 .component('admin-finance-invoices', AdminFinanceInvoices)
 .component('admin-finance-payment-manager', AdminFinancePaymentManager)
 .component('admin-order-count-report', AdminOrderCountReport)
+.component('admin-seller-breakdown-report', AdminSellerBreakdownReport)
+.component('admin-product-breakdown-report', AdminProductBreakdownReport)
 .component('grn-manager', GrnManager)
 .component('lot-manager', LotManager)
 .component('delivery-fee-manager', DeliveryFeeManager)

@@ -22,6 +22,24 @@
       @filters-changed="onFiltersChanged"
     />
 
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Order Scope</p>
+          <h2 class="mt-1 text-base font-bold text-slate-900 dark:text-white">{{ selectedScopeLabel }}</h2>
+        </div>
+        <select
+          v-model="filters.order_scope"
+          class="min-w-72 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 outline-none transition focus:border-violet-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+          @change="refreshReport"
+        >
+          <option v-for="option in orderScopeOptions" :key="option.value" :value="option.value">
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+    </div>
+
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
       <summary-tile label="Selling Total" :value="formatCurrency(report.summary.selling_total)" icon="fa-sack-dollar" tone="sky" />
       <summary-tile label="Commission Cost" :value="formatCurrency(report.summary.commission_total)" icon="fa-chart-line" tone="amber" />
@@ -30,7 +48,7 @@
     </div>
 
     <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <summary-tile label="Completed Orders" :value="formatNumber(report.summary.completed_orders)" icon="fa-circle-check" tone="slate" />
+      <summary-tile :label="`${selectedScopeShortLabel} Orders`" :value="formatNumber(report.summary.scoped_orders)" icon="fa-circle-check" tone="slate" />
       <summary-tile label="Net Sales" :value="formatCurrency(report.summary.net_sales_total)" icon="fa-receipt" tone="slate" />
       <summary-tile label="Delivery Collected" :value="formatCurrency(report.summary.delivery_total)" icon="fa-truck-fast" tone="slate" />
       <summary-tile label="Profit Margin" :value="`${report.summary.profit_margin}%`" icon="fa-percent" tone="slate" />
@@ -103,7 +121,7 @@
       <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 dark:border-slate-800">
         <div>
           <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Product Finance</p>
-          <h2 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">Completed sales by product</h2>
+          <h2 class="mt-1 text-lg font-bold text-slate-900 dark:text-white">{{ selectedScopeLabel }} by product</h2>
         </div>
         <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">Loads 15 products at a time</p>
       </div>
@@ -114,7 +132,7 @@
             <tr>
               <th class="px-4 py-3">Rank</th>
               <th class="px-4 py-3">Product</th>
-              <th class="px-4 py-3 text-right">Completed Orders</th>
+              <th class="px-4 py-3 text-right">{{ selectedScopeShortLabel }} Orders</th>
               <th class="px-4 py-3 text-right">Units</th>
               <th class="px-4 py-3 text-right">Selling Total</th>
               <th class="px-4 py-3 text-right">Commission Cost</th>
@@ -123,7 +141,7 @@
           <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
             <tr v-if="!loading && !report.products.length">
               <td colspan="6" class="px-4 py-8 text-center text-sm font-semibold text-slate-500 dark:text-slate-400">
-                No completed product sales found for the selected filters.
+                No product sales found for the selected filters.
               </td>
             </tr>
             <tr v-for="product in report.products" :key="product.product_id" class="hover:bg-slate-50 dark:hover:bg-slate-800/50">
@@ -136,7 +154,7 @@
                 <p class="font-bold text-slate-900 dark:text-white">{{ product.product_name }}</p>
                 <p class="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{{ product.product_code || '-' }}</p>
               </td>
-              <td class="px-4 py-3 text-right align-top font-semibold text-slate-700 dark:text-slate-200">{{ formatNumber(product.completed_orders) }}</td>
+              <td class="px-4 py-3 text-right align-top font-semibold text-slate-700 dark:text-slate-200">{{ formatNumber(product.scoped_orders) }}</td>
               <td class="px-4 py-3 text-right align-top font-semibold text-slate-700 dark:text-slate-200">{{ formatNumber(product.total_quantity) }}</td>
               <td class="px-4 py-3 text-right align-top font-semibold text-slate-700 dark:text-slate-200">{{ formatCurrency(product.selling_total) }}</td>
               <td class="px-4 py-3 text-right align-top font-black text-slate-900 dark:text-white">{{ formatCurrency(product.commission_total) }}</td>
@@ -217,13 +235,15 @@ const filters = reactive({
   date_from: '',
   date_to: '',
   seller_id: null,
+  order_scope: 'delivered',
 })
 const pagination = reactive({
   has_more: false,
 })
 const report = reactive({
   summary: {
-    completed_orders: 0,
+    scoped_orders: 0,
+    order_scope: 'delivered',
     selling_total: 0,
     net_sales_total: 0,
     delivery_total: 0,
@@ -239,6 +259,20 @@ const report = reactive({
   product_count: 0,
 })
 
+const orderScopeOptions = [
+  { value: 'delivered', label: 'Delivered / Completed Orders', shortLabel: 'Delivered' },
+  { value: 'without_rejected_cancelled', label: 'All Orders Without Rejected / Cancelled', shortLabel: 'Active' },
+  { value: 'cancelled', label: 'Cancelled Orders', shortLabel: 'Cancelled' },
+  { value: 'in_transit', label: 'In Transit Orders', shortLabel: 'In Transit' },
+  { value: 'all', label: 'All Orders', shortLabel: 'All' },
+  { value: 'commission_paid', label: 'Commission Payment Completed Orders', shortLabel: 'Commission Paid' },
+]
+
+const selectedScope = computed(() => {
+  return orderScopeOptions.find((option) => option.value === filters.order_scope) || orderScopeOptions[0]
+})
+const selectedScopeLabel = computed(() => selectedScope.value.label)
+const selectedScopeShortLabel = computed(() => selectedScope.value.shortLabel)
 const winningProductName = computed(() => report.winning_product?.product_name || '-')
 const formatNumber = (value) => Number(value || 0).toLocaleString()
 const formatCurrency = (value) => `LKR ${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -296,6 +330,7 @@ const renderCostChart = () => {
     Math.max(0, Number(report.summary.company_net_profit || 0)),
     Number(report.summary.commission_total || 0),
     Number(report.summary.affiliate_total || 0),
+    Number(report.summary.delivery_total || 0),
   ]
   const data = values.some((value) => value > 0) ? values : [1, 0]
 
@@ -303,8 +338,8 @@ const renderCostChart = () => {
     costChart = new Chart(costChartCanvas.value, {
       type: 'doughnut',
       data: {
-        labels: ['Company Net Profit', 'Commission Cost', 'Affiliate Cost'],
-        datasets: [{ data, backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderColor: '#ffffff', borderWidth: 4, hoverOffset: 8 }],
+        labels: ['Company Net Profit', 'Commission Cost', 'Affiliate Cost', 'Delivery Charge'],
+        datasets: [{ data, backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#0ea5e9'], borderColor: '#ffffff', borderWidth: 4, hoverOffset: 8 }],
       },
       options: { ...chartOptions, cutout: '72%', plugins: { ...chartOptions.plugins, legend: { display: false } } },
     })
@@ -386,6 +421,7 @@ const fetchReport = async ({ append = false } = {}) => {
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         seller_id: filters.seller_id || undefined,
+        order_scope: filters.order_scope || 'delivered',
         per_page: perPage,
         offset: append ? report.products.length : 0,
       },

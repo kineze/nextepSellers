@@ -428,12 +428,14 @@ class AdminReportController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
+            'order_scope' => ['nullable', 'string', 'in:delivered,without_rejected_cancelled,cancelled,in_transit,all,commission_paid'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             'offset' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $perPage = (int) ($validated['per_page'] ?? 15);
         $offset = (int) ($validated['offset'] ?? 0);
+        $orderScope = $validated['order_scope'] ?? 'delivered';
 
         $ordersQuery = Order::query()
             ->leftJoin('sellers', 'orders.seller_id', '=', 'sellers.id')
@@ -467,11 +469,11 @@ class AdminReportController extends Controller
             });
         }
 
-        $completedOrdersQuery = (clone $ordersQuery)->where('orders.status', 'completed');
+        $scopedOrdersQuery = $this->applyFinanceOrderScope(clone $ordersQuery, $orderScope);
 
-        $summary = (clone $completedOrdersQuery)
+        $summary = (clone $scopedOrdersQuery)
             ->selectRaw('
-                COUNT(*) as completed_orders,
+                COUNT(*) as scoped_orders,
                 COALESCE(SUM(orders.total_collectable_amount), 0) as selling_total,
                 COALESCE(SUM(CASE WHEN (orders.net_total - orders.total_discount) > 0 THEN (orders.net_total - orders.total_discount) ELSE 0 END), 0) as net_sales_total,
                 COALESCE(SUM(orders.delivery_charge), 0) as delivery_total,
@@ -483,8 +485,7 @@ class AdminReportController extends Controller
         $affiliateQuery = AffiliateCommission::query()
             ->join('orders', 'affiliate_commissions.order_id', '=', 'orders.id')
             ->leftJoin('sellers', 'affiliate_commissions.seller_id', '=', 'sellers.id')
-            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id')
-            ->where('orders.status', 'completed');
+            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id');
 
         if (!empty($validated['date_from'])) {
             $affiliateQuery->whereDate('orders.order_datetime', '>=', $validated['date_from']);
@@ -513,10 +514,13 @@ class AdminReportController extends Controller
             });
         }
 
+        $affiliateQuery = $this->applyFinanceOrderScope($affiliateQuery, $orderScope);
+
         $affiliateTotal = (float) (clone $affiliateQuery)->sum('affiliate_commissions.amount');
         $commissionTotal = (float) ($summary->commission_total ?? 0);
         $sellingTotal = (float) ($summary->selling_total ?? 0);
-        $netProfit = $sellingTotal - $commissionTotal - $affiliateTotal;
+        $deliveryTotal = (float) ($summary->delivery_total ?? 0);
+        $netProfit = $sellingTotal - $commissionTotal - $affiliateTotal - $deliveryTotal;
 
         $statusTotals = collect(self::ORDER_STATUSES)
             ->mapWithKeys(fn ($status) => [$status => 0])
@@ -535,8 +539,7 @@ class AdminReportController extends Controller
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->leftJoin('sellers', 'orders.seller_id', '=', 'sellers.id')
-            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id')
-            ->where('orders.status', 'completed');
+            ->leftJoin('business_informations', 'business_informations.seller_id', '=', 'sellers.id');
 
         if (!empty($validated['date_from'])) {
             $productQuery->whereDate('orders.order_datetime', '>=', $validated['date_from']);
@@ -567,6 +570,8 @@ class AdminReportController extends Controller
             });
         }
 
+        $productQuery = $this->applyFinanceOrderScope($productQuery, $orderScope);
+
         $productCount = (int) (clone $productQuery)->distinct('order_items.product_id')->count('order_items.product_id');
 
         $productsQuery = (clone $productQuery)
@@ -574,7 +579,7 @@ class AdminReportController extends Controller
                 order_items.product_id,
                 products.title,
                 products.product_code,
-                COUNT(DISTINCT orders.id) as completed_orders,
+                COUNT(DISTINCT orders.id) as scoped_orders,
                 COALESCE(SUM(order_items.quantity), 0) as total_quantity,
                 COALESCE(SUM(order_items.quantity * order_items.price), 0) as selling_total,
                 COALESCE(SUM(
@@ -595,7 +600,7 @@ class AdminReportController extends Controller
                 'product_id' => (int) $row->product_id,
                 'product_name' => (string) $row->title,
                 'product_code' => $row->product_code,
-                'completed_orders' => (int) $row->completed_orders,
+                'scoped_orders' => (int) $row->scoped_orders,
                 'total_quantity' => (int) $row->total_quantity,
                 'selling_total' => round((float) $row->selling_total, 2),
                 'commission_total' => round((float) $row->commission_total, 2),
@@ -626,7 +631,8 @@ class AdminReportController extends Controller
             'statuses' => self::ORDER_STATUSES,
             'status_totals' => $statusTotals,
             'summary' => [
-                'completed_orders' => (int) ($summary->completed_orders ?? 0),
+                'scoped_orders' => (int) ($summary->scoped_orders ?? 0),
+                'order_scope' => $orderScope,
                 'selling_total' => round($sellingTotal, 2),
                 'net_sales_total' => round((float) ($summary->net_sales_total ?? 0), 2),
                 'delivery_total' => round((float) ($summary->delivery_total ?? 0), 2),
@@ -647,5 +653,17 @@ class AdminReportController extends Controller
             'products' => $products,
             'product_count' => $productCount,
         ]);
+    }
+
+    private function applyFinanceOrderScope($query, string $scope)
+    {
+        return match ($scope) {
+            'without_rejected_cancelled' => $query->whereNotIn('orders.status', ['rejected', 'cancelled']),
+            'cancelled' => $query->where('orders.status', 'cancelled'),
+            'in_transit' => $query->where('orders.status', 'shipped'),
+            'all' => $query,
+            'commission_paid' => $query->where('orders.payment_status', 'paid'),
+            default => $query->where('orders.status', 'completed'),
+        };
     }
 }

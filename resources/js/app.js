@@ -24,7 +24,7 @@ import ProductCreateManager from './components/ProductCreateManager.vue';
 import SellerProductVariantSelector from './components/SellerProductVariantSelector.vue';
 import SellerProductShow from './components/SellerProductShow.vue';
 import SellerCartNavLink from './components/SellerCartNavLink.vue';
-import SellerFloatingCart from './components/SellerFloatingCart.vue';
+import SellerNewOrderButton from './components/SellerNewOrderButton.vue';
 import CurfoxLogin from './components/CurfoxLogin.vue';
 import CitySync from './components/CitySync.vue';
 import StateMatcher from './components/StateMatcher.vue';
@@ -98,7 +98,7 @@ app.use(Toast, {
 .component('seller-product-variant-selector', SellerProductVariantSelector)
 .component('seller-product-show', SellerProductShow)
 .component('seller-cart-nav-link', SellerCartNavLink)
-.component('seller-floating-cart', SellerFloatingCart)
+.component('seller-new-order-button', SellerNewOrderButton)
 .component('curfox-login', CurfoxLogin)
 .component('city-sync', CitySync)
 .component('state-matcher', StateMatcher)

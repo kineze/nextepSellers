@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Level;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class LevelController extends Controller
 {
@@ -52,7 +53,14 @@ class LevelController extends Controller
             'level_name' => ['required', 'string', 'max:255'],
             'points' => ['required', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
+            'icon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
         ]);
+
+        if ($request->hasFile('icon')) {
+            $validated['icon_path'] = $request->file('icon')->store('level-icons', 'public');
+        }
+
+        unset($validated['icon']);
 
         Level::create($validated);
 
@@ -66,7 +74,18 @@ class LevelController extends Controller
             'level_name' => ['required', 'string', 'max:255'],
             'points' => ['required', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
+            'icon' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp,svg', 'max:2048'],
         ]);
+
+        if ($request->hasFile('icon')) {
+            if ($level->icon_path) {
+                Storage::disk('public')->delete($level->icon_path);
+            }
+
+            $validated['icon_path'] = $request->file('icon')->store('level-icons', 'public');
+        }
+
+        unset($validated['icon']);
 
         $level->update($validated);
 
@@ -75,6 +94,10 @@ class LevelController extends Controller
 
     public function destroy(Level $level)
     {
+        if ($level->icon_path) {
+            Storage::disk('public')->delete($level->icon_path);
+        }
+
         $level->delete();
 
         return response()->json(['message' => 'Level deleted successfully.']);

@@ -3,25 +3,23 @@
 @include('site.includes.headerlinks')
 <body class="m-0 font-sans antialiased text-slate-600 dark:bg-slate-950 dark:text-white">
   <div id="app" class="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
+    @php
+      $sellerHeaderUser = auth()->user();
+      $sellerHeaderName = trim((string) ($sellerHeaderUser?->name ?? 'Seller'));
+      $sellerHeaderInitial = strtoupper(substr($sellerHeaderName !== '' ? $sellerHeaderName : 'Seller', 0, 1));
+    @endphp
+
     <header class="sticky top-0 z-[1100] border-b border-slate-200/80 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
       <div class="flex h-16 w-full items-center justify-between px-6">
-        <a href="{{ route('sellerDashboard') }}" class="inline-flex items-center gap-3">
-          <img src="{{ asset('assets/img/nextep-icon.webp') }}" alt="Nextep" class="h-8 w-8 rounded-lg object-cover">
-          <div>
-            <p class="text-[10px] font-semibold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">Nextep</p>
-            <p class="text-sm font-semibold text-slate-900 dark:text-white">Seller Dashboard</p>
-          </div>
+        <a href="{{ route('sellerDashboard') }}" class="inline-flex items-center">
+          <img src="{{ asset('assets/img/nextep-logo.webp') }}" alt="Nextep" class="h-10 w-auto dark:hidden">
+          <img src="{{ asset('assets/img/nextep-logo-dark.webp') }}" alt="Nextep" class="hidden h-10 w-auto dark:block">
         </a>
 
         <div class="flex items-center gap-2">
-          <a href="{{ route('sellerDashboard') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide md:inline-flex {{ request()->routeIs('sellerDashboard') ? 'bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800' }}">
-            Dashboard
-          </a>
-          <a href="{{ route('learningMaterials') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
+          <a href="{{ route('learningMaterials') }}" class="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
+            <i class="fas fa-graduation-cap text-[0.72rem]"></i>
             Learning
-          </a>
-          <a href="{{ url('/') }}" class="hidden rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
-            Go to Site
           </a>
 
           <div class="hidden items-center rounded-full border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800 sm:flex">
@@ -33,15 +31,40 @@
             </button>
           </div>
 
-          <form method="POST" action="{{ route('logout') }}" class="hidden md:block">
-            @csrf
-            <button
-              type="submit"
-              class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
-            >
-              Logout
-            </button>
-          </form>
+          <details class="relative hidden md:block [&>summary::-webkit-details-marker]:hidden">
+            <summary class="flex cursor-pointer list-none items-center gap-3 rounded-2xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition hover:border-zinc-300 hover:bg-zinc-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800">
+              <span class="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-black text-sm font-black text-white dark:bg-white dark:text-black">
+                {{ $sellerHeaderInitial }}
+              </span>
+              <span class="min-w-0">
+                <span class="block max-w-36 truncate text-sm font-bold text-slate-900 dark:text-white">{{ $sellerHeaderName }}</span>
+                <span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Seller</span>
+              </span>
+              <i class="fas fa-chevron-down text-[0.65rem] text-slate-400"></i>
+            </summary>
+
+            <div class="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl shadow-slate-900/10 dark:border-slate-700 dark:bg-slate-900 dark:shadow-black/30">
+              <a href="{{ url('/') }}" class="flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-zinc-100 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white">
+                <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-slate-800 dark:text-slate-200">
+                  <i class="fas fa-arrow-up-right-from-square text-xs"></i>
+                </span>
+                Go to Site
+              </a>
+
+              <form method="POST" action="{{ route('logout') }}" class="mt-1">
+                @csrf
+                <button
+                  type="submit"
+                  class="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300">
+                    <i class="fas fa-right-from-bracket text-xs"></i>
+                  </span>
+                  Logout
+                </button>
+              </form>
+            </div>
+          </details>
 
           <button
             id="sellerSidebarMobileOpen"
@@ -55,7 +78,7 @@
       </div>
     </header>
 
-    <main class="w-full flex-1 px-6 py-8">
+    <main class="w-full flex-1 px-3 py-3">
       <div class="flex w-full gap-6">
         <aside id="sellerDesktopSidebar" class="hidden shrink-0 transition-all duration-300 lg:sticky lg:top-20 lg:block lg:w-72 lg:self-start">
           <div id="sellerDesktopSidebarShell">
@@ -72,24 +95,24 @@
     <div id="sellerSidebarMobileOverlay" class="fixed inset-0 z-[1198] hidden bg-black/40 lg:hidden"></div>
     <aside
       id="sellerMobileSidebar"
-      class="fixed inset-y-0 left-0 z-[1199] w-72 -translate-x-full border-r border-slate-200 bg-white/95 shadow-2xl transition-transform duration-300 dark:border-slate-800 dark:bg-slate-900/95 lg:hidden"
+      class="fixed inset-y-0 left-0 z-[1199] flex w-72 -translate-x-full flex-col border-r border-slate-800 bg-black shadow-2xl transition-transform duration-300 lg:hidden"
     >
-      <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
-        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">Seller Menu</p>
+      <div class="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">Seller Menu</p>
         <button
           id="sellerSidebarMobileClose"
           type="button"
-          class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+          class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/10 text-slate-200 hover:bg-white hover:text-black"
         >
           <i class="fas fa-xmark"></i>
         </button>
       </div>
-      <div class="px-4 pt-3">
-        <div class="flex items-center rounded-xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-700 dark:bg-slate-800">
-          <button type="button" data-theme-btn="light" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Light mode">
+      <div class="shrink-0 px-4 pt-3">
+        <div class="flex items-center rounded-xl border border-white/10 bg-white/10 p-1">
+          <button type="button" data-theme-btn="light" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white hover:text-black" aria-label="Light mode">
             <i class="fas fa-sun"></i>
           </button>
-          <button type="button" data-theme-btn="dark" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700" aria-label="Dark mode">
+          <button type="button" data-theme-btn="dark" class="flex-1 rounded-lg px-2 py-2 text-xs font-semibold text-slate-300 hover:bg-white hover:text-black" aria-label="Dark mode">
             <i class="fas fa-moon"></i>
           </button>
         </div>
@@ -97,7 +120,10 @@
       @include('dashboards.seller.includes.sidebar', ['mode' => 'drawer'])
     </aside>
 
-    <seller-floating-cart :orders-url='@json(route("sellerCheckout"))'></seller-floating-cart>
+    <seller-new-order-button
+      :single-order-url='@json(route("sellerOrderCreate"))'
+      :bulk-order-url='@json(route("sellerBulkOrders"))'
+    ></seller-new-order-button>
   </div>
 
   <style>
@@ -122,10 +148,32 @@
       margin-right: auto;
     }
 
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-new-order {
+      width: 2.35rem;
+      height: 2.35rem;
+      justify-content: center;
+      gap: 0;
+      padding: 0;
+      margin-left: auto;
+      margin-right: auto;
+      border-radius: 0.85rem;
+    }
+
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-new-order > span:first-child {
+      width: 2.1rem;
+      height: 2.1rem;
+      border-radius: 0.75rem;
+    }
+
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-label {
       display: none;
     }
 
+    #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-header {
+      justify-content: center;
+    }
+
+    .seller-sidebar-tooltip,
     #sellerDesktopSidebar #sellerDesktopSidebarShell .seller-sidebar-tooltip {
       display: none;
     }
@@ -160,8 +208,8 @@
     }
 
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-sidebar-floating-toggle {
-      right: -0.6rem;
-      top: 0.9rem;
+      width: 2.2rem;
+      height: 2.2rem;
     }
 
     #sellerDesktopSidebar.is-compact #sellerDesktopSidebarShell .seller-cart-link {
@@ -313,6 +361,12 @@
 
           if (target.closest('#sellerSidebarMobileClose') || target.closest('#sellerSidebarMobileOverlay')) {
             closeMobile();
+            return;
+          }
+
+          if (target.closest('[data-seller-new-order-open]')) {
+            closeMobile();
+            window.dispatchEvent(new CustomEvent('seller-new-order-open'));
             return;
           }
 

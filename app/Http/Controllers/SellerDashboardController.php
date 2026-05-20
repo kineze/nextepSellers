@@ -63,6 +63,7 @@ class SellerDashboardController extends Controller
             'points' => [
                 'level_name' => $level?->level_name,
                 'level_no' => $level?->level_no,
+                'level_icon_url' => $level?->icon_url,
                 'current_level_points' => $currentLevelPoints,
                 'current_points' => $currentPoints,
                 'pending_points' => $pendingPoints,
@@ -70,6 +71,7 @@ class SellerDashboardController extends Controller
                 'pending_base_amount' => round($pendingBaseAmount, 2),
                 'next_level_name' => $nextLevel?->level_name,
                 'next_level_no' => $nextLevel?->level_no,
+                'next_level_icon_url' => $nextLevel?->icon_url,
                 'next_level_points' => $nextLevelPoints,
                 'current_points_to_next_level' => $currentPointsToNextLevel,
                 'current_level_progress_points' => $currentLevelProgressPoints,
@@ -104,7 +106,7 @@ class SellerDashboardController extends Controller
             $query->where('points', '>', (int) ($level->points ?? 0));
         }
 
-        return $query->first(['id', 'level_no', 'level_name', 'points']);
+        return $query->first(['id', 'level_no', 'level_name', 'points', 'icon_path']);
     }
 
     private function lkrPerPoint(): float

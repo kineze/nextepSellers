@@ -48,6 +48,7 @@
           <thead class="text-[0.7rem] uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <tr>
               <th class="px-3 py-3">Level No</th>
+              <th class="px-3 py-3">Icon</th>
               <th class="px-3 py-3">Level Name</th>
               <th class="px-3 py-3">Points</th>
               <th class="px-3 py-3">Description</th>
@@ -57,11 +58,17 @@
           </thead>
           <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800/70">
             <tr v-if="levels.length === 0">
-              <td colspan="6" class="text-center py-6 text-slate-500 dark:text-slate-400">No levels found</td>
+              <td colspan="7" class="text-center py-6 text-slate-500 dark:text-slate-400">No levels found</td>
             </tr>
 
             <tr v-for="level in levels" :key="level.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
               <td class="px-3 py-4 font-medium text-slate-900 dark:text-white">{{ level.level_no }}</td>
+              <td class="px-3 py-4">
+                <div class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+                  <img v-if="level.icon_url" :src="level.icon_url" :alt="`${level.level_name} icon`" class="aspect-square h-full w-full object-cover" />
+                  <i v-else class="fas fa-medal text-slate-400"></i>
+                </div>
+              </td>
               <td class="px-3 py-4">{{ level.level_name }}</td>
               <td class="px-3 py-4">{{ level.points }}</td>
               <td class="px-3 py-4">{{ level.description || '-' }}</td>
@@ -140,6 +147,25 @@
               <textarea v-model="form.description" rows="4" class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"></textarea>
             </div>
 
+            <div>
+              <label class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Level Icon</label>
+              <label class="group flex cursor-pointer items-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:border-slate-500 hover:bg-white dark:border-slate-700 dark:bg-slate-800/70 dark:hover:border-slate-500 dark:hover:bg-slate-800">
+                <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+                  <img v-if="iconPreview" :src="iconPreview" alt="Level icon preview" class="aspect-square h-full w-full object-cover" />
+                  <i v-else class="fas fa-image text-lg text-slate-400"></i>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-sm font-bold text-slate-900 dark:text-white">Upload icon</p>
+                  <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">PNG, JPG, WEBP, or SVG. Square icons work best.</p>
+                  <p v-if="form.icon" class="mt-2 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">{{ form.icon.name }}</p>
+                </div>
+                <span class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white dark:bg-white dark:text-slate-900">
+                  Choose
+                </span>
+                <input type="file" accept="image/jpeg,image/png,image/webp,image/svg+xml" class="hidden" @change="onIconChange" />
+              </label>
+            </div>
+
             <button type="submit" class="w-full py-2.5 bg-slate-900 text-sm text-white rounded-xl hover:bg-black dark:bg-white dark:text-slate-900">
               {{ editingId ? 'Update Level' : 'Save Level' }}
             </button>
@@ -199,7 +225,9 @@ const showDefaultConfirmModal = ref(false)
 const selectedDefaultLevel = ref(null)
 
 const showDrawer = ref(false)
-const form = ref({ level_no: '', level_name: '', points: '', description: '' })
+const blankForm = () => ({ level_no: '', level_name: '', points: '', description: '', icon: null })
+const form = ref(blankForm())
+const iconPreview = ref('')
 const editingId = ref(null)
 
 const showDeleteModal = ref(false)
@@ -231,7 +259,8 @@ const changePage = (page) => {
 
 const openDrawer = () => {
   editingId.value = null
-  form.value = { level_no: '', level_name: '', points: '', description: '' }
+  form.value = blankForm()
+  iconPreview.value = ''
   showDrawer.value = true
 }
 
@@ -246,17 +275,42 @@ const editLevel = (level) => {
     level_name: level.level_name || '',
     points: level.points,
     description: level.description || '',
+    icon: null,
   }
+  iconPreview.value = level.icon_url || ''
   showDrawer.value = true
+}
+
+const onIconChange = (event) => {
+  const file = event.target.files?.[0] || null
+  form.value.icon = file
+  iconPreview.value = file ? URL.createObjectURL(file) : ''
+}
+
+const buildPayload = () => {
+  const payload = new FormData()
+  payload.append('level_no', form.value.level_no)
+  payload.append('level_name', form.value.level_name)
+  payload.append('points', form.value.points)
+  payload.append('description', form.value.description || '')
+
+  if (form.value.icon) {
+    payload.append('icon', form.value.icon)
+  }
+
+  return payload
 }
 
 const saveLevel = async () => {
   try {
+    const payload = buildPayload()
+
     if (editingId.value) {
-      await axios.put(`/api/levels/${editingId.value}`, form.value)
+      payload.append('_method', 'PUT')
+      await axios.post(`/api/levels/${editingId.value}`, payload)
       toast.success('Level updated successfully')
     } else {
-      await axios.post('/api/levels', form.value)
+      await axios.post('/api/levels', payload)
       toast.success('Level created successfully')
     }
 

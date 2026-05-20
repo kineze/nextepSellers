@@ -6,20 +6,12 @@
 @endphp
 
 <div class="space-y-6">
-  <div class="rounded-3xl border border-slate-200/70 bg-white/80 p-7 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
-    <p class="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">Seller Products</p>
-    <h1 class="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white">Products</h1>
-    <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">
-      Explore active products available in the catalog.
-    </p>
-  </div>
-
   @if(($categories ?? collect())->count() > 0)
-    <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
+    <div class="rounded-2xl border border-zinc-200/70 bg-white/90 p-3 shadow-sm dark:border-zinc-800/70 dark:bg-slate-900/80">
       <div class="flex flex-wrap items-center gap-2">
         <a
           href="{{ route('sellerProducts') }}"
-          class="rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition {{ empty($selectedCategoryId) ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' }}"
+          class="rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition {{ empty($selectedCategoryId) ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800' }}"
         >
           All
         </a>
@@ -27,7 +19,7 @@
         @foreach(($categories ?? collect()) as $category)
           <a
             href="{{ route('sellerProducts', ['category_id' => $category->id]) }}"
-            class="rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition {{ (int) ($selectedCategoryId ?? 0) === (int) $category->id ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200' : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800' }}"
+            class="rounded-xl border px-3 py-2 text-xs font-semibold uppercase tracking-wide transition {{ (int) ($selectedCategoryId ?? 0) === (int) $category->id ? 'border-black bg-black text-white dark:border-white dark:bg-white dark:text-black' : 'border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800' }}"
           >
             {{ $category->name }}
           </a>
@@ -41,7 +33,7 @@
       {{ !empty($selectedCategoryId) ? 'No active products found in this category.' : 'No active products available right now.' }}
     </div>
   @else
-    <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       @foreach ($products as $product)
         @php
           $primaryImage = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
@@ -62,10 +54,9 @@
         @endphp
 
         <article
-          class="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
-          onclick="window.location.href='{{ route('sellerProducts.show', $product) }}'"
+          class="group flex h-full flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md dark:border-zinc-800 dark:bg-slate-900 dark:hover:border-zinc-700"
         >
-          <div class="relative h-52 w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+          <div class="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
             @if ($primaryImage)
               <img src="{{ asset('storage/' . $primaryImage->path) }}" alt="{{ $product->title }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
             @else
@@ -77,16 +68,16 @@
             </span>
           </div>
 
-          <div class="space-y-3 p-4">
+          <div class="flex flex-1 flex-col space-y-3 p-4">
             <div>
-              <h3 class="line-clamp-1 text-lg font-bold text-slate-900 dark:text-white">{{ $product->title }}</h3>
+              <h3 class="line-clamp-2 min-h-10 text-sm font-bold leading-5 text-slate-900 dark:text-white">{{ $product->title }}</h3>
             </div>
 
-            <p class="line-clamp-2 min-h-[2.8rem] text-sm text-slate-600 dark:text-slate-300">
-              {{ \Illuminate\Support\Str::limit($product->small_description, 90) }}
+            <p class="line-clamp-2 min-h-9 text-xs leading-4 text-slate-600 dark:text-slate-300">
+              {{ \Illuminate\Support\Str::limit($product->small_description, 70) }}
             </p>
 
-            <div class="rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-800/70">
+            <div class="rounded-xl bg-zinc-50 px-3 py-2 text-xs dark:bg-zinc-800/70">
               @if (is_null($minPrice))
                 <span class="text-slate-500 dark:text-slate-400">Price unavailable</span>
               @elseif ($minPrice == $maxPrice)
@@ -96,14 +87,24 @@
               @endif
             </div>
 
-            <div class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs dark:border-blue-500/30 dark:bg-blue-500/10">
+            <div class="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs dark:border-zinc-700 dark:bg-slate-950/60">
               @if (is_null($commissionLkr))
-                <span class="font-semibold text-blue-700 dark:text-blue-300">Your current commission: Not configured</span>
+                <span class="font-semibold text-zinc-700 dark:text-zinc-200">Commission: Not configured</span>
               @else
-                <span class="font-semibold text-blue-700 dark:text-blue-300">
-                  Your current commission: LKR {{ number_format((float) $commissionLkr, 2) }}
+                <span class="font-semibold text-zinc-700 dark:text-zinc-200">
+                  Commission: LKR {{ number_format((float) $commissionLkr, 2) }}
                 </span>
               @endif
+            </div>
+
+            <div class="mt-auto pt-1">
+              <a
+                href="{{ route('sellerProducts.show', $product) }}"
+                class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-black px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              >
+                View
+                <i class="fas fa-arrow-right text-[0.68rem]"></i>
+              </a>
             </div>
           </div>
         </article>

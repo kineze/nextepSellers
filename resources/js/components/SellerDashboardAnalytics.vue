@@ -46,71 +46,53 @@
       </div>
     </div>
 
-    <section class="rounded-3xl ">
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p class="text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-300">Seller Dashboard</p>
-          <h1 class="mt-3 text-3xl font-extrabold text-slate-900 dark:text-white sm:text-4xl">
-            Welcome back, {{ data.seller.name || 'Seller' }}
-          </h1>
-          <p class="mt-3 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-            Track selling performance, fulfillment movement, points, and payout readiness from one analytics view.
-          </p>
-        </div>
+    <section class="rounded-3xl">
+      <div class="grid gap-3 xl:grid-cols-[0.75fr_1.25fr]">
+        <article class="rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-stone-100 via-white to-zinc-100 p-5 shadow-sm dark:border-zinc-700 dark:from-zinc-900 dark:via-slate-900 dark:to-stone-900">
+          <div class="flex h-full flex-col justify-between gap-6">
+            <div>
+              <p class="text-[0.68rem] font-semibold uppercase tracking-[0.24em] text-zinc-600 dark:text-zinc-300">Welcome</p>
+              <h1 class="mt-2 text-2xl font-extrabold text-slate-950 dark:text-white sm:text-3xl">
+                {{ data.seller.name || 'Seller' }}
+              </h1>
+            </div>
 
-        <button
-          type="button"
-          class="inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-blue-500/30 dark:bg-slate-950 dark:text-blue-200 dark:hover:bg-blue-500/10"
-          :disabled="loading"
-          @click="fetchAnalytics"
-        >
-          <i class="fas" :class="loading ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'" aria-hidden="true"></i>
-          Refresh
-        </button>
-      </div>
+            <div class="grid gap-5 sm:grid-cols-2">
+              <div>
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Seller Level</p>
+                <p class="mt-1 text-lg font-black text-slate-950 dark:text-white">{{ levelLabel }}</p>
+              </div>
+              <div>
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Current Points</p>
+                <p class="mt-1 text-lg font-black text-zinc-900 dark:text-zinc-100">{{ formatNumber(data.points.current_points) }}</p>
+              </div>
+            </div>
+          </div>
+        </article>
 
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <MetricCard label="Current Level" :value="levelLabel" icon="fa-medal" />
-        <MetricCard label="Current Points" :value="formatNumber(data.points.current_points)" icon="fa-star" />
-        <MetricCard
-          label="Delivery Score"
-          :value="`${deliveryScore}%`"
-          :subtext="`Penalty starts below ${deliveryScorePenaltyLimit}%`"
-          icon="fa-truck-fast"
-          :tone="deliveryScoreTone"
-        />
-        <MetricCard
-          label="Pending Points"
-          :value="formatNumber(data.points.pending_points)"
-          :subtext="`From LKR ${toMoney(data.points.pending_base_amount)} ongoing value`"
-          icon="fa-hourglass-half"
-          tone="amber"
-        />
-        <MetricCard
-          label="Projected Points"
-          :value="formatNumber(data.points.projected_points)"
-          :subtext="nextLevelLabel ? `${formatNumber(data.points.points_to_next_level)} more for ${nextLevelLabel}` : 'Top level reached'"
-          icon="fa-arrow-trend-up"
-          tone="emerald"
-        />
-      </div>
-
-      <div class="mt-3 overflow-hidden rounded-3xl border border-blue-100 bg-white shadow-sm ring-1 ring-blue-500/5 dark:border-blue-500/20 dark:bg-slate-900/80 dark:ring-blue-400/10">
-        <div class="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-sm ring-1 ring-zinc-500/5 dark:border-zinc-800 dark:bg-slate-900/80 dark:ring-zinc-400/10">
           <div class="p-5 sm:p-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">Progress</p>
-                <h2 class="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">
-                  {{ nextLevelLabel ? `On the way to ${nextLevelLabel}` : 'Top seller level active' }}
-                </h2>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Current level: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ levelLabel }}</span>
-                </p>
+                <div class="flex items-start gap-4">
+                  <div class="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800">
+                    <img v-if="progressLevelIcon" :src="progressLevelIcon" alt="Seller level icon" class="aspect-square h-full w-full object-cover" />
+                    <i v-else class="fas fa-medal text-xl text-zinc-500 dark:text-zinc-300"></i>
+                  </div>
+                  <div>
+                    <p class="text-[0.68rem] font-semibold uppercase tracking-[0.22em] text-zinc-600 dark:text-zinc-300">Progress</p>
+                    <h2 class="mt-2 text-xl font-extrabold text-slate-950 dark:text-white">
+                      {{ nextLevelLabel ? `On the way to ${nextLevelLabel}` : 'Top seller level active' }}
+                    </h2>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      Current level: <span class="font-semibold text-slate-700 dark:text-slate-200">{{ levelLabel }}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div class="rounded-2xl bg-blue-50 px-4 py-3 text-right dark:bg-blue-500/10">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">Current Points</p>
+              <div class="rounded-2xl bg-zinc-100 px-4 py-3 text-right dark:bg-zinc-800/70">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">Current Points</p>
                 <p class="mt-1 text-2xl font-black text-slate-950 dark:text-white">{{ formatNumber(data.points.current_points) }}</p>
               </div>
             </div>
@@ -122,7 +104,7 @@
               </div>
               <div class="mt-2 h-3 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-500"
+                  class="h-full rounded-full bg-gradient-to-r from-zinc-800 via-stone-500 to-zinc-400 transition-all duration-500 dark:from-zinc-200 dark:via-stone-400 dark:to-zinc-500"
                   :style="{ width: `${currentProgressPct}%` }"
                 ></div>
               </div>
@@ -133,35 +115,9 @@
               </div>
             </div>
           </div>
-
-          <div class="border-t border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60 sm:p-6 lg:border-l lg:border-t-0">
-            <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Next Level</p>
-                <p class="mt-1 text-base font-bold text-slate-900 dark:text-white">{{ nextLevelLabel || 'Completed' }}</p>
-              </div>
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Points Needed</p>
-                <p class="mt-1 text-base font-bold text-emerald-600 dark:text-emerald-300">
-                  {{ data.points.next_level_points ? formatNumber(data.points.current_points_to_next_level) : '0' }}
-                </p>
-              </div>
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Conversion</p>
-                <p class="mt-1 text-base font-bold text-slate-900 dark:text-white">LKR {{ toMoney(data.points.lkr_per_point, 0) }} = 1 pt</p>
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
       </div>
     </section>
-
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <MetricCard label="Total Orders" :value="formatNumber(data.orders.total)" icon="fa-boxes-stacked" />
-      <MetricCard label="Completed Orders" :value="formatNumber(statusCount('completed'))" icon="fa-circle-check" tone="emerald" />
-      <MetricCard label="Available Commission" :value="`LKR ${toMoney(data.finance.available_commission)}`" icon="fa-wallet" tone="blue" />
-      <MetricCard label="Paid Commission" :value="`LKR ${toMoney(data.finance.paid_commission)}`" icon="fa-money-check-dollar" tone="violet" />
-    </div>
 
     <div class="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
       <section class="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
@@ -204,7 +160,7 @@
           >
             <div class="flex h-32 w-full items-end rounded-full bg-slate-100 px-1 dark:bg-slate-800">
               <div
-                class="w-full rounded-full bg-blue-500 transition-all duration-300 dark:bg-blue-400"
+                class="w-full rounded-full bg-zinc-700 transition-all duration-300 dark:bg-zinc-300"
                 :style="{ height: `${trendHeight(day.orders_count)}%` }"
               ></div>
             </div>
@@ -299,6 +255,7 @@ const data = reactive({
   points: {
     level_name: '',
     level_no: null,
+    level_icon_url: '',
     current_level_points: 0,
     current_points: 0,
     pending_points: 0,
@@ -306,6 +263,7 @@ const data = reactive({
     pending_base_amount: 0,
     next_level_name: '',
     next_level_no: null,
+    next_level_icon_url: '',
     next_level_points: null,
     current_points_to_next_level: null,
     current_level_progress_points: 0,
@@ -358,7 +316,7 @@ const MetricCard = defineComponent({
       violet: 'border-violet-200/80 bg-violet-50/80 text-violet-900 dark:border-violet-500/30 dark:bg-violet-500/10 dark:text-violet-100',
     }
 
-    return () => h('article', { class: `rounded-2xl border p-4 shadow-sm ${tones[props.tone] || tones.slate}` }, [
+    return () => h('article', { class: `flex min-h-28 rounded-2xl border p-4 shadow-sm ${tones[props.tone] || tones.slate}` }, [
       h('div', { class: 'flex items-start justify-between gap-3' }, [
         h('div', [
           h('p', { class: 'text-[11px] font-semibold uppercase tracking-wider opacity-70' }, props.label),
@@ -384,11 +342,11 @@ const QuickLink = defineComponent({
   setup(props) {
     return () => h('a', {
       href: props.href,
-      class: 'rounded-2xl border border-slate-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:hover:border-blue-500/40',
+      class: 'rounded-2xl border border-zinc-200 bg-white p-4 transition hover:-translate-y-0.5 hover:border-zinc-400 hover:shadow-sm dark:border-zinc-800 dark:bg-slate-950 dark:hover:border-zinc-500',
     }, [
       h('div', { class: 'flex items-center justify-between gap-3' }, [
         h('p', { class: 'text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400' }, props.eyebrow),
-        h('span', { class: 'inline-flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300' }, [
+        h('span', { class: 'inline-flex h-8 w-8 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200' }, [
           h('i', { class: `fas ${props.icon}`, 'aria-hidden': 'true' }),
         ]),
       ]),
@@ -407,6 +365,8 @@ const nextLevelLabel = computed(() => {
   if (!data.points.next_level_name) return ''
   return data.points.next_level_no ? `${data.points.next_level_name} (L${data.points.next_level_no})` : data.points.next_level_name
 })
+
+const progressLevelIcon = computed(() => data.points.next_level_icon_url || data.points.level_icon_url || '')
 
 const currentProgressPct = computed(() => {
   return Math.min(100, Math.max(0, Number(data.points.current_progress_pct || 0)))

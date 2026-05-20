@@ -1,26 +1,28 @@
 @php
   $mode = $mode ?? 'desktop';
   $wrapperClass = $mode === 'drawer'
-      ? 'h-full overflow-y-auto rounded-none border-0 bg-white/95 px-2 py-3 shadow-none backdrop-blur dark:bg-slate-950'
-      : 'relative max-h-[calc(100vh-6rem)] overflow-visible rounded-[1.35rem] border border-white/80 bg-white/85 px-2 py-3 shadow-xl shadow-slate-200/70 ring-1 ring-slate-900/5 backdrop-blur-xl dark:border-slate-700/70 dark:bg-slate-950 dark:shadow-black/20 dark:ring-white/5';
+      ? 'min-h-0 flex-1 overflow-y-auto rounded-none border-0 bg-black px-2 pb-8 pt-3 shadow-none backdrop-blur'
+      : 'relative h-[calc(100vh-6rem)] overflow-visible rounded-[1.35rem] border border-slate-800 bg-black px-2 pb-8 pt-3 shadow-xl shadow-black/30 ring-1 ring-white/10 backdrop-blur-xl';
   $itemBase = 'seller-sidebar-item group flex items-center gap-2 rounded-xl border px-2 py-2 text-[0.78rem] font-semibold leading-none transition';
-  $itemActive = 'border-blue-200 bg-blue-50 text-blue-800 shadow-sm shadow-blue-100/60 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200 dark:shadow-none';
-  $itemIdle = 'border-transparent text-slate-600 hover:-translate-y-0.5 hover:border-blue-100 hover:bg-blue-50/70 hover:text-blue-700 dark:text-slate-300 dark:hover:border-blue-500/20 dark:hover:bg-slate-800/80 dark:hover:text-blue-200';
-  $iconClass = 'seller-sidebar-icon inline-flex aspect-square h-7 w-7 min-h-7 min-w-7 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[0.78rem] text-slate-600 transition group-hover:bg-white group-hover:text-blue-700 dark:bg-slate-800 dark:text-slate-300 dark:group-hover:bg-blue-500/20 dark:group-hover:text-blue-200';
+  $itemActive = 'border-white/10 bg-white text-black shadow-sm shadow-black/20';
+  $itemIdle = 'border-transparent text-slate-300 hover:-translate-y-0.5 hover:border-white/10 hover:bg-white/10 hover:text-white';
+  $iconBase = 'seller-sidebar-icon inline-flex aspect-square h-7 w-7 min-h-7 min-w-7 shrink-0 items-center justify-center rounded-lg text-[0.78rem] transition';
+  $iconActive = 'bg-slate-100 text-black';
+  $iconIdle = 'bg-white/10 text-slate-300 group-hover:bg-white group-hover:text-black';
 @endphp
 
 <div class="seller-sidebar-shell {{ $wrapperClass }}">
-  <div class="flex items-center justify-between px-1">
-    <div class="seller-sidebar-label">
-      <p class="text-[0.58rem] font-bold uppercase tracking-[0.22em] text-blue-600 dark:text-blue-300">Seller</p>
-      <p class="mt-0.5 text-[0.72rem] font-semibold text-slate-500 dark:text-slate-400">Workspace</p>
+  <div class="seller-sidebar-header flex items-center justify-between gap-3 px-1">
+    <div class="seller-sidebar-label inline-flex items-baseline gap-2">
+      <p class="text-sm font-black uppercase tracking-[0.18em] text-slate-100">Seller</p>
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-200">Workspace</p>
     </div>
 
     @if($mode === 'desktop')
       <button
         id="sellerSidebarDesktopToggle"
         type="button"
-        class="seller-sidebar-floating-toggle absolute -right-3 top-5 z-20 inline-flex h-7 w-7 items-center justify-center rounded-full border border-blue-100 bg-white text-blue-600 shadow-lg shadow-blue-100/80 transition hover:-translate-y-0.5 hover:bg-blue-50 dark:border-blue-500/30 dark:bg-slate-900 dark:text-blue-300 dark:shadow-black/30 dark:hover:bg-slate-800"
+        class="seller-sidebar-floating-toggle inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-slate-200 shadow-sm transition hover:-translate-y-0.5 hover:bg-white hover:text-black"
         title="Toggle sidebar size"
       >
         <i class="fas fa-angles-left text-[0.68rem]"></i>
@@ -33,7 +35,7 @@
       href="{{ route('sellerDashboard') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerDashboard') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerDashboard') ? $iconActive : $iconIdle }}">
         <i class="fas fa-chart-line"></i>
       </span>
       <span class="seller-sidebar-label">Dashboard</span>
@@ -42,9 +44,9 @@
 
     <a
       href="{{ route('sellerProducts') }}"
-      class="{{ $itemBase }} {{ request()->routeIs('sellerProducts') || request()->routeIs('sellerInventory') ? $itemActive : $itemIdle }}"
+      class="{{ $itemBase }} {{ request()->routeIs('sellerProducts') || request()->routeIs('sellerProducts.show') || request()->routeIs('sellerInventory') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerProducts') || request()->routeIs('sellerProducts.show') || request()->routeIs('sellerInventory') ? $iconActive : $iconIdle }}">
         <i class="fas fa-box-open"></i>
       </span>
       <span class="seller-sidebar-label">Products</span>
@@ -53,53 +55,31 @@
 
     <a
       href="{{ route('sellerOrders') }}"
-      class="{{ $itemBase }} {{ request()->routeIs('sellerOrders') ? $itemActive : $itemIdle }}"
+      class="{{ $itemBase }} {{ request()->routeIs('sellerOrders') || request()->routeIs('sellerOrderShow') || request()->routeIs('sellerOrderCreate') || request()->routeIs('sellerBulkOrders') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerOrders') || request()->routeIs('sellerOrderShow') || request()->routeIs('sellerOrderCreate') || request()->routeIs('sellerBulkOrders') ? $iconActive : $iconIdle }}">
         <i class="fas fa-cart-shopping"></i>
       </span>
-      <span class="seller-sidebar-label">My Orders</span>
-      <span class="seller-sidebar-tooltip">My Orders</span>
-    </a>
-
-    <a
-      href="{{ route('sellerOrderCreate') }}"
-      class="{{ $itemBase }} {{ request()->routeIs('sellerOrderCreate') ? $itemActive : $itemIdle }}"
-    >
-      <span class="{{ $iconClass }}">
-        <i class="fas fa-plus"></i>
-      </span>
-      <span class="seller-sidebar-label">Create Order</span>
-      <span class="seller-sidebar-tooltip">Create Order</span>
-    </a>
-
-    <a
-      href="{{ route('sellerBulkOrders') }}"
-      class="{{ $itemBase }} {{ request()->routeIs('sellerBulkOrders') ? $itemActive : $itemIdle }}"
-    >
-      <span class="{{ $iconClass }}">
-        <i class="fas fa-table-list"></i>
-      </span>
-      <span class="seller-sidebar-label">Bulk Orders</span>
-      <span class="seller-sidebar-tooltip">Bulk Orders</span>
+      <span class="seller-sidebar-label">Orders</span>
+      <span class="seller-sidebar-tooltip">Orders</span>
     </a>
 
     <a
       href="{{ route('sellerPayments') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerPayments') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerPayments') ? $iconActive : $iconIdle }}">
         <i class="fas fa-money-check-dollar"></i>
       </span>
-      <span class="seller-sidebar-label">Payments</span>
-      <span class="seller-sidebar-tooltip">Payments</span>
+      <span class="seller-sidebar-label">Payments & Invoices</span>
+      <span class="seller-sidebar-tooltip">Payments & Invoices</span>
     </a>
 
     <a
       href="{{ route('sellerAffiliate') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerAffiliate') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerAffiliate') ? $iconActive : $iconIdle }}">
         <i class="fas fa-users"></i>
       </span>
       <span class="seller-sidebar-label">Affiliate</span>
@@ -110,11 +90,26 @@
       href="{{ route('sellerProfileManager') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerProfileManager') ? $itemActive : $itemIdle }}"
     >
-      <span class="{{ $iconClass }}">
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerProfileManager') ? $iconActive : $iconIdle }}">
         <i class="fas fa-user-pen"></i>
       </span>
-      <span class="seller-sidebar-label">Profile Manager</span>
-      <span class="seller-sidebar-tooltip">Profile Manager</span>
+      <span class="seller-sidebar-label">Profile</span>
+      <span class="seller-sidebar-tooltip">Profile</span>
     </a>
+
+    <button
+      type="button"
+      data-seller-new-order-open
+      class="seller-sidebar-new-order group mt-4 flex w-full items-center gap-3 rounded-2xl border border-cyan-300/25 bg-gradient-to-br from-sky-950 via-blue-800 to-cyan-700 px-3 py-3 text-left text-white shadow-lg shadow-cyan-950/30 ring-1 ring-cyan-200/20 transition hover:-translate-y-0.5 hover:from-sky-900 hover:via-blue-700 hover:to-cyan-600"
+    >
+      <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white shadow-sm ring-1 ring-white/20">
+        <i class="fas fa-plus"></i>
+      </span>
+      <span class="seller-sidebar-label min-w-0">
+        <span class="block text-sm font-black leading-tight">New Order</span>
+        <span class="mt-0.5 block text-[11px] font-semibold uppercase tracking-wide text-cyan-100/80">Single or bulk upload</span>
+      </span>
+      <span class="seller-sidebar-tooltip">New Order</span>
+    </button>
   </nav>
 </div>

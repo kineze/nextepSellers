@@ -42,6 +42,11 @@ class LotItem extends Model
         return $this->belongsTo(GrnItem::class, 'grn_item_id');
     }
 
+    public function returnItem()
+    {
+        return $this->hasOne(ReturnItem::class);
+    }
+
     public function scopeAvailable($query)
     {
         return $query

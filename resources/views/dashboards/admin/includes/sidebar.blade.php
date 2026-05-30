@@ -42,7 +42,8 @@
               {"label":"Supplier Manager","href":"{{ url('/suppliers') }}"},
               {"label":"Category Manager","href":"{{ url('/categories') }}"},
               {"label":"GRN Manager","href":"{{ route('grns') }}"},
-              {"label":"Lot Manager","href":"{{ route('lots') }}"}
+              {"label":"Lot Manager","href":"{{ route('lots') }}"},
+              {"label":"Return List","href":"{{ route('returnList') }}"}
             ]'>
 
           <button class="dropdown-toggle  dark:border-zinc-600 w-full flex items-center gap-3 p-2 dark:hover:bg-zinc-950 transition-all">
@@ -71,6 +72,9 @@
             </a>
             <a href="{{ route('lots') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
               Lot Manager
+            </a>
+            <a href="{{ route('returnList') }}" class="block px-4 py-2 text-xs font-semibold text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-700 rounded-md">
+              Return List
             </a>
           </div>
         </div>

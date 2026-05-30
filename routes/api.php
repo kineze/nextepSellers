@@ -31,6 +31,7 @@ use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
 use App\Http\Controllers\SystemDataController;
 use App\Http\Controllers\PenaltyTypeController;
+use App\Http\Controllers\OrderReturnController;
 
 Route::post('/delivery/webhook', [DeliveryWebhookController::class, 'store'])
     ->name('delivery.webhook.store');
@@ -182,6 +183,11 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
     Route::post('/lot-items/{lotItem}/mark-damaged', [LotController::class, 'markDamaged']);
     Route::post('/lots/{lot}/add-items', [LotController::class, 'addItems']);
     Route::post('/lots/{lot}/adjust', [LotController::class, 'adjust']);
+
+    Route::get('/admin/returns', [OrderReturnController::class, 'index']);
+    Route::post('/admin/returns/scan', [OrderReturnController::class, 'scan']);
+    Route::post('/admin/returns/{orderReturn}/scan-lot-item', [OrderReturnController::class, 'scanLotItem'])->whereNumber('orderReturn');
+    Route::post('/admin/returns/{orderReturn}/finalize', [OrderReturnController::class, 'finalize'])->whereNumber('orderReturn');
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

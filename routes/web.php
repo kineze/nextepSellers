@@ -177,6 +177,7 @@ Route::middleware(['permission:Manage Inventory', config('jetstream.auth_session
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/grns', 'getGrns')->name('grns');
         Route::get('/lots', 'getLots')->name('lots');
+        Route::get('/return-list', 'getReturnList')->name('returnList');
     });
 
 });

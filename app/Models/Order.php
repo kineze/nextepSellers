@@ -125,6 +125,11 @@ class Order extends Model
         return $this->hasOne(AffiliateCommission::class);
     }
 
+    public function orderReturn()
+    {
+        return $this->hasOne(OrderReturn::class);
+    }
+
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);

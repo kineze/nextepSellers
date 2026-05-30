@@ -419,4 +419,9 @@ class DashboardController extends Controller
     {
         return view('dashboards.admin.settings.lots');
     }
+
+    public function getReturnList()
+    {
+        return view('dashboards.admin.settings.returnList');
+    }
 }

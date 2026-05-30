@@ -69,6 +69,7 @@ import BankManager from './components/BankManager.vue';
 import LearningContentManager from './components/LearningContentManager.vue';
 import SystemDataManager from './components/SystemDataManager.vue';
 import PenaltyTypeManager from './components/PenaltyTypeManager.vue';
+import AdminReturnList from './components/AdminReturnList.vue';
 
 const app = createApp({})
 
@@ -143,5 +144,6 @@ app.use(Toast, {
 .component('learning-content-manager', LearningContentManager)
 .component('system-data-manager', SystemDataManager)
 .component('penalty-type-manager', PenaltyTypeManager)
+.component('admin-return-list', AdminReturnList)
 
 .mount('#app')

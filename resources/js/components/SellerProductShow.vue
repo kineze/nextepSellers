@@ -18,9 +18,9 @@
 
       <div class="grid gap-6 xl:grid-cols-5">
         <div class="xl:col-span-2 xl:sticky xl:top-24 xl:self-start">
-          <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
-            <img v-if="selectedImage" :src="selectedImage" :alt="product.title" class="h-[430px] w-full object-cover" />
-            <div v-else class="flex h-[430px] items-center justify-center text-sm text-slate-400 dark:text-slate-500">No image available</div>
+          <div class="aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+            <img v-if="selectedImage" :src="selectedImage" :alt="product.title" class="h-full w-full object-contain" />
+            <div v-else class="flex h-full items-center justify-center text-sm text-slate-400 dark:text-slate-500">No image available</div>
           </div>
 
           <div v-if="images.length" class="mt-3 grid grid-cols-5 gap-2">
@@ -28,10 +28,10 @@
               v-for="img in images"
               :key="img.id"
               type="button"
-              class="overflow-hidden rounded-lg border border-slate-200 hover:border-blue-400 dark:border-slate-700"
+              class="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-100 hover:border-blue-400 dark:border-slate-700 dark:bg-slate-800"
               @click="selectedImage = imageUrl(img.path)"
             >
-              <img :src="imageUrl(img.path)" :alt="product.title" class="h-16 w-full object-cover" />
+              <img :src="imageUrl(img.path)" :alt="product.title" class="h-full w-full object-contain" />
             </button>
           </div>
         </div>
@@ -59,17 +59,55 @@
           </div>
 
           <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
-            <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Variant Selection</h2>
-            <seller-product-variant-selector
-              :product-id="product.id"
-              :product-title="product.title"
-              :product-code="product.product_code"
-              :product-image="selectedImage"
-              :product-delivery-fee="Number(product.delivery_fee || 0)"
-              :product-is-free-shipping="!!product.is_free_shipping"
-              :has-variants="hasVariantOptions"
-              :variants="normalizedVariants"
-            />
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Product Details</h2>
+              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {{ variants.length }} variant{{ variants.length === 1 ? '' : 's' }}
+              </span>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-3">
+              <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Delivery Fee</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-white">
+                  {{ product.is_free_shipping ? 'Free shipping' : `LKR ${toMoney(Number(product.delivery_fee || 0))}` }}
+                </p>
+              </div>
+              <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Variant Type</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-white">{{ product.has_varients ? 'Multiple variants' : 'Single product' }}</p>
+              </div>
+              <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p class="text-xs text-slate-500 dark:text-slate-400">Stock</p>
+                <p class="mt-1 font-semibold text-slate-900 dark:text-white">{{ totalStock.toLocaleString() }}</p>
+              </div>
+            </div>
+
+            <div class="mt-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                  <tr>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">SKU</th>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">Attributes</th>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">Price</th>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">Stock</th>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">Reorder</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
+                  <tr v-if="!variants.length">
+                    <td colspan="5" class="px-3 py-4 text-center text-slate-500 dark:text-slate-400">No variant data available.</td>
+                  </tr>
+                  <tr v-for="variant in variants" :key="variant.id">
+                    <td class="px-3 py-2 font-semibold text-slate-900 dark:text-white">{{ variant.sku || '-' }}</td>
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ formatAttributes(variant.attributes) }}</td>
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(variant.price || 0)) }}</td>
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.stock_quantity || 0).toLocaleString() }}</td>
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.reorder_level || 0).toLocaleString() }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
@@ -154,7 +192,9 @@ const selectedImage = ref('')
 
 const images = computed(() => product.value?.images || [])
 const variants = computed(() => product.value?.varients || [])
-const hasVariantOptions = computed(() => !!product.value?.has_varients && variants.value.length > 0)
+const totalStock = computed(() => {
+  return variants.value.reduce((sum, variant) => sum + Number(variant?.stock_quantity || 0), 0)
+})
 const levelRows = computed(() => {
   const rows = product.value?.product_levels || []
   return [...rows]
@@ -185,41 +225,6 @@ const priceRange = computed(() => {
   return { min: Math.min(...vals), max: Math.max(...vals) }
 })
 
-const normalizedVariants = computed(() => {
-  return variants.value.map((variant) => {
-    const attrs = {}
-    const rawAttrs = variant?.attributes || {}
-
-    for (const [key, val] of Object.entries(rawAttrs)) {
-      if (val && typeof val === 'object') {
-        const rawValue = String(val.color || val.name || '').trim().toLowerCase()
-        attrs[key] = {
-          value: rawValue,
-          label: String(val.name || val.color || '').trim(),
-          color: val.color || null,
-        }
-      } else {
-        const raw = String(val || '').trim()
-        attrs[key] = {
-          value: raw.toLowerCase(),
-          label: raw,
-          color: null,
-        }
-      }
-    }
-
-    return {
-      id: variant.id,
-      sku: variant.sku,
-      price: variant.price,
-      stock_quantity: variant.stock_quantity,
-      reorder_level: variant.reorder_level,
-      is_active: !!variant.is_active,
-      attributes: attrs,
-    }
-  })
-})
-
 const fetchData = async () => {
   loading.value = true
   try {
@@ -244,6 +249,22 @@ const imageUrl = (path) => {
 }
 
 const toMoney = (value) => Number(value).toFixed(2)
+
+const formatAttributes = (attributes) => {
+  const entries = Object.entries(attributes || {})
+  if (!entries.length) return '-'
+
+  return entries
+    .map(([key, value]) => {
+      const label = String(key || '').replace(/_/g, ' ')
+      if (value && typeof value === 'object') {
+        return `${label}: ${value.name || value.color || '-'}`
+      }
+
+      return `${label}: ${value || '-'}`
+    })
+    .join(', ')
+}
 
 const commissionLabel = (row) => {
   if (!row) return '-'

@@ -95,7 +95,7 @@
             >
               <img
                 :src="form.images[0]?.preview"
-                class="h-full w-full rounded-lg object-cover"
+                class="h-full w-full rounded-lg object-contain"
                 alt="Primary product image"
                 @click="selectedImagePreview = form.images[0]?.preview"
               />
@@ -128,7 +128,7 @@
               >
                 <img
                   :src="image.preview"
-                  class="h-full w-full rounded-lg object-cover"
+                  class="h-full w-full rounded-lg object-contain"
                   @click="selectedImagePreview = image.preview"
                   alt="Uploaded product image"
                 />

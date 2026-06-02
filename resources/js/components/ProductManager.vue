@@ -153,14 +153,14 @@
 
             <div v-else-if="viewingProduct" class="grid gap-5 text-sm lg:grid-cols-5">
               <div class="lg:col-span-2">
-                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
+                <div class="aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/60">
                   <img
                     v-if="selectedPreviewImage"
                     :src="selectedPreviewImage"
                     alt="Product preview"
-                    class="h-80 w-full object-cover"
+                    class="h-full w-full object-contain"
                   />
-                  <div v-else class="flex h-80 items-center justify-center text-sm text-slate-400 dark:text-slate-500">
+                  <div v-else class="flex h-full items-center justify-center text-sm text-slate-400 dark:text-slate-500">
                     No images
                   </div>
                 </div>
@@ -171,10 +171,10 @@
                     :key="image.id"
                     type="button"
                     @click="selectedPreviewImage = imageUrl(image.path)"
-                    class="overflow-hidden rounded-lg border-2 transition"
+                    class="aspect-square overflow-hidden rounded-lg border-2 bg-slate-50 transition dark:bg-slate-800/60"
                     :class="selectedPreviewImage === imageUrl(image.path) ? 'border-slate-900 dark:border-white' : 'border-slate-200 dark:border-slate-700'"
                   >
-                    <img :src="imageUrl(image.path)" alt="Product thumbnail" class="h-14 w-full object-cover" />
+                    <img :src="imageUrl(image.path)" alt="Product thumbnail" class="h-full w-full object-contain" />
                   </button>
                 </div>
               </div>

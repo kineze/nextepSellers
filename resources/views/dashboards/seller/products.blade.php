@@ -58,7 +58,7 @@
         >
           <div class="relative aspect-square w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
             @if ($primaryImage)
-              <img src="{{ asset('storage/' . $primaryImage->path) }}" alt="{{ $product->title }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" />
+              <img src="{{ asset('storage/' . $primaryImage->path) }}" alt="{{ $product->title }}" class="h-full w-full object-contain" />
             @else
               <div class="flex h-full w-full items-center justify-center text-xs text-slate-400 dark:text-slate-500">No image</div>
             @endif

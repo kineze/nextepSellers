@@ -85,44 +85,59 @@
           </div>
           <input ref="imageInputRef" type="file" multiple class="hidden" @change="handleImageUpload" />
 
-          <div v-if="form.images.length" class="mt-3 space-y-3">
-            <button
-              type="button"
-              class="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-900"
-              @click="openImagePreview(selectedImagePreview || form.images[0]?.preview)"
+          <div v-if="form.images.length" class="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1.85fr)]">
+            <div
+              draggable="true"
+              @dragstart="onImageDragStart(0)"
+              @dragover.prevent
+              @drop="onImageDrop(0)"
+              class="group relative aspect-square cursor-move overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm ring-2 ring-emerald-500 dark:border-slate-700 dark:bg-slate-950"
             >
               <img
-                :src="selectedImagePreview || form.images[0]?.preview"
-                class="h-52 w-full object-cover"
-                alt="Selected product image"
+                :src="form.images[0]?.preview"
+                class="h-full w-full rounded-lg object-cover"
+                alt="Primary product image"
+                @click="selectedImagePreview = form.images[0]?.preview"
               />
-            </button>
+              <button type="button" @click.stop="removeImage(0)" class="absolute right-2 top-2 z-20 rounded bg-black/60 px-1.5 text-xs text-white">✖</button>
+              <span class="absolute bottom-2 left-2 z-20 rounded bg-emerald-600/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+                Primary image
+              </span>
+              <button
+                type="button"
+                @click.stop="openImagePreview(form.images[0]?.preview)"
+                class="absolute inset-1 z-10 hidden items-center justify-center rounded-lg bg-black/40 text-xs font-semibold uppercase tracking-wide text-white group-hover:flex"
+              >
+                View
+              </button>
+            </div>
 
-            <div class="grid grid-cols-4 gap-3">
+            <div class="grid content-start grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-3 xl:grid-cols-4">
               <div
-                v-for="(image, index) in form.images"
-                :key="image.preview"
+                v-for="(image, index) in form.images.slice(1)"
+                :key="`${image.path}-${index}`"
                 draggable="true"
-                @dragstart="onImageDragStart(index)"
+                @dragstart="onImageDragStart(index + 1)"
                 @dragover.prevent
-                @drop="onImageDrop(index)"
-                class="group relative cursor-move rounded-lg border border-slate-200 p-1 dark:border-slate-700"
+                @drop="onImageDrop(index + 1)"
+                class="group relative aspect-square cursor-move overflow-hidden rounded-xl border border-slate-200 bg-white p-1 shadow-sm dark:border-slate-700 dark:bg-slate-950"
+                :class="[
+                  image.is_primary ? 'ring-2 ring-emerald-500' : '',
+                  selectedImagePreview === image.preview ? 'ring-2 ring-slate-900 dark:ring-slate-300' : ''
+                ]"
               >
                 <img
                   :src="image.preview"
-                  class="h-20 w-full rounded-md object-cover"
-                  :class="[
-                    image.is_primary ? 'ring-2 ring-emerald-500' : '',
-                    selectedImagePreview === image.preview ? 'ring-2 ring-slate-900 dark:ring-slate-300' : ''
-                  ]"
+                  class="h-full w-full rounded-lg object-cover"
                   @click="selectedImagePreview = image.preview"
+                  alt="Uploaded product image"
                 />
-                <button type="button" @click="removeImage(index)" class="absolute right-1 top-1 rounded bg-black/60 px-1 text-xs text-white">✖</button>
-                <span v-if="image.is_primary" class="absolute bottom-1 left-1 rounded bg-emerald-600/90 px-1 text-[10px] text-white">Primary</span>
+                <button type="button" @click.stop="removeImage(index + 1)" class="absolute right-1 top-1 z-20 rounded bg-black/60 px-1 text-xs text-white">✖</button>
+                <span v-if="image.is_primary" class="absolute bottom-1 left-1 z-20 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">Primary</span>
                 <button
                   type="button"
                   @click.stop="openImagePreview(image.preview)"
-                  class="absolute inset-0 hidden items-center justify-center rounded-md bg-black/40 text-[10px] font-semibold uppercase tracking-wide text-white group-hover:flex"
+                  class="absolute inset-1 z-10 hidden items-center justify-center rounded-lg bg-black/40 text-[10px] font-semibold uppercase tracking-wide text-white group-hover:flex"
                 >
                   View
                 </button>

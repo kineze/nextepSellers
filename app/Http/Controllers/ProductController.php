@@ -108,6 +108,19 @@ class ProductController extends Controller
         ]);
     }
 
+    public function uploadVideo(Request $request)
+    {
+        $validated = $request->validate([
+            'video' => ['required', 'file', 'mimes:mp4,mov,webm,avi,mpeg,mpg', 'max:51200'],
+        ]);
+
+        $path = $request->file('video')->store('product-videos', 'public');
+
+        return response()->json([
+            'path' => $path,
+        ]);
+    }
+
     public function show(Product $product)
     {
         $product->load([
@@ -126,6 +139,7 @@ class ProductController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'small_description' => ['required', 'string', 'max:255'],
             'long_description' => ['nullable', 'string'],
+            'product_video' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
             'is_active' => ['nullable', 'boolean'],
@@ -173,6 +187,7 @@ class ProductController extends Controller
                 'title' => $validated['title'],
                 'small_description' => $validated['small_description'],
                 'long_description' => $validated['long_description'] ?? null,
+                'product_video' => $validated['product_video'] ?? null,
                 'category_id' => $validated['category_id'],
                 'product_code' => $validated['product_code'],
                 'is_active' => array_key_exists('is_active', $validated)
@@ -252,6 +267,7 @@ class ProductController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'small_description' => ['required', 'string', 'max:255'],
             'long_description' => ['nullable', 'string'],
+            'product_video' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', Rule::unique('products', 'product_code')->ignore($product->id)],
             'is_active' => ['nullable', 'boolean'],
@@ -340,6 +356,7 @@ class ProductController extends Controller
                 'title' => $validated['title'],
                 'small_description' => $validated['small_description'],
                 'long_description' => $validated['long_description'] ?? null,
+                'product_video' => $validated['product_video'] ?? null,
                 'category_id' => $validated['category_id'],
                 'product_code' => $validated['product_code'],
                 'is_active' => array_key_exists('is_active', $validated)

@@ -12,6 +12,7 @@ class Product extends Model
         'title',
         'small_description',
         'long_description',
+        'product_video',
         'category_id',
         'product_code',
         'is_active',

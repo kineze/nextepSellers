@@ -71,6 +71,41 @@
               class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white dark:focus:border-slate-500 dark:focus:ring-slate-500/20 resize-none"
             ></textarea>
           </div>
+          <div class="md:col-span-2">
+            <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Product Video</label>
+            <div
+              class="cursor-pointer rounded-xl border border-dashed border-slate-300 bg-white px-4 py-5 text-center text-sm text-slate-500 transition hover:border-slate-500 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              @click="openVideoFilePicker"
+              @drop.prevent="handleVideoDrop"
+              @dragover.prevent
+            >
+              {{ uploadingVideo ? 'Uploading video...' : 'Drag & drop or click to upload video' }}
+            </div>
+            <input
+              ref="videoInputRef"
+              type="file"
+              accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/mpeg"
+              class="hidden"
+              @change="handleVideoUpload"
+            />
+            <div v-if="form.product_video" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/50">
+              <video
+                :src="mediaUrl(form.product_video)"
+                controls
+                class="max-h-56 w-full rounded-lg bg-black object-contain"
+              ></video>
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p class="break-all text-xs text-slate-500 dark:text-slate-400">{{ form.product_video }}</p>
+                <button
+                  type="button"
+                  @click="removeVideo"
+                  class="rounded-lg border border-rose-200 px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:border-rose-500/40 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="mt-4 rounded-xl border border-slate-200/70 bg-slate-50/70 p-3 dark:border-slate-700 dark:bg-slate-800/50">
@@ -379,9 +414,11 @@ const levels = ref([])
 const deliveryFees = ref([])
 const defaultDeliveryFeeId = ref(null)
 const imageInputRef = ref(null)
+const videoInputRef = ref(null)
 const quillEditorRef = ref(null)
 const quillInstance = ref(null)
 const saving = ref(false)
+const uploadingVideo = ref(false)
 const levelMode = ref('percentage')
 const levelRows = ref([])
 const selectedImagePreview = ref('')
@@ -401,6 +438,7 @@ const form = ref({
   is_free_shipping: false,
   small_description: '',
   long_description: '',
+  product_video: '',
   hasVariants: 'no',
   is_active: true,
   images: [],
@@ -524,6 +562,17 @@ const openFilePicker = () => {
   imageInputRef.value?.click()
 }
 
+const openVideoFilePicker = () => {
+  if (uploadingVideo.value) return
+  videoInputRef.value?.click()
+}
+
+const mediaUrl = (path) => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `/storage/${path}`
+}
+
 const uploadOneImage = async (file) => {
   const fd = new FormData()
   fd.append('image', file)
@@ -558,6 +607,39 @@ const handleDrop = async (event) => {
       toast.error(`Failed to upload ${file.name}`)
     }
   }
+}
+
+const uploadProductVideo = async (file) => {
+  if (!file) return
+
+  const fd = new FormData()
+  fd.append('video', file)
+
+  uploadingVideo.value = true
+  try {
+    const { data } = await axios.post('/api/products/upload-video', fd)
+    form.value.product_video = data.path || ''
+    toast.success('Video uploaded successfully.')
+  } catch (error) {
+    toast.error(error.response?.data?.message || `Failed to upload ${file.name}`)
+  } finally {
+    uploadingVideo.value = false
+  }
+}
+
+const handleVideoUpload = async (event) => {
+  const file = event.target?.files?.[0] || null
+  await uploadProductVideo(file)
+  event.target.value = ''
+}
+
+const handleVideoDrop = async (event) => {
+  const file = event.dataTransfer?.files?.[0] || null
+  await uploadProductVideo(file)
+}
+
+const removeVideo = () => {
+  form.value.product_video = ''
 }
 
 const ensureFirstImagePrimary = () => {
@@ -699,6 +781,7 @@ const saveProduct = async () => {
     title: form.value.title,
     small_description: form.value.small_description,
     long_description: form.value.long_description || null,
+    product_video: form.value.product_video || null,
     category_id: form.value.category_id,
     product_code: form.value.product_code,
     is_active: form.value.is_active ? 1 : 0,
@@ -766,6 +849,7 @@ const loadProduct = async () => {
     form.value.is_free_shipping = !!data.is_free_shipping
     form.value.small_description = data.small_description || ''
     form.value.long_description = data.long_description || ''
+    form.value.product_video = data.product_video || ''
     form.value.hasVariants = data.has_varients ? 'yes' : 'no'
     form.value.is_active = !!data.is_active
     form.value.images = (data.images || []).map((img) => ({

@@ -203,6 +203,20 @@
                 </div>
 
                 <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                  <p class="text-xs text-slate-500 dark:text-slate-400">Product Video</p>
+                  <a
+                    v-if="viewingProduct.product_video"
+                    :href="videoUrl(viewingProduct.product_video)"
+                    target="_blank"
+                    rel="noopener"
+                    class="mt-1 inline-flex text-sm font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200"
+                  >
+                    Open video
+                  </a>
+                  <p v-else class="mt-1 text-slate-800 dark:text-slate-100">-</p>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                   <p class="text-xs text-slate-500 dark:text-slate-400">Long Description</p>
                   <div class="prose prose-sm mt-2 max-w-none dark:prose-invert" v-html="viewingProduct.long_description || '<p>-</p>'"></div>
                 </div>
@@ -325,6 +339,12 @@ const editProduct = (product) => {
 }
 
 const imageUrl = (path) => {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `/storage/${path}`
+}
+
+const videoUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   return `/storage/${path}`

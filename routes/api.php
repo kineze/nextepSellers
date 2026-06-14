@@ -150,6 +150,7 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
     Route::get('/products/create-options', [ProductController::class, 'createOptions']);
     Route::get('/products/{product}', [ProductController::class, 'show']);
     Route::post('/products/upload-image', [ProductController::class, 'uploadImage']);
+    Route::post('/products/upload-video', [ProductController::class, 'uploadVideo']);
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{product}', [ProductController::class, 'update']);
     Route::post('/products/{product}/toggle-active', [ProductController::class, 'toggleActive']);

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class SystemData extends Model
@@ -14,6 +15,13 @@ class SystemData extends Model
         'country',
         'phone_number',
         'fax',
+        'year_start_month',
+        'year_end_month',
         'logo',
     ];
+
+    public function quarters(): HasMany
+    {
+        return $this->hasMany(SystemQuarter::class);
+    }
 }

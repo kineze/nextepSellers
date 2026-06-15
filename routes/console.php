@@ -3,6 +3,7 @@
 use App\Jobs\FetchTrackingJob;
 use App\Services\OrderTrackingSyncService;
 use App\Services\InvoiceGenerationService;
+use App\Services\SalesTargetAssessmentService;
 use App\Models\Order;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -92,6 +93,24 @@ Artisan::command('finance:auto-generate-invoices', function (InvoiceGenerationSe
 
 Schedule::command('finance:auto-generate-invoices')
     ->dailyAt('04:30')
+    ->timezone('Asia/Colombo')
+    ->withoutOverlapping()
+    ->runInBackground();
+
+Artisan::command('sales-targets:assess', function (SalesTargetAssessmentService $service) {
+    $startedAt = now('Asia/Colombo');
+    $this->info('Starting sales target assessment at ' . $startedAt->toDateTimeString());
+
+    $result = $service->assessDueTargets($startedAt);
+
+    $this->line('Targets due: ' . (int) ($result['targets'] ?? 0));
+    $this->line('Seller target results assessed: ' . (int) ($result['assessed'] ?? 0));
+    $this->line('Penalties applied: ' . (int) ($result['penalties_applied'] ?? 0));
+    $this->info('Sales target assessment finished at ' . now('Asia/Colombo')->toDateTimeString());
+})->purpose('Assess completed sales target periods and apply seller penalties.');
+
+Schedule::command('sales-targets:assess')
+    ->dailyAt('00:15')
     ->timezone('Asia/Colombo')
     ->withoutOverlapping()
     ->runInBackground();

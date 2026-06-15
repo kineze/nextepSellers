@@ -22,6 +22,11 @@ class DashboardController extends Controller
         return view('dashboards.admin.dashboard');
     }
 
+    public function getSellerSalesTargets()
+    {
+        return view('dashboards.seller.sales-targets');
+    }
+
     public function adminAnalytics()
     {
         $today = Carbon::today();

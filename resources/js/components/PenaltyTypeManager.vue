@@ -34,6 +34,7 @@
           <thead class="text-[0.7rem] uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <tr>
               <th class="px-3 py-3">Penalty</th>
+              <th class="px-3 py-3">Type</th>
               <th class="px-3 py-3">Description</th>
               <th class="px-3 py-3">Effective Areas</th>
               <th class="px-3 py-3">Restrictions</th>
@@ -44,10 +45,18 @@
           </thead>
           <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800/70">
             <tr v-if="items.length === 0">
-              <td colspan="7" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No penalty types found</td>
+              <td colspan="8" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No penalty types found</td>
             </tr>
             <tr v-for="item in items" :key="item.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
               <td class="px-3 py-4 font-semibold text-slate-900 dark:text-white">{{ item.penalty }}</td>
+              <td class="px-3 py-4">
+                <span
+                  class="inline-flex rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wide"
+                  :class="item.trigger_type === 'sales_target' ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200' : 'bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-200'"
+                >
+                  {{ triggerTypeLabel(item.trigger_type) }}
+                </span>
+              </td>
               <td class="max-w-md px-3 py-4 text-slate-600 dark:text-slate-300">
                 <span class="line-clamp-2">{{ item.description || '-' }}</span>
               </td>
@@ -68,7 +77,9 @@
                   <div v-if="ruleSummary(item).length === 0">-</div>
                 </div>
               </td>
-              <td class="px-3 py-4 font-semibold text-slate-900 dark:text-white">{{ formatPercentage(item.effective_percentage) }}</td>
+              <td class="px-3 py-4 font-semibold text-slate-900 dark:text-white">
+                {{ item.trigger_type === 'delivery_score' ? formatPercentage(item.effective_percentage) : '-' }}
+              </td>
               <td class="px-3 py-4">
                 <span
                   class="inline-flex rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-wide"
@@ -133,6 +144,17 @@
             </div>
 
             <div>
+              <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Trigger Type</label>
+              <select
+                v-model="form.trigger_type"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                <option value="delivery_score">Delivery Score</option>
+                <option value="sales_target">Sales Target</option>
+              </select>
+            </div>
+
+            <div v-if="form.trigger_type === 'delivery_score'">
               <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">Effective Percentage</label>
               <input
                 v-model="form.effective_percentage"
@@ -289,6 +311,10 @@ const effectiveAreaOptions = [
   { value: 'account', label: 'Account' },
 ]
 
+const triggerTypeLabel = (value) => {
+  return value === 'sales_target' ? 'Sales Target' : 'Delivery Score'
+}
+
 const defaultRules = () => ({
   orders: {
     daily_order_limit: '',
@@ -306,6 +332,7 @@ const defaultRules = () => ({
 const emptyForm = () => ({
   penalty: '',
   description: '',
+  trigger_type: 'delivery_score',
   effective_areas: [],
   rules: defaultRules(),
   effective_percentage: '',
@@ -388,6 +415,7 @@ const openDrawer = (item = null) => {
     form.value = {
       penalty: item.penalty || '',
       description: item.description || '',
+      trigger_type: item.trigger_type || 'delivery_score',
       effective_areas: Array.isArray(item.effective_areas) ? [...item.effective_areas] : [],
       rules: {
         orders: {
@@ -424,9 +452,10 @@ const save = async () => {
     const payload = {
       penalty: form.value.penalty,
       description: form.value.description,
+      trigger_type: form.value.trigger_type,
       effective_areas: form.value.effective_areas,
       rules: form.value.rules,
-      effective_percentage: form.value.effective_percentage,
+      effective_percentage: form.value.trigger_type === 'delivery_score' ? form.value.effective_percentage : 0,
       is_active: !!form.value.is_active,
     }
 

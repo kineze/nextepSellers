@@ -76,6 +76,17 @@
     </a>
 
     <a
+      href="{{ route('sellerSalesTargets') }}"
+      class="{{ $itemBase }} {{ request()->routeIs('sellerSalesTargets') ? $itemActive : $itemIdle }}"
+    >
+      <span class="{{ $iconBase }} {{ request()->routeIs('sellerSalesTargets') ? $iconActive : $iconIdle }}">
+        <i class="fas fa-bullseye"></i>
+      </span>
+      <span class="seller-sidebar-label">Sales Targets</span>
+      <span class="seller-sidebar-tooltip">Sales Targets</span>
+    </a>
+
+    <a
       href="{{ route('sellerAffiliate') }}"
       class="{{ $itemBase }} {{ request()->routeIs('sellerAffiliate') ? $itemActive : $itemIdle }}"
     >

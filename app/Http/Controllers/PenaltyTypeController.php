@@ -21,12 +21,14 @@ class PenaltyTypeController extends Controller
 
         $query = PenaltyType::query()
             ->orderByDesc('is_active')
+            ->orderBy('trigger_type')
             ->latest();
 
         if ($search !== '') {
             $query->where(function ($query) use ($search) {
                 $query->where('penalty', 'like', '%' . $search . '%')
                     ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('trigger_type', 'like', '%' . $search . '%')
                     ->orWhere('effective_areas', 'like', '%' . $search . '%');
             });
         }
@@ -41,9 +43,10 @@ class PenaltyTypeController extends Controller
         $penaltyType = PenaltyType::create([
             'penalty' => $validated['penalty'],
             'description' => $validated['description'] ?? null,
+            'trigger_type' => $validated['trigger_type'],
             'effective_areas' => $validated['effective_areas'],
             'rules' => $this->formatRules($validated),
-            'effective_percentage' => $validated['effective_percentage'],
+            'effective_percentage' => $validated['effective_percentage'] ?? 0,
             'is_active' => (bool) ($validated['is_active'] ?? true),
         ]);
 
@@ -60,9 +63,10 @@ class PenaltyTypeController extends Controller
         $penaltyType->update([
             'penalty' => $validated['penalty'],
             'description' => $validated['description'] ?? null,
+            'trigger_type' => $validated['trigger_type'],
             'effective_areas' => $validated['effective_areas'],
             'rules' => $this->formatRules($validated),
-            'effective_percentage' => $validated['effective_percentage'],
+            'effective_percentage' => $validated['effective_percentage'] ?? 0,
             'is_active' => (bool) ($validated['is_active'] ?? false),
         ]);
 
@@ -86,6 +90,7 @@ class PenaltyTypeController extends Controller
         $validator = Validator::make($request->all(), [
             'penalty' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
+            'trigger_type' => ['required', 'string', 'in:delivery_score,sales_target'],
             'effective_areas' => ['required', 'array', 'min:1'],
             'effective_areas.*' => ['required', 'string', 'in:orders,return_charges,account'],
             'rules' => ['nullable', 'array'],
@@ -97,7 +102,7 @@ class PenaltyTypeController extends Controller
             'rules.account' => ['nullable', 'array'],
             'rules.account.block_withdrawals' => ['nullable', 'boolean'],
             'rules.account.block_order_placing' => ['nullable', 'boolean'],
-            'effective_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
+            'effective_percentage' => ['required_if:trigger_type,delivery_score', 'nullable', 'numeric', 'min:0', 'max:100'],
             'is_active' => ['nullable', 'boolean'],
         ]);
 

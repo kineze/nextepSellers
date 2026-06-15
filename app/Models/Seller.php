@@ -83,6 +83,11 @@ class Seller extends Model
         return $this->hasMany(SellerPenalty::class);
     }
 
+    public function salesTargetResults()
+    {
+        return $this->hasMany(SellerSalesTarget::class);
+    }
+
     public function recalculateDeliveryScore(): int
     {
         $completedOrders = $this->orders()

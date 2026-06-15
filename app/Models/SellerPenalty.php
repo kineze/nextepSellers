@@ -10,6 +10,7 @@ class SellerPenalty extends Model
         'seller_id',
         'penalty_type_id',
         'order_id',
+        'seller_sales_target_id',
         'delivery_score',
         'effective_areas',
         'rules',
@@ -40,5 +41,10 @@ class SellerPenalty extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function sellerSalesTarget()
+    {
+        return $this->belongsTo(SellerSalesTarget::class);
     }
 }

@@ -37,6 +37,7 @@ import SellerPayments from './components/SellerPayments.vue';
 import SellerProfileManager from './components/SellerProfileManager.vue';
 import SellerAffiliateManager from './components/SellerAffiliateManager.vue';
 import SellerDashboardAnalytics from './components/SellerDashboardAnalytics.vue';
+import SellerSalesTargetHistory from './components/SellerSalesTargetHistory.vue';
 import AdminDraftOrders from './components/AdminDraftOrders.vue';
 import AdminBulkOrderRequests from './components/AdminBulkOrderRequests.vue';
 import AdminApprovedOrders from './components/AdminApprovedOrders.vue';
@@ -69,6 +70,7 @@ import BankManager from './components/BankManager.vue';
 import LearningContentManager from './components/LearningContentManager.vue';
 import SystemDataManager from './components/SystemDataManager.vue';
 import PenaltyTypeManager from './components/PenaltyTypeManager.vue';
+import SalesTargetManager from './components/SalesTargetManager.vue';
 import AdminReturnList from './components/AdminReturnList.vue';
 
 const app = createApp({})
@@ -112,6 +114,7 @@ app.use(Toast, {
 .component('seller-profile-manager', SellerProfileManager)
 .component('seller-affiliate-manager', SellerAffiliateManager)
 .component('seller-dashboard-analytics', SellerDashboardAnalytics)
+.component('seller-sales-target-history', SellerSalesTargetHistory)
 .component('admin-draft-orders', AdminDraftOrders)
 .component('admin-bulk-order-requests', AdminBulkOrderRequests)
 .component('admin-approved-orders', AdminApprovedOrders)
@@ -144,6 +147,7 @@ app.use(Toast, {
 .component('learning-content-manager', LearningContentManager)
 .component('system-data-manager', SystemDataManager)
 .component('penalty-type-manager', PenaltyTypeManager)
+.component('sales-target-manager', SalesTargetManager)
 .component('admin-return-list', AdminReturnList)
 
 .mount('#app')

@@ -17,6 +17,7 @@ use App\Http\Controllers\SellerRegistrationController;
 use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\SystemDataController;
 use App\Http\Controllers\PenaltyTypeController;
+use App\Http\Controllers\SalesTargetController;
 
 Route::controller(GenaralController::class)->group(function () {
     Route::get('/', 'index')->name('index');
@@ -83,6 +84,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         Route::post('/seller/affiliate/generate', 'postSellerAffiliateGenerate')->name('sellerAffiliateGenerate');
         Route::get('/seller/orders/{order}', 'getSellerOrderShow')->whereNumber('order')->name('sellerOrderShow');
         Route::get('/seller/payments', 'getSellerPayments')->name('sellerPayments');
+        Route::get('/seller/sales-targets', 'getSellerSalesTargets')->name('sellerSalesTargets');
         Route::get('/seller/profile', 'getSellerProfileManager')->name('sellerProfileManager');
     });
 });
@@ -115,6 +117,10 @@ Route::middleware(['permission:Manage System Configuration', config('jetstream.a
 
     Route::controller(PenaltyTypeController::class)->group(function () {
         Route::get('/penalty-types', 'indexView')->name('penaltyTypes');
+    });
+
+    Route::controller(SalesTargetController::class)->group(function () {
+        Route::get('/sales-targets', 'indexView')->name('salesTargets');
     });
 
     Route::controller(SystemDataController::class)->group(function () {

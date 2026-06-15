@@ -16,6 +16,7 @@ class PenaltyApplicationService
 
         $penaltyTypes = PenaltyType::query()
             ->where('is_active', true)
+            ->where('trigger_type', 'delivery_score')
             ->where('effective_percentage', '>=', $score)
             ->get();
 

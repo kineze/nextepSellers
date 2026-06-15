@@ -31,6 +31,8 @@ use App\Http\Controllers\LabelSettingController;
 use App\Http\Controllers\DeliveryWebhookController;
 use App\Http\Controllers\SystemDataController;
 use App\Http\Controllers\PenaltyTypeController;
+use App\Http\Controllers\SalesTargetController;
+use App\Http\Controllers\SellerSalesTargetController;
 use App\Http\Controllers\OrderReturnController;
 
 Route::post('/delivery/webhook', [DeliveryWebhookController::class, 'store'])
@@ -110,6 +112,10 @@ Route::middleware(['auth:sanctum', 'permission:Manage System Configuration'])->g
     Route::post('/penalty-types', [PenaltyTypeController::class, 'store']);
     Route::put('/penalty-types/{penaltyType}', [PenaltyTypeController::class, 'update']);
     Route::delete('/penalty-types/{penaltyType}', [PenaltyTypeController::class, 'destroy']);
+
+    Route::get('/sales-targets', [SalesTargetController::class, 'index']);
+    Route::post('/sales-targets', [SalesTargetController::class, 'store']);
+    Route::get('/sales-targets/penalty-options', [SalesTargetController::class, 'penaltyOptions']);
 
     Route::get('/admin/tracking/manual-fetch/summary', [AdminOrderTrackingController::class, 'summary']);
     Route::post('/admin/tracking/manual-fetch', [AdminOrderTrackingController::class, 'fetchShipped']);
@@ -193,6 +199,7 @@ Route::middleware(['auth:sanctum', 'permission:Manage Inventory'])->group(functi
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/admin/dashboard/analytics', [DashboardController::class, 'adminAnalytics']);
+    Route::get('/seller/sales-targets', [SellerSalesTargetController::class, 'index']);
     Route::get('/label-settings/active', [LabelSettingController::class, 'active']);
 
     Route::get('/royal-express/logins', [RoyalExpressLoginController::class, 'index']);

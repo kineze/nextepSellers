@@ -285,27 +285,21 @@
               <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Set commission values for each level and apply one mode for all levels.</p>
             </div>
 
-            <div class="inline-flex rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
-              <button
-                type="button"
-                @click="setLevelMode('percentage')"
-                class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition"
-                :class="levelMode === 'percentage'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-              >
-                Percentage
-              </button>
-              <button
-                type="button"
-                @click="setLevelMode('amount')"
-                class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition"
-                :class="levelMode === 'amount'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'"
-              >
-                Amount
-              </button>
+            <div class="flex flex-wrap gap-3">
+              <div>
+                <p class="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Seller commission</p>
+                <div class="inline-flex rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
+                  <button type="button" @click="setLevelMode('percentage')" class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition" :class="levelMode === 'percentage' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'">Percentage</button>
+                  <button type="button" @click="setLevelMode('amount')" class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition" :class="levelMode === 'amount' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'">Amount</button>
+                </div>
+              </div>
+              <div>
+                <p class="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">Affiliate commission</p>
+                <div class="inline-flex rounded-xl border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-950">
+                  <button type="button" @click="setAffiliateLevelMode('percentage')" class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition" :class="affiliateLevelMode === 'percentage' ? 'bg-violet-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'">Percentage</button>
+                  <button type="button" @click="setAffiliateLevelMode('amount')" class="rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition" :class="affiliateLevelMode === 'amount' ? 'bg-violet-700 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'">Amount</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -319,7 +313,7 @@
                 <tr>
                   <th class="px-3 py-2 text-left">Level</th>
                   <th class="px-3 py-2 text-left">{{ levelMode === 'percentage' ? 'Commission %' : 'Commission Amount' }}</th>
-                  <th class="px-3 py-2 text-left">Affiliate Commission %</th>
+                  <th class="px-3 py-2 text-left">{{ affiliateLevelMode === 'percentage' ? 'Affiliate Commission %' : 'Affiliate Commission Amount' }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -352,12 +346,12 @@
                         v-model.number="row.affiliate_commission"
                         type="number"
                         min="0"
-                        max="100"
+                        :max="affiliateLevelMode === 'percentage' ? 100 : undefined"
                         step="0.01"
                         placeholder="0.00"
                         class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-8 text-sm text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                       />
-                      <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400">%</span>
+                      <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-500 dark:text-slate-400">{{ affiliateLevelMode === 'percentage' ? '%' : 'LKR' }}</span>
                     </div>
                   </td>
                 </tr>
@@ -420,6 +414,7 @@ const quillInstance = ref(null)
 const saving = ref(false)
 const uploadingVideo = ref(false)
 const levelMode = ref('percentage')
+const affiliateLevelMode = ref('percentage')
 const levelRows = ref([])
 const selectedImagePreview = ref('')
 const dragImageIndex = ref(null)
@@ -483,6 +478,7 @@ const initializeLevelRows = () => {
       level_label: level.level_name || `Level ${level.level_no}`,
       type: levelMode.value,
       value: existing ? Number(existing.value || 0) : 0,
+      affiliate_commission_type: existing?.affiliate_commission_type || affiliateLevelMode.value,
       affiliate_commission: existing ? Number(existing.affiliate_commission || 0) : 0,
     }
   })
@@ -494,6 +490,15 @@ const setLevelMode = (mode) => {
   levelRows.value = levelRows.value.map((row) => ({
     ...row,
     type: mode,
+  }))
+}
+
+const setAffiliateLevelMode = (mode) => {
+  if (!['percentage', 'amount'].includes(mode)) return
+  affiliateLevelMode.value = mode
+  levelRows.value = levelRows.value.map((row) => ({
+    ...row,
+    affiliate_commission_type: mode,
   }))
 }
 
@@ -799,6 +804,7 @@ const saveProduct = async () => {
       level_id: row.level_id,
       type: row.type,
       value: Number(row.value || 0),
+      affiliate_commission_type: row.affiliate_commission_type,
       affiliate_commission: Number(row.affiliate_commission || 0),
     })),
     varients: form.value.hasVariants === 'yes'
@@ -889,6 +895,7 @@ const loadProduct = async () => {
     const productLevels = data.product_levels || []
     if (productLevels.length) {
       levelMode.value = productLevels[0]?.type === 'amount' ? 'amount' : 'percentage'
+      affiliateLevelMode.value = productLevels[0]?.affiliate_commission_type === 'amount' ? 'amount' : 'percentage'
       const mapped = new Map(productLevels.map((item) => [item.level_id, item]))
       levelRows.value = levels.value.map((level) => {
         const item = mapped.get(level.id)
@@ -897,6 +904,7 @@ const loadProduct = async () => {
           level_label: level.level_name || `Level ${level.level_no}`,
           type: item?.type || levelMode.value,
           value: Number(item?.value || 0),
+          affiliate_commission_type: item?.affiliate_commission_type || affiliateLevelMode.value,
           affiliate_commission: Number(item?.affiliate_commission || 0),
         }
       })

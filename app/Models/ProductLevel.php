@@ -12,6 +12,7 @@ class ProductLevel extends Model
         'level_id',
         'type',
         'value',
+        'affiliate_commission_type',
         'affiliate_commission',
     ];
 
@@ -37,5 +38,17 @@ class ProductLevel extends Model
         }
 
         return (float) $this->value;
+    }
+
+    public function calculateAffiliateCommission(float $price, int $quantity = 1): float
+    {
+        $quantity = max(0, $quantity);
+        $value = max(0, (float) $this->affiliate_commission);
+
+        if ($this->affiliate_commission_type === 'amount') {
+            return round($value * $quantity, 2);
+        }
+
+        return round(($price * $value / 100) * $quantity, 2);
     }
 }

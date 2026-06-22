@@ -279,6 +279,9 @@
                       <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
                         {{ row.type === 'percentage' ? `${row.value}%` : `LKR ${row.value}` }}
                       </p>
+                      <p class="mt-1 text-xs font-semibold text-violet-700 dark:text-violet-300">
+                        Affiliate: {{ row.affiliate_commission_type === 'amount' ? `LKR ${row.affiliate_commission}` : `${row.affiliate_commission}%` }}
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -34,7 +34,7 @@ class OrderTrackingSyncService
             ->latest('id')
             ->first();
 
-        if (!$login) {
+        if (! $login) {
             return [
                 'ready' => false,
                 'message' => 'No active Royal Express login found.',
@@ -57,11 +57,12 @@ class OrderTrackingSyncService
     public function syncOrderById(int $orderId): array
     {
         $context = $this->resolveTrackingContext();
-        if (!$context['ready']) {
+        if (! $context['ready']) {
             Log::warning('Tracking sync skipped: context not ready', [
                 'order_id' => $orderId,
                 'error' => $context['message'] ?? 'Unknown context error',
             ]);
+
             return [
                 'order_id' => $orderId,
                 'waybill_no' => null,
@@ -78,10 +79,11 @@ class OrderTrackingSyncService
         }
 
         $order = Order::query()->find($orderId);
-        if (!$order || empty($order->waybill_no)) {
+        if (! $order || empty($order->waybill_no)) {
             Log::warning('Tracking sync skipped: order missing or waybill missing', [
                 'order_id' => $orderId,
             ]);
+
             return [
                 'order_id' => $orderId,
                 'waybill_no' => $order?->waybill_no,
@@ -100,10 +102,10 @@ class OrderTrackingSyncService
         try {
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $context['token'],
+                'Authorization' => 'Bearer '.$context['token'],
                 'Content-Type' => 'application/json',
                 'X-tenant' => $context['tenant'],
-            ])->retry(2, 200)->get($context['base_url'] . '/api/public/merchant/order/tracking-info', [
+            ])->retry(2, 200)->get($context['base_url'].'/api/public/merchant/order/tracking-info', [
                 'waybill_number' => $order->waybill_no,
             ]);
         } catch (\Throwable $e) {
@@ -128,7 +130,7 @@ class OrderTrackingSyncService
             ];
         }
 
-        if (!$response->successful()) {
+        if (! $response->successful()) {
             Log::warning('Tracking API request failed', [
                 'order_id' => (int) $order->id,
                 'waybill_no' => (string) $order->waybill_no,
@@ -152,7 +154,7 @@ class OrderTrackingSyncService
         }
 
         $rows = $response->json('data');
-        if (!is_array($rows) || empty($rows)) {
+        if (! is_array($rows) || empty($rows)) {
             Log::warning('Tracking API returned empty or invalid data', [
                 'order_id' => (int) $order->id,
                 'waybill_no' => (string) $order->waybill_no,
@@ -177,7 +179,7 @@ class OrderTrackingSyncService
             ?? data_get($rows, '0.status')
             ?? data_get($rows, '0.delivery_status');
 
-        if (!is_string($latestStatus) || trim($latestStatus) === '') {
+        if (! is_string($latestStatus) || trim($latestStatus) === '') {
             Log::warning('Tracking API returned row without status', [
                 'order_id' => (int) $order->id,
                 'waybill_no' => (string) $order->waybill_no,
@@ -212,7 +214,7 @@ class OrderTrackingSyncService
             ->where('waybill_no', $waybillNo)
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             return [
                 'matched' => false,
                 'order_id' => null,
@@ -240,7 +242,7 @@ class OrderTrackingSyncService
         $localStatus = $this->mapLocalStatus($statusKey) ?? $this->mapLocalStatus($latestStatus);
 
         $fresh = Order::query()->find($order->id);
-        if (!$fresh) {
+        if (! $fresh) {
             return [
                 'order_id' => (int) $order->id,
                 'waybill_no' => (string) $order->waybill_no,
@@ -364,7 +366,7 @@ class OrderTrackingSyncService
                 ->lockForUpdate()
                 ->find($orderId);
 
-            if (!$order || $order->status !== 'completed') {
+            if (! $order || $order->status !== 'completed') {
                 return [
                     'awarded' => false,
                     'points' => 0,
@@ -384,7 +386,7 @@ class OrderTrackingSyncService
                 ->lockForUpdate()
                 ->find($order->seller_id);
 
-            if (!$seller) {
+            if (! $seller) {
                 $order->points_awarded = 0;
                 $order->points_awarded_at = now('Asia/Colombo');
                 $order->save();
@@ -448,7 +450,7 @@ class OrderTrackingSyncService
     private function syncPaymentLedger(Order $order): void
     {
         $paymentStatus = strtolower(trim((string) ($order->payment_status ?? 'pending')));
-        if (!in_array($paymentStatus, ['available', 'paid'], true)) {
+        if (! in_array($paymentStatus, ['available', 'paid'], true)) {
             return;
         }
 
@@ -475,7 +477,7 @@ class OrderTrackingSyncService
         }
 
         $paymentStatus = strtolower(trim((string) ($order->payment_status ?? 'pending')));
-        if (!in_array($paymentStatus, ['available', 'paid'], true)) {
+        if (! in_array($paymentStatus, ['available', 'paid'], true)) {
             return;
         }
 
@@ -483,7 +485,7 @@ class OrderTrackingSyncService
             ->select('id', 'affiliate_seller_id')
             ->find((int) $order->seller_id);
 
-        if (!$seller || empty($seller->affiliate_seller_id)) {
+        if (! $seller || empty($seller->affiliate_seller_id)) {
             return;
         }
 
@@ -491,7 +493,7 @@ class OrderTrackingSyncService
             ->select('id', 'seller_level_id')
             ->find((int) $seller->affiliate_seller_id);
 
-        if (!$affiliateSeller) {
+        if (! $affiliateSeller) {
             return;
         }
 
@@ -527,7 +529,7 @@ class OrderTrackingSyncService
         }
 
         $levelsByProduct = ProductLevel::query()
-            ->select('product_id', 'affiliate_commission')
+            ->select('product_id', 'affiliate_commission_type', 'affiliate_commission')
             ->where('level_id', $levelId)
             ->whereIn('product_id', $productIds)
             ->get()
@@ -542,9 +544,11 @@ class OrderTrackingSyncService
             $lineAmount = max(0, $qty * $unitPrice);
 
             $productLevel = $levelsByProduct->get((int) ($item->product_id ?? 0));
-            $rate = max(0, (float) ($productLevel->affiliate_commission ?? 0));
-
-            $lineCommission = round(($lineAmount * $rate) / 100, 2);
+            $commissionType = (string) ($productLevel->affiliate_commission_type ?? 'percentage');
+            $configuredValue = max(0, (float) ($productLevel->affiliate_commission ?? 0));
+            $lineCommission = $productLevel
+                ? $productLevel->calculateAffiliateCommission($unitPrice, $qty)
+                : 0.0;
             $totalAmount += $lineCommission;
 
             $breakdown[] = [
@@ -552,7 +556,9 @@ class OrderTrackingSyncService
                 'quantity' => $qty,
                 'unit_price' => round($unitPrice, 2),
                 'line_amount' => round($lineAmount, 2),
-                'rate_percent' => round($rate, 2),
+                'commission_type' => $commissionType,
+                'configured_value' => round($configuredValue, 2),
+                'rate_percent' => $commissionType === 'percentage' ? round($configuredValue, 2) : null,
                 'commission_amount' => $lineCommission,
             ];
         }
@@ -562,6 +568,7 @@ class OrderTrackingSyncService
             AffiliateCommission::query()
                 ->where('order_id', (int) $order->id)
                 ->delete();
+
             return;
         }
 
@@ -570,7 +577,7 @@ class OrderTrackingSyncService
             ->where('order_id', (int) $order->id)
             ->first();
 
-        if ($existing && !empty($existing->invoice_id)) {
+        if ($existing && ! empty($existing->invoice_id)) {
             return;
         }
 
@@ -610,7 +617,7 @@ class OrderTrackingSyncService
             ->latest('id')
             ->first();
 
-        if (!$login) {
+        if (! $login) {
             return [
                 'ready' => false,
                 'message' => 'No active Royal Express login found.',

@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use App\Models\Product;
 use App\Models\Attribute;
+use App\Models\Category;
 use App\Models\DeliveryFee;
 use App\Models\Level;
+use App\Models\Product;
 use App\Models\Varient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -167,7 +167,13 @@ class ProductController extends Controller
             'levels.*.level_id' => ['required_with:levels', 'integer', 'exists:levels,id', 'distinct'],
             'levels.*.type' => ['required_with:levels', 'string', 'in:percentage,amount'],
             'levels.*.value' => ['required_with:levels', 'numeric', 'min:0'],
-            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'levels.*.affiliate_commission_type' => ['required_with:levels', 'string', 'in:percentage,amount'],
+            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                $index = explode('.', $attribute)[1] ?? null;
+                if ($index !== null && $request->input("levels.{$index}.affiliate_commission_type", 'percentage') === 'percentage' && (float) $value > 100) {
+                    $fail('The affiliate commission percentage may not be greater than 100.');
+                }
+            }],
         ]);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
@@ -244,11 +250,12 @@ class ProductController extends Controller
                     'level_id' => (int) $row['level_id'],
                     'type' => $row['type'],
                     'value' => $row['value'],
+                    'affiliate_commission_type' => $row['affiliate_commission_type'],
                     'affiliate_commission' => (float) ($row['affiliate_commission'] ?? 0),
                 ];
             })->all();
 
-            if (!empty($levelRows)) {
+            if (! empty($levelRows)) {
                 $product->productLevels()->createMany($levelRows);
             }
 
@@ -296,7 +303,13 @@ class ProductController extends Controller
             'levels.*.level_id' => ['required_with:levels', 'integer', 'exists:levels,id', 'distinct'],
             'levels.*.type' => ['required_with:levels', 'string', 'in:percentage,amount'],
             'levels.*.value' => ['required_with:levels', 'numeric', 'min:0'],
-            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'levels.*.affiliate_commission_type' => ['required_with:levels', 'string', 'in:percentage,amount'],
+            'levels.*.affiliate_commission' => ['nullable', 'numeric', 'min:0', function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                $index = explode('.', $attribute)[1] ?? null;
+                if ($index !== null && $request->input("levels.{$index}.affiliate_commission_type", 'percentage') === 'percentage' && (float) $value > 100) {
+                    $fail('The affiliate commission percentage may not be greater than 100.');
+                }
+            }],
         ]);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
@@ -400,11 +413,11 @@ class ProductController extends Controller
                     ];
 
                     $target = null;
-                    if (!empty($row['id']) && $existing->has((int) $row['id'])) {
+                    if (! empty($row['id']) && $existing->has((int) $row['id'])) {
                         $target = $existing->get((int) $row['id']);
                     } else {
                         $target = $existing->first(function ($variant) use ($row, $keptIds) {
-                            return $variant->sku === $row['sku'] && !in_array($variant->id, $keptIds, true);
+                            return $variant->sku === $row['sku'] && ! in_array($variant->id, $keptIds, true);
                         });
                     }
 
@@ -417,7 +430,7 @@ class ProductController extends Controller
                     }
                 }
 
-                if (!empty($keptIds)) {
+                if (! empty($keptIds)) {
                     $product->varients()->whereNotIn('id', $keptIds)->delete();
                 }
             } else {
@@ -445,11 +458,12 @@ class ProductController extends Controller
                     'level_id' => (int) $row['level_id'],
                     'type' => $row['type'],
                     'value' => $row['value'],
+                    'affiliate_commission_type' => $row['affiliate_commission_type'],
                     'affiliate_commission' => (float) ($row['affiliate_commission'] ?? 0),
                 ];
             })->all();
 
-            if (!empty($levelRows)) {
+            if (! empty($levelRows)) {
                 $product->productLevels()->createMany($levelRows);
             }
         });
@@ -468,7 +482,7 @@ class ProductController extends Controller
 
         $product->is_active = array_key_exists('is_active', $validated)
             ? (bool) $validated['is_active']
-            : !$product->is_active;
+            : ! $product->is_active;
         $product->save();
 
         return response()->json([

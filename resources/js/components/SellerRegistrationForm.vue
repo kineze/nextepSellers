@@ -1,61 +1,23 @@
 <template>
-  <div class="overflow-hidden rounded-[2rem] border border-slate-200/70 bg-gradient-to-br from-white via-slate-50 to-sky-50/40 shadow-2xl shadow-slate-900/10 dark:border-slate-700/70 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900">
+  <div class="relative w-full overflow-hidden bg-white py-8 text-slate-900 dark:bg-black dark:text-slate-100">
     <div class="mx-auto w-full">
-      <div class="grid gap-8 lg:grid-cols-[320px_minmax(0,1fr)]">
-        <aside class="rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-slate-700/80 dark:bg-slate-900/80">
-          <p class="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300">Seller Registration</p>
-          <h1 class="mt-3 text-3xl font-black text-slate-900 dark:text-white">Become a nextepSellers Partner</h1>
-          <p class="mt-3 text-sm text-slate-600 dark:text-slate-300">Complete the steps below to submit your seller onboarding request.</p>
+    
 
-          <div class="mt-8 space-y-4">
-            <div
-              v-for="(item, idx) in steps"
-              :key="item.id"
-              class="relative pl-12"
-            >
-              <span
-                v-if="idx < steps.length - 1"
-                class="absolute left-[0.9rem] top-7 h-[calc(100%+1rem)] w-px"
-                :class="step > item.id ? 'bg-gradient-to-b from-emerald-400/70 to-emerald-300/30 dark:from-emerald-400/70 dark:to-emerald-500/20' : 'bg-gradient-to-b from-slate-300/80 to-slate-200/20 dark:from-slate-700 dark:to-slate-800/20'"
-              />
-              <span
-                class="absolute left-0 top-1.5 inline-flex h-7 w-7 items-center justify-center rounded-full border text-xs font-black"
-                :class="{
-                  'border-emerald-500 bg-emerald-500 text-white shadow-lg shadow-emerald-500/30': getStepState(item.id) === 'completed',
-                  'border-sky-500 bg-sky-500 text-white shadow-lg shadow-sky-500/30': getStepState(item.id) === 'active',
-                  'border-slate-300 bg-white text-slate-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300': ['available', 'locked'].includes(getStepState(item.id)),
-                }"
-              >
-                {{ getStepState(item.id) === 'completed' ? '✓' : item.id }}
-              </span>
-              <button
-                type="button"
-                class="w-full rounded-2xl border p-3 text-left transition"
-                :class="{
-                  'border-emerald-300 dark:border-emerald-500/40 bg-emerald-50/90 dark:bg-emerald-500/10': getStepState(item.id) === 'completed',
-                  'border-sky-300 dark:border-sky-500/40 bg-sky-50 dark:bg-sky-500/10 shadow-sm shadow-sky-500/10': getStepState(item.id) === 'active',
-                  'border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600': ['available', 'locked'].includes(getStepState(item.id)),
-                }"
-                @click="openStep(item.id)"
-              >
-                <p
-                  class="text-[11px] font-bold uppercase tracking-[0.14em]"
-                  :class="{
-                    'text-emerald-700 dark:text-emerald-300': getStepState(item.id) === 'completed',
-                    'text-sky-700 dark:text-sky-300': getStepState(item.id) === 'active',
-                    'text-slate-500 dark:text-slate-400': ['available', 'locked'].includes(getStepState(item.id)),
-                  }"
-                >
-                  Step {{ item.id }}
-                </p>
-                <p class="mt-1 text-sm font-semibold text-slate-900 dark:text-white">{{ item.label }}</p>
-                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ item.hint }}</p>
-              </button>
-            </div>
-          </div>
-        </aside>
+      <div v-if="!submissionCompleted" class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <button
+          v-for="item in steps.slice(0, 4)"
+          :key="item.id"
+          type="button"
+          class="rounded-xl border px-4 py-3 text-left backdrop-blur transition"
+          :class="step >= item.id ? 'border-sky-400 bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-600/20' : 'border-white/80 bg-white/75 text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300'"
+          @click="openStep(item.id)"
+        >
+          <div class="text-xs font-semibold uppercase tracking-[0.18em]">Step {{ item.id }}</div>
+          <div class="mt-1 text-sm font-semibold">{{ item.label }}</div>
+        </button>
+      </div>
 
-        <div class="rounded-3xl border border-slate-200/80 bg-white/90 p-6 shadow-xl shadow-slate-900/5 backdrop-blur dark:border-slate-700/80 dark:bg-slate-900/80 sm:p-8">
+      <div class="overflow-hidden rounded-3xl border border-white/80 bg-white/90 p-6 shadow-2xl shadow-sky-600/15 backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 sm:p-10">
           <p
             v-if="successMessage"
             class="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
@@ -309,13 +271,15 @@
 
               <div v-if="step === 3" class="space-y-5 px-2 pb-2 pt-4">
                 <div class="grid gap-4 sm:grid-cols-2">
-                  <div v-for="field in uploadFields" :key="field.key" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+                  <div v-for="field in uploadFields" :key="field.key" class="rounded-xl border border-sky-100 bg-gradient-to-br from-white to-sky-50/80 p-4 shadow-sm dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
                     <div class="flex items-start justify-between gap-3">
                       <div>
-                        <label class="mb-1 block text-sm font-semibold text-slate-700 dark:text-slate-300">{{ field.label }}</label>
+                        <label class="mb-1 block text-sm font-semibold text-sky-900 dark:text-sky-200">{{ field.label }}</label>
                         <p class="text-xs text-slate-500 dark:text-slate-400">{{ field.helper }}</p>
                       </div>
-                      <button type="button" class="rounded-xl border border-sky-500 bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700 transition hover:bg-sky-100 dark:border-sky-400/50 dark:bg-sky-500/10 dark:text-sky-200 dark:hover:bg-sky-500/20" @click="triggerFilePicker(field.key)">Choose</button>
+                      <button type="button" class="rounded-lg bg-gradient-to-r from-sky-600 to-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-md shadow-sky-600/20 transition hover:shadow-lg" @click="openCamera(field.key)">
+                        <i class="fa-solid fa-camera mr-1.5"></i>Camera
+                      </button>
                     </div>
 
                     <input
@@ -326,12 +290,17 @@
                       @change="onFileChange($event, field.key)"
                     />
 
-                    <div v-if="filePreviewUrls[field.key]" class="mt-3 flex min-h-[8.5rem] items-center justify-center overflow-hidden rounded-xl border border-dashed border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
-                      <img :src="filePreviewUrls[field.key]" :alt="`${field.label} preview`" class="h-full max-h-56 w-full object-cover" />
+                    <div v-if="filePreviewUrls[field.key]" class="mt-4 flex h-48 items-center justify-center overflow-hidden rounded-lg border border-sky-100 bg-white dark:border-slate-700 dark:bg-slate-950">
+                      <img :src="filePreviewUrls[field.key]" :alt="`${field.label} preview`" class="h-full w-full object-contain" />
                     </div>
-                    <div v-else class="mt-3 flex min-h-[8.5rem] items-center justify-center rounded-xl border border-dashed border-slate-300 bg-gradient-to-br from-slate-50 to-indigo-50 dark:border-slate-700 dark:from-slate-900 dark:to-slate-800">
-                      <span class="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">No preview yet</span>
+                    <div v-else class="mt-4 flex h-48 flex-col items-center justify-center rounded-lg border border-dashed border-sky-200 bg-white text-sm text-slate-400 dark:border-slate-700 dark:bg-slate-950">
+                      <i class="fa-regular fa-image mb-2 text-2xl text-sky-300"></i>
+                      <span>No image captured</span>
                     </div>
+
+                    <button type="button" class="mt-3 block w-full rounded-lg border border-sky-100 bg-white px-3 py-2 text-center text-sm font-semibold text-sky-800 transition hover:bg-sky-50 hover:text-indigo-700 dark:border-slate-700 dark:bg-slate-900 dark:text-sky-200" @click="triggerFilePicker(field.key)">
+                      <i class="fa-solid fa-upload mr-1.5"></i>Upload {{ field.accept.includes('.pdf') ? 'file' : 'image' }}
+                    </button>
 
                     <div v-if="fileMeta[field.key]" class="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
                       <div class="min-w-0">
@@ -426,7 +395,6 @@
               </div>
             </section>
           </div>
-        </div>
       </div>
     </div>
 
@@ -468,6 +436,26 @@
         </div>
       </div>
     </div>
+
+    <transition name="fade">
+      <div v-if="camera.open" class="fixed inset-0 z-[1600] flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+        <div class="w-full max-w-2xl rounded-2xl border border-white/80 bg-white p-4 text-slate-900 shadow-2xl shadow-sky-600/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white">
+          <div class="mb-3 flex items-center justify-between">
+            <div>
+              <h3 class="font-semibold">Capture {{ activeCameraField?.label || 'document' }}</h3>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Keep the document inside the frame and make sure the text is clear.</p>
+            </div>
+            <button type="button" class="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800" @click="closeCamera"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <video ref="videoRef" autoplay playsinline class="aspect-video w-full rounded-xl bg-gradient-to-r from-sky-700 to-indigo-700 object-cover"></video>
+          <canvas ref="canvasRef" class="hidden"></canvas>
+          <div class="mt-4 flex justify-end gap-3">
+            <button type="button" :class="secondaryButtonClasses" @click="closeCamera">Cancel</button>
+            <button type="button" :class="primaryButtonClasses" @click="capturePhoto"><i class="fa-solid fa-camera mr-1.5"></i>Capture</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -575,6 +563,13 @@ const fileMeta = reactive({
 })
 
 const fileInputRefs = ref({})
+const videoRef = ref(null)
+const canvasRef = ref(null)
+const camera = reactive({
+  open: false,
+  target: '',
+  stream: null,
+})
 
 const uploadFields = computed(() => {
   const baseFields = [
@@ -609,6 +604,8 @@ const uploadFields = computed(() => {
 
   return baseFields
 })
+
+const activeCameraField = computed(() => uploadFields.value.find((field) => field.key === camera.target) || null)
 
 const submissionDocuments = computed(() => {
   const docs = [
@@ -759,8 +756,7 @@ function goToStepFour() {
   scrollToStep(4)
 }
 
-function onFileChange(event, key) {
-  const [file] = event.target.files || []
+function setFile(key, file) {
   if (filePreviewUrls[key]) {
     URL.revokeObjectURL(filePreviewUrls[key])
   }
@@ -779,6 +775,71 @@ function onFileChange(event, key) {
   }
 
   filePreviewUrls[key] = file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
+}
+
+function onFileChange(event, key) {
+  const [file] = event.target.files || []
+  setFile(key, file || null)
+}
+
+async function openCamera(key) {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    toast.error('Camera access is unavailable. Please upload an image instead.')
+    return
+  }
+
+  camera.open = true
+  camera.target = key
+
+  try {
+    camera.stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: key === 'seller_image' ? 'user' : { ideal: 'environment' },
+      },
+      audio: false,
+    })
+    await nextTick()
+    if (videoRef.value) {
+      videoRef.value.srcObject = camera.stream
+      await videoRef.value.play()
+    }
+  } catch {
+    toast.error('Camera access was blocked or is unavailable. Please upload an image instead.')
+    closeCamera()
+  }
+}
+
+function capturePhoto() {
+  const video = videoRef.value
+  const canvas = canvasRef.value
+  if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+    toast.error('The camera is not ready yet. Please try again.')
+    return
+  }
+
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  canvas.getContext('2d')?.drawImage(video, 0, 0, canvas.width, canvas.height)
+  canvas.toBlob((blob) => {
+    if (!blob || !camera.target) {
+      toast.error('Unable to capture the image. Please try again.')
+      return
+    }
+
+    const file = new File([blob], `${camera.target}-${Date.now()}.jpg`, { type: 'image/jpeg' })
+    setFile(camera.target, file)
+    closeCamera()
+  }, 'image/jpeg', 0.9)
+}
+
+function closeCamera() {
+  if (camera.stream) {
+    camera.stream.getTracks().forEach((track) => track.stop())
+  }
+  if (videoRef.value) videoRef.value.srcObject = null
+  camera.stream = null
+  camera.open = false
+  camera.target = ''
 }
 
 function setFileInputRef(key, el) {
@@ -968,6 +1029,19 @@ async function submitForm() {
 }
 
 onBeforeUnmount(() => {
+  closeCamera()
   clearAllFilePreviews()
 })
 </script>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

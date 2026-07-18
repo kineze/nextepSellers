@@ -28,77 +28,6 @@
       </div>
     </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <button
-        type="button"
-        class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
-        :aria-expanded="showAdvancedFilters"
-        @click="showAdvancedFilters = !showAdvancedFilters"
-      >
-        <span class="flex items-center gap-3">
-          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
-            <i class="fas fa-sliders"></i>
-          </span>
-          <span>
-            <span class="block text-sm font-black text-slate-950 dark:text-white">Advanced filters</span>
-            <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Category, product collection, date order, and available attributes</span>
-          </span>
-        </span>
-        <span class="flex items-center gap-3">
-          <span v-if="activeFilterCount" class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-            {{ activeFilterCount }} active
-          </span>
-          <i class="fas fa-chevron-down text-xs text-slate-400 transition" :class="showAdvancedFilters ? 'rotate-180' : ''"></i>
-        </span>
-      </button>
-
-      <div v-show="showAdvancedFilters" class="border-t border-slate-200 px-5 py-5 dark:border-slate-800">
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <label for="catalog-category" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</label>
-            <select id="catalog-category" v-model="filterForm.category_id" class="filter-select">
-              <option value="">All categories</option>
-              <option v-for="category in categories" :key="category.id" :value="String(category.id)">{{ category.name }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="catalog-sort" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date order</label>
-            <select id="catalog-sort" v-model="filterForm.sort" class="filter-select">
-              <option value="latest">Latest to oldest</option>
-              <option value="oldest">Oldest to latest</option>
-            </select>
-          </div>
-
-          <div>
-            <label for="catalog-collection" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Collection</label>
-            <select id="catalog-collection" v-model="filterForm.collection" class="filter-select">
-              <option value="all">All products</option>
-              <option value="best_selling">Best selling</option>
-              <option value="new_arrivals">New arrivals (30 days)</option>
-            </select>
-          </div>
-
-          <div v-for="attribute in filterAttributes" :key="attribute.slug">
-            <label :for="`catalog-attribute-${attribute.slug}`" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ attribute.name }}</label>
-            <select :id="`catalog-attribute-${attribute.slug}`" v-model="filterForm.attributes[attribute.slug]" class="filter-select">
-              <option value="">Any {{ attribute.name.toLowerCase() }}</option>
-              <option v-for="option in attribute.options" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
-          <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="clearFilters">
-            Clear filters
-          </button>
-          <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-black dark:bg-white dark:text-slate-950" @click="applyFilters">
-            <i class="fas fa-filter"></i> Apply filters
-          </button>
-        </div>
-      </div>
-    </section>
-
     <section aria-labelledby="best-sellers-heading">
       <div class="mb-4 flex items-end justify-between gap-4">
         <div>
@@ -167,7 +96,20 @@
             <p class="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Full collection</p>
             <h2 id="all-products-heading" class="mt-1 text-xl font-black text-slate-950 dark:text-white">All products</h2>
           </div>
-          <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ total }} products</p>
+          <div class="flex items-center gap-2">
+            <p class="text-xs font-semibold text-slate-500 dark:text-slate-400">{{ total }} products</p>
+            <button
+              type="button"
+              class="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 shadow-sm transition hover:border-slate-950 hover:bg-slate-950 hover:text-white dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-white dark:hover:bg-white dark:hover:text-slate-950"
+              aria-label="Open product filters"
+              @click="showAdvancedFilters = true"
+            >
+              <i class="fas fa-filter text-xs"></i>
+              <span v-if="activeFilterCount" class="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-400 px-1 text-[9px] font-black text-amber-950 ring-2 ring-white dark:ring-slate-950">
+                {{ activeFilterCount }}
+              </span>
+            </button>
+          </div>
         </div>
 
         <div v-if="products.length" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
@@ -259,11 +201,85 @@
         </div>
       </aside>
     </div>
+
+    <transition name="filter-panel">
+      <div
+        v-if="showAdvancedFilters"
+        class="fixed inset-0 z-[1400] flex items-stretch justify-end bg-slate-950/60 backdrop-blur-sm lg:items-center lg:justify-center lg:p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-filter-title"
+        @click.self="showAdvancedFilters = false"
+      >
+        <aside class="flex h-full w-[90%] max-w-sm flex-col rounded-l-3xl bg-white shadow-2xl dark:bg-slate-900 lg:h-auto lg:max-h-[90vh] lg:w-full lg:max-w-4xl lg:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-5 dark:border-slate-800 lg:px-6">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                <i class="fas fa-sliders"></i>
+              </span>
+              <div>
+                <h2 id="product-filter-title" class="text-base font-black text-slate-950 dark:text-white">Filter products</h2>
+                <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Refine the complete product collection.</p>
+              </div>
+            </div>
+            <button type="button" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white" aria-label="Close filters" @click="showAdvancedFilters = false">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto px-5 py-5 lg:px-6">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                <label for="catalog-category" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</label>
+                <select id="catalog-category" v-model="filterForm.category_id" class="filter-select">
+                  <option value="">All categories</option>
+                  <option v-for="category in categories" :key="category.id" :value="String(category.id)">{{ category.name }}</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="catalog-sort" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date order</label>
+                <select id="catalog-sort" v-model="filterForm.sort" class="filter-select">
+                  <option value="latest">Latest to oldest</option>
+                  <option value="oldest">Oldest to latest</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="catalog-collection" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Collection</label>
+                <select id="catalog-collection" v-model="filterForm.collection" class="filter-select">
+                  <option value="all">All products</option>
+                  <option value="best_selling">Best selling</option>
+                  <option value="new_arrivals">New arrivals (30 days)</option>
+                </select>
+              </div>
+
+              <div v-for="attribute in filterAttributes" :key="attribute.slug">
+                <label :for="`catalog-attribute-${attribute.slug}`" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ attribute.name }}</label>
+                <select :id="`catalog-attribute-${attribute.slug}`" v-model="filterForm.attributes[attribute.slug]" class="filter-select">
+                  <option value="">Any {{ attribute.name.toLowerCase() }}</option>
+                  <option v-for="option in attribute.options" :key="option.value" :value="option.value">{{ option.label }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-5 py-4 dark:border-slate-800 sm:flex-row sm:justify-end lg:px-6">
+            <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="clearFilters">
+              Clear filters
+            </button>
+            <button type="button" class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-black dark:bg-white dark:text-slate-950" @click="applyFilters">
+              <i class="fas fa-filter"></i> Apply filters
+            </button>
+          </div>
+        </aside>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 
 const props = defineProps({
   initialCatalog: { type: Object, required: true },
@@ -295,6 +311,7 @@ const carouselTrack = ref(null)
 const loadTrigger = ref(null)
 let carouselTimer = null
 let observer = null
+let previousBodyOverflow = ''
 
 const activeFilterCount = computed(() => {
   return Number(!!filterForm.category_id)
@@ -302,8 +319,6 @@ const activeFilterCount = computed(() => {
     + Number(filterForm.collection !== 'all')
     + Object.values(filterForm.attributes).filter(Boolean).length
 })
-
-showAdvancedFilters.value = activeFilterCount.value > 0
 
 const money = (value) => Number(value || 0).toLocaleString('en-LK', {
   minimumFractionDigits: 2,
@@ -356,6 +371,19 @@ const clearFilters = () => {
   window.location.href = props.productsUrl
 }
 
+const closeFiltersOnEscape = (event) => {
+  if (event.key === 'Escape') showAdvancedFilters.value = false
+}
+
+watch(showAdvancedFilters, (isOpen) => {
+  if (isOpen) {
+    previousBodyOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = previousBodyOverflow
+  }
+})
+
 const moveCarousel = (direction = 1) => {
   const track = carouselTrack.value
   if (!track || track.scrollWidth <= track.clientWidth) return
@@ -405,6 +433,7 @@ const loadMore = async () => {
 }
 
 onMounted(async () => {
+  window.addEventListener('keydown', closeFiltersOnEscape)
   startCarousel()
   await nextTick()
   observer = new IntersectionObserver((entries) => {
@@ -414,6 +443,8 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener('keydown', closeFiltersOnEscape)
+  document.body.style.overflow = previousBodyOverflow
   pauseCarousel()
   observer?.disconnect()
 })
@@ -468,5 +499,32 @@ onBeforeUnmount(() => {
   border-color: rgb(51 65 85);
   background: rgb(2 6 23);
   color: rgb(241 245 249);
+}
+
+.filter-panel-enter-active,
+.filter-panel-leave-active {
+  transition: opacity 180ms ease;
+}
+
+.filter-panel-enter-active aside,
+.filter-panel-leave-active aside {
+  transition: transform 220ms ease;
+}
+
+.filter-panel-enter-from,
+.filter-panel-leave-to {
+  opacity: 0;
+}
+
+.filter-panel-enter-from aside,
+.filter-panel-leave-to aside {
+  transform: translateX(100%);
+}
+
+@media (min-width: 1024px) {
+  .filter-panel-enter-from aside,
+  .filter-panel-leave-to aside {
+    transform: translateY(12px) scale(0.98);
+  }
 }
 </style>

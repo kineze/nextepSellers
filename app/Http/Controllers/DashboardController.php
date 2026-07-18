@@ -124,7 +124,7 @@ class DashboardController extends Controller
 
     public function getSellerDashboard()
     {
-        return view('dashboards.seller.dashboard');
+        return redirect()->route('sellerProducts');
     }
 
     public function getSellerProducts(Request $request)

@@ -77,6 +77,22 @@ class SellerProductFilterTest extends TestCase
 
         $newArrivalResponse->assertOk();
         $newArrivalResponse->assertJsonCount(2, 'products');
+
+        $newLarge->update(['pricing_model' => 'reseller']);
+        $newLarge->varients()->update([
+            'reseller_price' => 800,
+            'maximum_selling_price' => 1200,
+        ]);
+
+        $marginResponse = $this->getJson(route('sellerProducts', ['pricing_model' => 'reseller']));
+        $marginResponse->assertOk();
+        $marginResponse->assertJsonCount(1, 'products');
+        $marginResponse->assertJsonPath('products.0.id', $newLarge->id);
+        $marginResponse->assertJsonPath('products.0.pricing_model', 'reseller');
+
+        $commissionResponse = $this->getJson(route('sellerProducts', ['pricing_model' => 'commission']));
+        $commissionResponse->assertOk();
+        $commissionResponse->assertJsonCount(2, 'products');
     }
 
     private function createProduct(Category $category, string $code, array $attributes, bool $bestSeller, $createdAt): Product

@@ -20,7 +20,7 @@
     <template v-else-if="order">
       <div class="grid gap-4 lg:grid-cols-4">
         <article class="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white shadow-sm">
-          <p class="text-xs uppercase tracking-wide text-emerald-100">Commission</p>
+          <p class="text-xs uppercase tracking-wide text-emerald-100">Seller Earnings</p>
           <p class="mt-1 text-2xl font-bold">LKR {{ toMoney(commissionAmount) }}</p>
           <p class="mt-1 text-xs text-emerald-100">Your earning from this order</p>
         </article>
@@ -119,21 +119,25 @@
                   <tr>
                     <th class="px-3 py-2 text-left">Product</th>
                     <th class="px-3 py-2 text-left">Variant</th>
+                    <th class="px-3 py-2 text-left">Pricing</th>
                     <th class="px-3 py-2 text-right">Price</th>
                     <th class="px-3 py-2 text-right">Qty</th>
                     <th class="px-3 py-2 text-right">Total</th>
+                    <th class="px-3 py-2 text-right">Earning</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                   <tr v-for="item in order.items || []" :key="item.id">
                     <td class="px-3 py-2">{{ item.product?.title || '-' }}</td>
                     <td class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{{ variantText(item.variant?.attributes) }}</td>
+                    <td class="px-3 py-2"><span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase" :class="item.pricing_model === 'reseller' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300' : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300'">{{ item.pricing_model === 'reseller' ? 'Margin' : 'Commission' }}</span></td>
                     <td class="px-3 py-2 text-right">LKR {{ toMoney(item.price) }}</td>
                     <td class="px-3 py-2 text-right">{{ item.quantity || 0 }}</td>
                     <td class="px-3 py-2 text-right font-semibold">LKR {{ toMoney(Number(item.price || 0) * Number(item.quantity || 0)) }}</td>
+                    <td class="px-3 py-2 text-right font-semibold text-emerald-700 dark:text-emerald-300">LKR {{ toMoney(item.seller_earning_amount) }}</td>
                   </tr>
                   <tr v-if="!(order.items || []).length">
-                    <td colspan="5" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No items</td>
+                    <td colspan="7" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No items</td>
                   </tr>
                 </tbody>
               </table>

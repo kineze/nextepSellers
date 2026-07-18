@@ -11,6 +11,7 @@ use App\Models\Varient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -129,7 +130,7 @@ class ProductController extends Controller
         $product->load([
             'category:id,name',
             'images:id,product_id,path,is_primary',
-            'varients:id,product_id,sku,attributes,price,stock_quantity,reorder_level,is_active',
+            'varients:id,product_id,sku,attributes,price,reseller_price,maximum_selling_price,stock_quantity,reorder_level,is_active',
             'productLevels.level:id,level_no,level_name',
         ]);
 
@@ -145,6 +146,7 @@ class ProductController extends Controller
             'product_video' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
+            'pricing_model' => ['required', 'string', 'in:commission,reseller'],
             'is_active' => ['nullable', 'boolean'],
             'isbestseller' => ['nullable', 'boolean'],
             'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
@@ -158,6 +160,8 @@ class ProductController extends Controller
 
             'sku' => ['required_if:has_varients,0', 'nullable', 'string', 'max:255', 'unique:varients,sku'],
             'price' => ['required_if:has_varients,0', 'nullable', 'numeric', 'min:0'],
+            'reseller_price' => ['nullable', 'numeric', 'min:0'],
+            'maximum_selling_price' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['required_if:has_varients,0', 'nullable', 'integer', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
 
@@ -165,6 +169,8 @@ class ProductController extends Controller
             'varients.*.sku' => ['required_if:has_varients,1', 'string', 'max:255', 'distinct', 'unique:varients,sku'],
             'varients.*.attributes' => ['required_with:varients', 'array', 'min:1'],
             'varients.*.price' => ['required_if:has_varients,1', 'numeric', 'min:0'],
+            'varients.*.reseller_price' => ['nullable', 'numeric', 'min:0'],
+            'varients.*.maximum_selling_price' => ['nullable', 'numeric', 'min:0'],
             'varients.*.reorder_level' => ['required_if:has_varients,1', 'integer', 'min:0'],
             'varients.*.stock_quantity' => ['nullable', 'integer', 'min:0'],
             'varients.*.is_active' => ['nullable', 'boolean'],
@@ -181,6 +187,8 @@ class ProductController extends Controller
                 }
             }],
         ]);
+
+        $this->validatePricingConfiguration($validated);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
             return response()->json([
@@ -202,6 +210,7 @@ class ProductController extends Controller
                 'product_video' => $validated['product_video'] ?? null,
                 'category_id' => $validated['category_id'],
                 'product_code' => $validated['product_code'],
+                'pricing_model' => $validated['pricing_model'],
                 'is_active' => array_key_exists('is_active', $validated)
                     ? (bool) $validated['is_active']
                     : true,
@@ -229,11 +238,14 @@ class ProductController extends Controller
             }
 
             if ((bool) $validated['has_varients']) {
-                $rows = collect($validated['varients'] ?? [])->map(function ($row) {
+                $rows = collect($validated['varients'] ?? [])->map(function ($row) use ($validated) {
+                    $isReseller = $validated['pricing_model'] === 'reseller';
                     return [
                         'sku' => $row['sku'],
                         'attributes' => $row['attributes'],
-                        'price' => $row['price'],
+                        'price' => $isReseller ? $row['reseller_price'] : $row['price'],
+                        'reseller_price' => $isReseller ? $row['reseller_price'] : null,
+                        'maximum_selling_price' => $isReseller ? $row['maximum_selling_price'] : null,
                         'stock_quantity' => (int) ($row['stock_quantity'] ?? 0),
                         'reorder_level' => (int) ($row['reorder_level'] ?? 0),
                         'is_active' => array_key_exists('is_active', $row)
@@ -244,10 +256,13 @@ class ProductController extends Controller
 
                 $product->varients()->createMany($rows);
             } else {
+                $isReseller = $validated['pricing_model'] === 'reseller';
                 $product->varients()->create([
                     'sku' => $validated['sku'],
                     'attributes' => [],
-                    'price' => $validated['price'],
+                    'price' => $isReseller ? $validated['reseller_price'] : $validated['price'],
+                    'reseller_price' => $isReseller ? $validated['reseller_price'] : null,
+                    'maximum_selling_price' => $isReseller ? $validated['maximum_selling_price'] : null,
                     'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                     'reorder_level' => (int) ($validated['reorder_level'] ?? 0),
                     'is_active' => true,
@@ -286,6 +301,7 @@ class ProductController extends Controller
             'product_video' => ['nullable', 'string', 'max:1000'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', Rule::unique('products', 'product_code')->ignore($product->id)],
+            'pricing_model' => ['required', 'string', 'in:commission,reseller'],
             'is_active' => ['nullable', 'boolean'],
             'isbestseller' => ['nullable', 'boolean'],
             'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
@@ -299,6 +315,8 @@ class ProductController extends Controller
 
             'sku' => ['required_if:has_varients,0', 'nullable', 'string', 'max:255'],
             'price' => ['required_if:has_varients,0', 'nullable', 'numeric', 'min:0'],
+            'reseller_price' => ['nullable', 'numeric', 'min:0'],
+            'maximum_selling_price' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['required_if:has_varients,0', 'nullable', 'integer', 'min:0'],
             'stock_quantity' => ['nullable', 'integer', 'min:0'],
 
@@ -307,6 +325,8 @@ class ProductController extends Controller
             'varients.*.sku' => ['required_if:has_varients,1', 'string', 'max:255', 'distinct'],
             'varients.*.attributes' => ['required_with:varients', 'array', 'min:1'],
             'varients.*.price' => ['required_if:has_varients,1', 'numeric', 'min:0'],
+            'varients.*.reseller_price' => ['nullable', 'numeric', 'min:0'],
+            'varients.*.maximum_selling_price' => ['nullable', 'numeric', 'min:0'],
             'varients.*.reorder_level' => ['required_if:has_varients,1', 'integer', 'min:0'],
             'varients.*.stock_quantity' => ['nullable', 'integer', 'min:0'],
             'varients.*.is_active' => ['nullable', 'boolean'],
@@ -323,6 +343,8 @@ class ProductController extends Controller
                 }
             }],
         ]);
+
+        $this->validatePricingConfiguration($validated);
 
         if ((bool) $validated['has_varients'] && empty($validated['varients'])) {
             return response()->json([
@@ -384,6 +406,7 @@ class ProductController extends Controller
                 'product_video' => $validated['product_video'] ?? null,
                 'category_id' => $validated['category_id'],
                 'product_code' => $validated['product_code'],
+                'pricing_model' => $validated['pricing_model'],
                 'is_active' => array_key_exists('is_active', $validated)
                     ? (bool) $validated['is_active']
                     : true,
@@ -416,10 +439,13 @@ class ProductController extends Controller
                 $keptIds = [];
 
                 foreach (($validated['varients'] ?? []) as $row) {
+                    $isReseller = $validated['pricing_model'] === 'reseller';
                     $payload = [
                         'sku' => $row['sku'],
                         'attributes' => $row['attributes'],
-                        'price' => $row['price'],
+                        'price' => $isReseller ? $row['reseller_price'] : $row['price'],
+                        'reseller_price' => $isReseller ? $row['reseller_price'] : null,
+                        'maximum_selling_price' => $isReseller ? $row['maximum_selling_price'] : null,
                         'stock_quantity' => (int) ($row['stock_quantity'] ?? 0),
                         'reorder_level' => (int) ($row['reorder_level'] ?? 0),
                         'is_active' => array_key_exists('is_active', $row)
@@ -449,10 +475,13 @@ class ProductController extends Controller
                     $product->varients()->whereNotIn('id', $keptIds)->delete();
                 }
             } else {
+                $isReseller = $validated['pricing_model'] === 'reseller';
                 $payload = [
                     'sku' => $validated['sku'],
                     'attributes' => [],
-                    'price' => $validated['price'],
+                    'price' => $isReseller ? $validated['reseller_price'] : $validated['price'],
+                    'reseller_price' => $isReseller ? $validated['reseller_price'] : null,
+                    'maximum_selling_price' => $isReseller ? $validated['maximum_selling_price'] : null,
                     'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                     'reorder_level' => (int) ($validated['reorder_level'] ?? 0),
                     'is_active' => true,
@@ -526,5 +555,36 @@ class ProductController extends Controller
             ->first();
 
         return $default ? (float) $default->fee : 0;
+    }
+
+    private function validatePricingConfiguration(array $validated): void
+    {
+        if (($validated['pricing_model'] ?? 'commission') !== 'reseller') {
+            return;
+        }
+
+        $rows = (bool) ($validated['has_varients'] ?? false)
+            ? collect($validated['varients'] ?? [])->values()
+            : collect([[
+                'reseller_price' => $validated['reseller_price'] ?? null,
+                'maximum_selling_price' => $validated['maximum_selling_price'] ?? null,
+            ]]);
+
+        $errors = [];
+        foreach ($rows as $index => $row) {
+            $prefix = (bool) ($validated['has_varients'] ?? false) ? "varients.{$index}." : '';
+            if (! isset($row['reseller_price'])) {
+                $errors[$prefix.'reseller_price'] = 'The reseller price is required for reseller products.';
+            }
+            if (! isset($row['maximum_selling_price'])) {
+                $errors[$prefix.'maximum_selling_price'] = 'The maximum selling price is required for reseller products.';
+            } elseif (isset($row['reseller_price']) && (float) $row['maximum_selling_price'] < (float) $row['reseller_price']) {
+                $errors[$prefix.'maximum_selling_price'] = 'The maximum selling price must be greater than or equal to the reseller price.';
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
     }
 }

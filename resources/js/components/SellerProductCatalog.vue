@@ -28,6 +28,12 @@
       </div>
     </header>
 
+    <nav class="flex flex-wrap gap-2" aria-label="Product pricing filters">
+      <a :href="catalogUrl({ pricing_model: 'all' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'all' ? 'border-slate-950 bg-slate-950 text-white dark:border-white dark:bg-white dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'">All products</a>
+      <a :href="catalogUrl({ pricing_model: 'reseller' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'reseller' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300'">Margin products</a>
+      <a :href="catalogUrl({ pricing_model: 'commission' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'commission' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-indigo-300 text-indigo-700 dark:border-indigo-700 dark:text-indigo-300'">Commission products</a>
+    </nav>
+
     <section aria-labelledby="best-sellers-heading">
       <div class="mb-4 flex items-end justify-between gap-4">
         <div>
@@ -64,6 +70,7 @@
                 <img v-if="product.image_url" :src="product.image_url" :alt="product.title" class="h-full w-full object-contain transition duration-500 group-hover:scale-105" />
                 <div v-else class="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
                 <span class="absolute left-2 top-2 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950">Best seller</span>
+                <span v-if="product.pricing_model === 'reseller'" class="absolute bottom-2 left-2 rounded-full bg-emerald-600 px-2.5 py-1 text-[9px] font-black uppercase tracking-wide text-white">Pricing Negotiable</span>
               </div>
               <div class="flex min-w-0 flex-1 flex-col py-1">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">{{ product.category }}</span>
@@ -125,6 +132,7 @@
               <span v-if="product.isbestseller" class="absolute right-2 top-2 rounded-full bg-amber-400 p-1.5 text-amber-950 shadow-sm" title="Best seller">
                 <i class="fas fa-fire text-[10px]"></i>
               </span>
+              <span v-if="product.pricing_model === 'reseller'" class="absolute bottom-2 left-2 rounded-full bg-emerald-600 px-2 py-1 text-[8px] font-black uppercase tracking-wide text-white shadow">Pricing Negotiable</span>
             </a>
             <div class="flex flex-1 flex-col p-3">
               <h3 class="line-clamp-2 min-h-8 text-xs font-black leading-4 text-slate-950 dark:text-white">{{ product.title }}</h3>
@@ -180,9 +188,10 @@
               :href="product.detail_url"
               class="group flex gap-3 rounded-2xl border border-slate-100 p-2.5 transition hover:border-indigo-200 hover:bg-indigo-50/50 dark:border-slate-800 dark:hover:border-indigo-500/30 dark:hover:bg-indigo-500/5"
             >
-              <div class="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+              <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
                 <img v-if="product.image_url" :src="product.image_url" :alt="product.title" loading="lazy" class="h-full w-full object-contain transition duration-300 group-hover:scale-105" />
                 <div v-else class="flex h-full items-center justify-center text-[10px] text-slate-400">No image</div>
+                <span v-if="product.pricing_model === 'reseller'" class="absolute bottom-1 left-1 rounded bg-emerald-600 px-1.5 py-0.5 text-[7px] font-black uppercase text-white">Negotiable</span>
               </div>
               <div class="min-w-0 py-1">
                 <p class="truncate text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">{{ product.category }}</p>
@@ -254,6 +263,15 @@
                 </select>
               </div>
 
+              <div>
+                <label for="catalog-pricing-model" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Pricing type</label>
+                <select id="catalog-pricing-model" v-model="filterForm.pricing_model" class="filter-select">
+                  <option value="all">All pricing types</option>
+                  <option value="reseller">Margin products</option>
+                  <option value="commission">Commission products</option>
+                </select>
+              </div>
+
               <div v-for="attribute in filterAttributes" :key="attribute.slug">
                 <label :for="`catalog-attribute-${attribute.slug}`" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ attribute.name }}</label>
                 <select :id="`catalog-attribute-${attribute.slug}`" v-model="filterForm.attributes[attribute.slug]" class="filter-select">
@@ -297,6 +315,7 @@ const filterForm = reactive({
   category_id: initialFilters.category_id ? String(initialFilters.category_id) : '',
   sort: initialFilters.sort || 'latest',
   collection: initialFilters.collection || 'all',
+  pricing_model: initialFilters.pricing_model || 'all',
   attributes: Object.fromEntries(filterAttributes.map((attribute) => [
     attribute.slug,
     initialFilters.attributes?.[attribute.slug] || '',
@@ -317,6 +336,7 @@ const activeFilterCount = computed(() => {
   return Number(!!filterForm.category_id)
     + Number(filterForm.sort !== 'latest')
     + Number(filterForm.collection !== 'all')
+    + Number(filterForm.pricing_model !== 'all')
     + Object.values(filterForm.attributes).filter(Boolean).length
 })
 
@@ -332,8 +352,8 @@ const priceLabel = (product) => {
 }
 
 const commissionLabel = (product) => product.commission === null || product.commission === undefined
-  ? 'Commission not configured'
-  : `Earn LKR ${money(product.commission)}`
+  ? (product.pricing_model === 'reseller' ? 'Margin unavailable' : 'Commission not configured')
+  : `${product.pricing_model === 'reseller' ? 'Margin up to' : 'Earn'} LKR ${money(product.commission)}`
 
 const ratingLabel = (product) => `${Number(product.rating || 0).toFixed(1)} (${Number(product.rating_user_count || 0).toLocaleString('en-LK')})`
 
@@ -349,10 +369,14 @@ const catalogUrl = (overrides = {}) => {
   const categoryId = Object.prototype.hasOwnProperty.call(overrides, 'category_id')
     ? overrides.category_id
     : filterForm.category_id
+  const pricingModel = Object.prototype.hasOwnProperty.call(overrides, 'pricing_model')
+    ? overrides.pricing_model
+    : filterForm.pricing_model
 
   if (categoryId) url.searchParams.set('category_id', categoryId)
   if (filterForm.sort !== 'latest') url.searchParams.set('sort', filterForm.sort)
   if (filterForm.collection !== 'all') url.searchParams.set('collection', filterForm.collection)
+  if (pricingModel !== 'all') url.searchParams.set('pricing_model', pricingModel)
 
   Object.entries(filterForm.attributes).forEach(([slug, value]) => {
     if (value) url.searchParams.set(`attributes[${slug}]`, value)

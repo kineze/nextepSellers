@@ -15,11 +15,16 @@ class OrderItem extends Model
         'product_variant_id',
         'quantity',
         'price',
+        'pricing_model',
+        'reseller_price',
+        'seller_earning_amount',
     ];
 
     protected $casts = [
         'quantity' => 'integer',
         'price' => 'decimal:2',
+        'reseller_price' => 'decimal:2',
+        'seller_earning_amount' => 'decimal:2',
     ];
 
     public function order()

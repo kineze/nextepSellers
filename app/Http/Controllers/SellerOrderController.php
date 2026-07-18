@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\ProductLevel;
 use App\Models\Varient;
 use App\Services\PenaltyApplicationService;
+use App\Services\OrderPricingService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,9 +23,10 @@ use Illuminate\Support\Str;
 
 class SellerOrderController extends Controller
 {
-    public function __construct(private readonly PenaltyApplicationService $penaltyApplicationService)
-    {
-    }
+    public function __construct(
+        private readonly PenaltyApplicationService $penaltyApplicationService,
+        private readonly OrderPricingService $orderPricingService,
+    ) {}
 
     public function adminOrderFilterOptions()
     {
@@ -66,7 +68,7 @@ class SellerOrderController extends Controller
                 'bulkOrderRequest:id,request_no,status',
                 'city:id,name_en',
                 'customer:id,default_name,primary_phone,additional_phone,email,notes',
-                'items:id,order_id,product_id,product_variant_id,quantity,price',
+                'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
                 'items.product:id,title,product_code',
                 'items.variant:id,sku,attributes',
             ])
@@ -143,7 +145,7 @@ class SellerOrderController extends Controller
                 'bulkOrderRequest:id,request_no,status',
                 'city:id,name_en',
                 'customer:id,default_name,primary_phone,additional_phone,email,notes',
-                'items:id,order_id,product_id,product_variant_id,quantity,price',
+                'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
                 'items.product:id,title,product_code',
                 'items.variant:id,sku,attributes',
             ])
@@ -291,7 +293,7 @@ class SellerOrderController extends Controller
             'city:id,name_en,district_id',
             'city.district:id,name_en',
             'customer:id,default_name,primary_phone,additional_phone,email,notes',
-            'items:id,order_id,product_id,product_variant_id,quantity,price',
+            'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
             'items.product:id,title,product_code',
             'items.variant:id,sku,attributes,price',
             'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks,created_at',
@@ -463,7 +465,7 @@ class SellerOrderController extends Controller
                 'bulkOrderRequest:id,request_no,status,seller_id,orders_count,created_at',
                 'city:id,name_en',
                 'customer:id,default_name,primary_phone,additional_phone,email,notes',
-                'items:id,order_id,product_id,product_variant_id,quantity,price',
+                'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
                 'items.product:id,title,product_code',
                 'items.variant:id,sku,attributes',
                 'lotItems:id,order_id,lot_id,variant_id,barcode,status',
@@ -538,7 +540,7 @@ class SellerOrderController extends Controller
             'city:id,name_en,district_id',
             'city.district:id,name_en',
             'customer:id,default_name,primary_phone,additional_phone,email,notes',
-            'items:id,order_id,product_id,product_variant_id,quantity,price',
+            'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
             'items.product:id,title,product_code',
             'items.variant:id,sku,attributes,price',
             'dispatchNoteItems:id,dispatch_note_id,order_id,waybill_snapshot,collectable_amount_snapshot,item_remarks,created_at',
@@ -709,7 +711,7 @@ class SellerOrderController extends Controller
         $sellerLevelId = (int) ($request->user()?->seller?->seller_level_id ?? 0);
 
         $query = Product::query()
-            ->select('id', 'title', 'product_code', 'delivery_fee', 'is_free_shipping', 'has_varients')
+            ->select('id', 'title', 'product_code', 'pricing_model', 'delivery_fee', 'is_free_shipping', 'has_varients')
             ->with([
                 'images' => function ($q) {
                     $q->select('id', 'product_id', 'path', 'is_primary')
@@ -717,7 +719,7 @@ class SellerOrderController extends Controller
                         ->orderBy('id');
                 },
                 'varients' => function ($q) {
-                    $q->select('id', 'product_id', 'sku', 'attributes', 'price', 'is_active')
+                    $q->select('id', 'product_id', 'sku', 'attributes', 'price', 'reseller_price', 'maximum_selling_price', 'is_active')
                         ->where('is_active', true)
                         ->orderBy('id');
                 },
@@ -753,6 +755,7 @@ class SellerOrderController extends Controller
                 'delivery_fee' => (float) ($product->delivery_fee ?? 0),
                 'is_free_shipping' => (bool) ($product->is_free_shipping ?? false),
                 'has_varients' => (bool) ($product->has_varients ?? false),
+                'pricing_model' => $product->pricing_model === 'reseller' ? 'reseller' : 'commission',
                 'commission_rule' => $product->productLevels->first() ? [
                     'type' => (string) $product->productLevels->first()->type,
                     'value' => (float) $product->productLevels->first()->value,
@@ -763,6 +766,8 @@ class SellerOrderController extends Controller
                         'sku' => (string) ($variant->sku ?? ''),
                         'attributes' => is_array($variant->attributes) ? $variant->attributes : [],
                         'price' => (float) ($variant->price ?? 0),
+                        'reseller_price' => is_null($variant->reseller_price) ? null : (float) $variant->reseller_price,
+                        'maximum_selling_price' => is_null($variant->maximum_selling_price) ? null : (float) $variant->maximum_selling_price,
                     ];
                 })->values(),
             ];
@@ -983,7 +988,7 @@ class SellerOrderController extends Controller
         $order->load([
             'city:id,name_en',
             'customer:id,default_name,primary_phone,additional_phone,email,notes',
-            'items:id,order_id,product_id,product_variant_id,quantity,price',
+            'items:id,order_id,product_id,product_variant_id,quantity,price,pricing_model,reseller_price,seller_earning_amount',
             'items.product:id,title,product_code',
             'items.variant:id,sku,attributes',
         ]);
@@ -1172,7 +1177,10 @@ class SellerOrderController extends Controller
                 ->value('id');
         }
 
-        $items = collect($payload['items']);
+        $items = $this->orderPricingService->normalize(
+            $payload['items'],
+            (int) ($seller->seller_level_id ?? 0)
+        );
         $netTotal = (float) $items->sum(fn ($item) => (float) $item['price'] * (int) $item['quantity']);
         $productIds = $items
             ->pluck('product_id')
@@ -1190,10 +1198,7 @@ class SellerOrderController extends Controller
         }
 
         $totalDiscount = (float) ($payload['total_discount'] ?? 0);
-        $commissionAmount = $this->calculateCommissionForItems(
-            $items,
-            (int) ($seller->seller_level_id ?? 0)
-        );
+        $commissionAmount = round((float) $items->sum('seller_earning_amount'), 2);
         $collectable = $netTotal + $deliveryCharge - $totalDiscount;
 
         $customer = Customer::updateOrCreate(
@@ -1243,6 +1248,9 @@ class SellerOrderController extends Controller
                 'product_variant_id' => !empty($item['product_variant_id']) ? (int) $item['product_variant_id'] : null,
                 'quantity' => (int) $item['quantity'],
                 'price' => (float) $item['price'],
+                'pricing_model' => $item['pricing_model'],
+                'reseller_price' => $item['reseller_price'],
+                'seller_earning_amount' => (float) $item['seller_earning_amount'],
             ])->all()
         );
 
@@ -1422,7 +1430,10 @@ class SellerOrderController extends Controller
         $variant = $this->findVariantForBulkUpload($productCode, $productName);
         $product = $variant?->product;
         $qty = max(1, (int) ($row['qty'] ?? 1));
-        $price = (float) ($row['price'] ?? $variant?->price ?? 0);
+        $isReseller = $product?->pricing_model === 'reseller';
+        $price = $isReseller
+            ? (float) ($row['price'] ?? $variant?->reseller_price ?? 0)
+            : (float) ($variant?->price ?? 0);
         $errors = [];
 
         foreach (['phone', 'name', 'address', 'city'] as $field) {
@@ -1449,12 +1460,22 @@ class SellerOrderController extends Controller
             $errors['qty'] = 'Quantity must be at least 1.';
         }
 
+        if ($variant && $isReseller) {
+            $minimum = (float) ($variant->reseller_price ?? 0);
+            $maximum = (float) ($variant->maximum_selling_price ?? 0);
+            if ($variant->reseller_price === null || $variant->maximum_selling_price === null || $price < $minimum || $price > $maximum) {
+                $errors['price'] = sprintf('Selling price must be between LKR %s and LKR %s.', number_format($minimum, 2), number_format($maximum, 2));
+            }
+        }
+
         $commission = $variant && $product
-            ? $this->calculateCommissionForItems(collect([[
+            ? ($isReseller
+                ? round(max(0, $price - (float) $variant->reseller_price) * $qty, 2)
+                : $this->calculateCommissionForItems(collect([[
                 'product_id' => (int) $product->id,
                 'quantity' => $qty,
                 'price' => $price,
-            ]]), $sellerLevelId)
+            ]]), $sellerLevelId))
             : 0.0;
         $commissionRule = $product
             ? ProductLevel::query()
@@ -1483,6 +1504,9 @@ class SellerOrderController extends Controller
             'variant_id' => $variant?->id,
             'variant_label' => $variant ? $this->bulkVariantLabel($variant) : '',
             'price' => $price,
+            'pricing_model' => $isReseller ? 'reseller' : 'commission',
+            'reseller_price' => $isReseller ? (float) $variant?->reseller_price : null,
+            'maximum_selling_price' => $isReseller ? (float) $variant?->maximum_selling_price : null,
             'qty' => $qty,
             'notes' => trim((string) ($row['notes'] ?? '')),
             'commission_rule' => $commissionRule ? [
@@ -1516,7 +1540,7 @@ class SellerOrderController extends Controller
     {
         if ($code !== '') {
             $variant = Varient::query()
-                ->with('product:id,title,product_code,is_active')
+                ->with('product:id,title,product_code,pricing_model,is_active')
                 ->where('sku', $code)
                 ->where('is_active', true)
                 ->whereHas('product', fn ($query) => $query->where('is_active', true))
@@ -1527,7 +1551,7 @@ class SellerOrderController extends Controller
             }
 
             $variants = Varient::query()
-                ->with('product:id,title,product_code,is_active')
+                ->with('product:id,title,product_code,pricing_model,is_active')
                 ->where('is_active', true)
                 ->whereHas('product', fn ($query) => $query
                     ->where('is_active', true)
@@ -1542,7 +1566,7 @@ class SellerOrderController extends Controller
 
         if ($productName !== '') {
             $variants = Varient::query()
-                ->with('product:id,title,product_code,is_active')
+                ->with('product:id,title,product_code,pricing_model,is_active')
                 ->where('is_active', true)
                 ->whereHas('product', fn ($query) => $query
                     ->where('is_active', true)
@@ -1667,12 +1691,7 @@ class SellerOrderController extends Controller
         }
 
         foreach ($orders as $order) {
-            $computed = $this->calculateCommissionForItems(
-                collect($order->items ?? []),
-                $sellerLevelId
-            );
-
-            $order->setAttribute('computed_commission_amount', $computed);
+            $order->setAttribute('computed_commission_amount', round((float) ($order->commission_amount ?? 0), 2));
             $order->setAttribute('computed_points_earned', $this->calculatePointsForOrder($order));
             $paymentStatus = strtolower(trim((string) ($order->payment_status ?? '')));
             $order->setAttribute('payment_status', in_array($paymentStatus, ['pending', 'available', 'paid'], true) ? $paymentStatus : 'pending');

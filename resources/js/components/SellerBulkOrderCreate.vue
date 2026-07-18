@@ -162,7 +162,11 @@
                 </div>
               </td>
               <td class="px-2 py-2"><input v-model.number="row.qty" min="1" type="number" :class="[cellClass, 'w-20']" @input="recalculateUploadRow(row)" /></td>
-              <td class="px-2 py-2 font-semibold">LKR {{ toMoney(uploadRowTotal(row)) }}</td>
+              <td class="px-2 py-2 font-semibold">
+                <input v-if="row.pricing_model === 'reseller'" v-model.number="row.price" type="number" step="0.01" :min="row.reseller_price" :max="row.maximum_selling_price" :class="[cellClass, 'w-28']" @input="recalculateUploadRow(row)" />
+                <span v-else>LKR {{ toMoney(uploadRowTotal(row)) }}</span>
+                <p v-if="row.pricing_model === 'reseller'" class="mt-1 text-[9px] text-slate-500">Total: LKR {{ toMoney(uploadRowTotal(row)) }}</p>
+              </td>
               <td class="px-2 py-2 font-semibold text-emerald-700 dark:text-emerald-300">LKR {{ toMoney(row.commission_amount) }}</td>
               <td class="px-2 py-2 font-semibold">{{ row.points_earned || 0 }}</td>
               <td class="px-2 py-2 text-right">
@@ -293,7 +297,7 @@
           </div>
           <div class="text-sm font-bold text-slate-900 dark:text-white">
             LKR {{ toMoney(draftTotal) }}
-            <span class="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">Commission: LKR {{ toMoney(draftCommission) }}</span>
+            <span class="ml-2 text-xs font-semibold text-emerald-600 dark:text-emerald-300">Seller earnings: LKR {{ toMoney(draftCommission) }}</span>
           </div>
         </div>
 
@@ -311,7 +315,7 @@
               <div class="min-w-0">
                 <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ item.product_title }}</p>
                 <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ item.variant_label }}</p>
-                <p class="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">Commission: LKR {{ toMoney(rowItemCommission(item)) }}</p>
+                <p class="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">{{ item.pricing_model === 'reseller' ? 'Margin' : 'Commission' }}: LKR {{ toMoney(rowItemCommission(item)) }}</p>
               </div>
               <button
                 type="button"
@@ -321,6 +325,11 @@
               >
                 <i class="fas fa-trash text-xs" aria-hidden="true"></i>
               </button>
+            </div>
+            <div v-if="item.pricing_model === 'reseller'" class="mt-3">
+              <label class="text-[10px] font-bold uppercase text-emerald-700">Customer selling price</label>
+              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="item.maximum_selling_price" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-xs dark:border-emerald-700 dark:bg-slate-950" />
+              <p class="mt-1 text-[10px] text-slate-500">Allowed LKR {{ toMoney(item.reseller_price) }} – {{ toMoney(item.maximum_selling_price) }}</p>
             </div>
             <div class="mt-3 flex items-center justify-between gap-3">
               <input
@@ -696,7 +705,10 @@ const createRowItem = (selectedProduct, chosenVariant, quantity = 1) => ({
   product_code: selectedProduct.product_code || '',
   variant_id: Number(chosenVariant.id),
   variant_label: formatVariantLabel(chosenVariant),
-  price: Number(chosenVariant.price || 0),
+  price: Number(selectedProduct.pricing_model === 'reseller' ? chosenVariant.reseller_price : chosenVariant.price || 0),
+  pricing_model: selectedProduct.pricing_model === 'reseller' ? 'reseller' : 'commission',
+  reseller_price: Number(chosenVariant.reseller_price || 0),
+  maximum_selling_price: Number(chosenVariant.maximum_selling_price || 0),
   quantity: Math.max(1, Number(quantity || 1)),
   commission_rule: selectedProduct.commission_rule || null,
 })
@@ -736,7 +748,9 @@ const commissionFor = (price, quantity, rule) => {
 }
 
 const rowItemTotal = (item) => Math.max(0, Number(item.price || 0) * Number(item.quantity || 0))
-const rowItemCommission = (item) => commissionFor(item.price, item.quantity, item.commission_rule)
+const rowItemCommission = (item) => item.pricing_model === 'reseller'
+  ? Math.max(0, Number(item.price || 0) - Number(item.reseller_price || 0)) * Number(item.quantity || 0)
+  : commissionFor(item.price, item.quantity, item.commission_rule)
 const rowTotal = (row) => (row.items || []).reduce((sum, item) => sum + rowItemTotal(item), 0)
 const rowCommission = (row) => (row.items || []).reduce((sum, item) => sum + rowItemCommission(item), 0)
 const uploadRowTotal = (row) => Math.max(0, Number(row.price || 0) * Number(row.qty || 0))
@@ -1041,12 +1055,20 @@ const validateUploadRow = (row) => {
   if (!Number(row.qty || 0) || Number(row.qty || 0) < 1) errors.qty = 'Quantity must be at least 1.'
   else delete errors.qty
 
+  if (row.pricing_model === 'reseller' && (
+    Number(row.price) < Number(row.reseller_price)
+    || Number(row.price) > Number(row.maximum_selling_price)
+  )) errors.price = `Price must be between LKR ${toMoney(row.reseller_price)} and LKR ${toMoney(row.maximum_selling_price)}.`
+  else delete errors.price
+
   row.errors = errors
 }
 
 const recalculateUploadRow = (row) => {
   row.qty = Math.max(1, Number.parseInt(row.qty || 1, 10))
-  row.commission_amount = commissionFor(row.price, row.qty, row.commission_rule)
+  row.commission_amount = row.pricing_model === 'reseller'
+    ? Math.max(0, Number(row.price) - Number(row.reseller_price)) * Number(row.qty || 1)
+    : commissionFor(row.price, row.qty, row.commission_rule)
   row.points_earned = Math.floor(uploadRowTotal(row) / Math.max(1, Number(row.points_rate || 100)))
   validateUploadRow(row)
 }
@@ -1106,9 +1128,14 @@ const selectVariantForUploadRow = (row, product, variant) => {
   row.product_query = row.product_code || row.product_title
   row.variant_id = Number(variant?.id || 0) || null
   row.variant_label = formatVariantLabel(variant)
-  row.price = Number(variant?.price || row.price || 0)
+  row.pricing_model = product?.pricing_model === 'reseller' ? 'reseller' : 'commission'
+  row.reseller_price = Number(variant?.reseller_price || 0)
+  row.maximum_selling_price = Number(variant?.maximum_selling_price || 0)
+  row.price = Number(row.pricing_model === 'reseller' ? variant?.reseller_price : variant?.price || row.price || 0)
   row.commission_rule = product?.commission_rule || null
-  row.commission_amount = commissionFor(row.price, row.qty, row.commission_rule)
+  row.commission_amount = row.pricing_model === 'reseller'
+    ? Math.max(0, row.price - row.reseller_price) * Number(row.qty || 1)
+    : commissionFor(row.price, row.qty, row.commission_rule)
   row.points_earned = Math.floor(uploadRowTotal(row) / Math.max(1, Number(row.points_rate || 100)))
   row._productOpen = false
   row._productOptions = []
@@ -1373,6 +1400,13 @@ const validateBeforeSubmit = () => {
         const qty = Number(items[ii].quantity || 0)
         if (!Number.isFinite(qty) || qty < 1) {
           toast.error(`Batch ${bi + 1}, Row ${ri + 1}, Product ${ii + 1}: quantity must be at least 1.`)
+          return false
+        }
+        if (items[ii].pricing_model === 'reseller' && (
+          Number(items[ii].price) < Number(items[ii].reseller_price)
+          || Number(items[ii].price) > Number(items[ii].maximum_selling_price)
+        )) {
+          toast.error(`Batch ${bi + 1}, Row ${ri + 1}, Product ${ii + 1}: selling price is outside the allowed range.`)
           return false
         }
       }

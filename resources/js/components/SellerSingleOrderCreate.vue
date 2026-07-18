@@ -201,7 +201,7 @@
                   <p class="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{{ product.title }}</p>
                   <p class="truncate text-xs text-slate-500 dark:text-slate-300">{{ product.product_code || 'No code' }}</p>
                   <p class="mt-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">
-                    Commission: {{ commissionRuleLabel(product.commission_rule) }}
+                    {{ product.pricing_model === 'reseller' ? 'Pricing Negotiable' : `Commission: ${commissionRuleLabel(product.commission_rule)}` }}
                   </p>
                 </div>
                 <span class="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
@@ -245,10 +245,30 @@
                   </button>
                 </div>
                 <p class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ item.variant_label }}</p>
+                <div
+                  class="mt-2 inline-flex flex-wrap items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-bold"
+                  :class="item.pricing_model === 'reseller'
+                    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/30'
+                    : 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/30'"
+                >
+                  <i :class="item.pricing_model === 'reseller' ? 'fas fa-tags' : 'fas fa-tag'"></i>
+                  <template v-if="item.pricing_model === 'reseller'">
+                    Allowed selling range: LKR {{ toMoney(item.reseller_price) }} – LKR {{ toMoney(item.maximum_selling_price) }}
+                  </template>
+                  <template v-else>
+                    Fixed selling price: LKR {{ toMoney(item.price) }}
+                  </template>
+                </div>
                 <p class="mt-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300">
-                  Commission earning: LKR {{ toMoney(lineCommission(item)) }}
+                  {{ item.pricing_model === 'reseller' ? 'Margin' : 'Commission' }} earning: LKR {{ toMoney(lineCommission(item)) }}
                 </p>
               </div>
+            </div>
+
+            <div v-if="item.pricing_model === 'reseller'" class="mt-3 rounded-xl bg-emerald-50 p-3 dark:bg-emerald-500/10">
+              <label class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Customer selling price</label>
+              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="item.maximum_selling_price" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold dark:border-emerald-700 dark:bg-slate-950" />
+              <p class="mt-1 text-[10px] text-slate-500">Enter a price within the allowed selling range shown above.</p>
             </div>
 
             <div class="mt-3 grid grid-cols-[auto_1fr] items-center gap-2">
@@ -296,7 +316,7 @@
             <div class="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
               <p class="flex items-center justify-between"><span>Subtotal</span><span class="font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(subtotal) }}</span></p>
               <p class="flex items-center justify-between"><span>Delivery</span><span class="font-semibold text-slate-900 dark:text-white">LKR {{ toMoney(deliveryCharge) }}</span></p>
-              <p class="flex items-center justify-between"><span>Commission Earning</span><span class="font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(totalCommission) }}</span></p>
+              <p class="flex items-center justify-between"><span>Seller Earnings</span><span class="font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(totalCommission) }}</span></p>
             </div>
 
             <div class="mt-4 rounded-2xl bg-blue-50 p-4 dark:bg-blue-500/10">
@@ -355,8 +375,8 @@
               <tr>
                 <th class="px-3 py-2 text-center">Add</th>
                 <th class="px-3 py-2">Variant</th>
-                <th class="px-3 py-2 text-right">Price</th>
-                <th class="px-3 py-2 text-right">Commission</th>
+                <th class="px-3 py-2 text-right">Selling Price</th>
+                <th class="px-3 py-2 text-right">Earning</th>
                 <th class="px-3 py-2 text-center">Qty</th>
               </tr>
             </thead>
@@ -366,7 +386,10 @@
                   <input v-model="variant.selected" type="checkbox" class="rounded border-slate-300 accent-blue-600 dark:border-slate-700" />
                 </td>
                 <td class="px-3 py-2 font-semibold text-slate-800 dark:text-slate-100">{{ formatVariantLabel(variant) }}</td>
-                <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-200">LKR {{ toMoney(variant.price) }}</td>
+                <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-200">
+                  <input v-if="modalProduct?.pricing_model === 'reseller'" v-model.number="variant.selling_price" type="number" step="0.01" :min="variant.reseller_price" :max="variant.maximum_selling_price" class="w-28 rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-right text-xs dark:border-emerald-700 dark:bg-slate-950" />
+                  <span v-else>LKR {{ toMoney(variant.price) }}</span>
+                </td>
                 <td class="px-3 py-2 text-right font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(variantCommission(variant, modalProduct)) }}</td>
                 <td class="px-3 py-2">
                   <input v-model.number="variant.quantity" type="number" min="1" class="mx-auto block w-20 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-center text-xs outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100" :disabled="!variant.selected" />
@@ -677,7 +700,13 @@ const normalizeVariant = (variant) => {
       attrs[key] = rawMeta || ''
     }
   })
-  return { ...variant, attributes: attrs }
+  return {
+    ...variant,
+    attributes: attrs,
+    selling_price: variant?.reseller_price === null || variant?.reseller_price === undefined
+      ? Number(variant?.price || 0)
+      : Number(variant.reseller_price),
+  }
 }
 
 const suggestedProducts = computed(() => {
@@ -813,7 +842,10 @@ const addItemToCart = (product, variant, quantity = 1) => {
     variant_id: variant.id,
     variant_label: formatVariantLabel(variant),
     quantity: Math.max(1, Number(quantity || 1)),
-    price: Number(variant.price || 0),
+    price: Number(product.pricing_model === 'reseller' ? (variant.selling_price ?? variant.reseller_price) : variant.price || 0),
+    pricing_model: product.pricing_model === 'reseller' ? 'reseller' : 'commission',
+    reseller_price: Number(variant.reseller_price || 0),
+    maximum_selling_price: Number(variant.maximum_selling_price || 0),
     delivery_fee: Number(product.delivery_fee || 0),
     is_free_shipping: Boolean(product.is_free_shipping),
     commission_rule: product.commission_rule || null,
@@ -846,8 +878,12 @@ const commissionFor = (price, quantity, rule) => {
 
   return value * qty
 }
-const lineCommission = (item) => commissionFor(item.price, item.quantity, item.commission_rule)
-const variantCommission = (variant, product) => commissionFor(variant?.price, variant?.quantity || 1, product?.commission_rule)
+const lineCommission = (item) => item.pricing_model === 'reseller'
+  ? Math.max(0, Number(item.price || 0) - Number(item.reseller_price || 0)) * Number(item.quantity || 0)
+  : commissionFor(item.price, item.quantity, item.commission_rule)
+const variantCommission = (variant, product) => product?.pricing_model === 'reseller'
+  ? Math.max(0, Number(variant?.selling_price ?? variant?.reseller_price ?? 0) - Number(variant?.reseller_price || 0)) * Number(variant?.quantity || 1)
+  : commissionFor(variant?.price, variant?.quantity || 1, product?.commission_rule)
 const subtotal = computed(() => items.value.reduce((sum, item) => sum + (Number(item.price || 0) * Number(item.quantity || 0)), 0))
 const totalQty = computed(() => items.value.reduce((sum, item) => sum + Number(item.quantity || 0), 0))
 const totalCommission = computed(() => items.value.reduce((sum, item) => sum + lineCommission(item), 0))
@@ -886,6 +922,15 @@ const openSubmitConfirmation = () => {
 
   if (!validateForm()) {
     toast.error('Please correct customer details.')
+    return
+  }
+
+  const invalidPrice = items.value.find((item) => item.pricing_model === 'reseller' && (
+    Number(item.price) < Number(item.reseller_price)
+    || Number(item.price) > Number(item.maximum_selling_price)
+  ))
+  if (invalidPrice) {
+    toast.error(`Selling price for ${invalidPrice.product_title} must be within its allowed range.`)
     return
   }
 

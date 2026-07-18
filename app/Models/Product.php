@@ -15,6 +15,7 @@ class Product extends Model
         'product_video',
         'category_id',
         'product_code',
+        'pricing_model',
         'is_active',
         'isbestseller',
         'rating',
@@ -33,6 +34,11 @@ class Product extends Model
         'delivery_fee' => 'decimal:2',
         'is_free_shipping' => 'boolean',
     ];
+
+    public function isResellerPriced(): bool
+    {
+        return $this->pricing_model === 'reseller';
+    }
 
     protected static function booted(): void
     {

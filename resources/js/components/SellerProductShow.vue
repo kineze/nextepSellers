@@ -90,6 +90,7 @@
               <span class="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800 dark:bg-blue-500/20 dark:text-blue-200">
                 {{ product.category?.name || 'Uncategorized' }}
               </span>
+              <span v-if="isReseller" class="rounded-full bg-emerald-600 px-3 py-1.5 text-xs font-black uppercase tracking-wide text-white">Pricing Negotiable</span>
             </div>
 
             <p class="mt-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300">{{ product.small_description }}</p>
@@ -132,19 +133,21 @@
                   <tr>
                     <th class="px-3 py-2 font-semibold uppercase tracking-wide">SKU</th>
                     <th class="px-3 py-2 font-semibold uppercase tracking-wide">Attributes</th>
-                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">Price</th>
+                    <th class="px-3 py-2 font-semibold uppercase tracking-wide">{{ isReseller ? 'Reseller Price' : 'Price' }}</th>
+                    <th v-if="isReseller" class="px-3 py-2 font-semibold uppercase tracking-wide">Maximum Price</th>
                     <th class="px-3 py-2 font-semibold uppercase tracking-wide">Stock</th>
                     <th class="px-3 py-2 font-semibold uppercase tracking-wide">Reorder</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                   <tr v-if="!variants.length">
-                    <td colspan="5" class="px-3 py-4 text-center text-slate-500 dark:text-slate-400">No variant data available.</td>
+                    <td :colspan="isReseller ? 6 : 5" class="px-3 py-4 text-center text-slate-500 dark:text-slate-400">No variant data available.</td>
                   </tr>
                   <tr v-for="variant in variants" :key="variant.id">
                     <td class="px-3 py-2 font-semibold text-slate-900 dark:text-white">{{ variant.sku || '-' }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ formatAttributes(variant.attributes) }}</td>
-                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(variant.price || 0)) }}</td>
+                    <td class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(isReseller ? variant.reseller_price : variant.price || 0)) }}</td>
+                    <td v-if="isReseller" class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(variant.maximum_selling_price || 0)) }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.stock_quantity || 0).toLocaleString() }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.reorder_level || 0).toLocaleString() }}</td>
                   </tr>
@@ -153,7 +156,12 @@
             </div>
           </div>
 
-          <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
+          <div v-if="isReseller" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
+            <h2 class="text-sm font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Margin Product</h2>
+            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Choose any customer selling price between the reseller price and maximum price. Your earning is the difference between those prices; no level commission is added.</p>
+          </div>
+
+          <div v-else class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
             <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Seller Earnings by Level</h2>
 
             <p v-if="!levelRows.length" class="mt-3 text-sm text-slate-500 dark:text-slate-400">
@@ -256,6 +264,7 @@ const selectedMedia = ref(null)
 
 const images = computed(() => product.value?.images || [])
 const variants = computed(() => product.value?.varients || [])
+const isReseller = computed(() => product.value?.pricing_model === 'reseller')
 const galleryItems = computed(() => {
   const items = []
 
@@ -300,14 +309,20 @@ const nextRow = computed(() => {
 })
 
 const priceRange = computed(() => {
-  const vals = variants.value
-    .map((v) => v?.price)
+  const minimumVals = variants.value
+    .map((v) => isReseller.value ? v?.reseller_price : v?.price)
     .filter((v) => v !== null && v !== undefined)
     .map((v) => Number(v))
     .filter((v) => Number.isFinite(v))
 
-  if (!vals.length) return { min: null, max: null }
-  return { min: Math.min(...vals), max: Math.max(...vals) }
+  const maximumVals = variants.value
+    .map((v) => isReseller.value ? v?.maximum_selling_price : v?.price)
+    .filter((v) => v !== null && v !== undefined)
+    .map((v) => Number(v))
+    .filter((v) => Number.isFinite(v))
+
+  if (!minimumVals.length || !maximumVals.length) return { min: null, max: null }
+  return { min: Math.min(...minimumVals), max: Math.max(...maximumVals) }
 })
 
 const fetchData = async () => {

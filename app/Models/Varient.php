@@ -13,6 +13,8 @@ class Varient extends Model
         'sku',
         'attributes',
         'price',
+        'reseller_price',
+        'maximum_selling_price',
         'stock_quantity',
         'reorder_level',
         'is_active',
@@ -21,6 +23,8 @@ class Varient extends Model
     protected $casts = [
         'attributes' => 'array',
         'price' => 'decimal:2',
+        'reseller_price' => 'decimal:2',
+        'maximum_selling_price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'reorder_level' => 'integer',
         'is_active' => 'boolean',

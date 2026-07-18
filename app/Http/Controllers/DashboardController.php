@@ -133,6 +133,7 @@ class DashboardController extends Controller
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'sort' => ['nullable', 'in:latest,oldest'],
             'collection' => ['nullable', 'in:all,best_selling,new_arrivals'],
+            'pricing_model' => ['nullable', 'in:all,commission,reseller'],
             'attributes' => ['nullable', 'array'],
             'attributes.*' => ['nullable', 'string', 'max:100'],
         ]);
@@ -140,6 +141,7 @@ class DashboardController extends Controller
         $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
         $sort = $validated['sort'] ?? 'latest';
         $collection = $validated['collection'] ?? 'all';
+        $pricingModel = $validated['pricing_model'] ?? 'all';
 
         $filterAttributes = Attribute::query()
             ->orderBy('name')
@@ -194,18 +196,19 @@ class DashboardController extends Controller
             });
         $attributeTypes = $filterAttributes->pluck('type', 'slug');
 
-        $catalogQuery = function () use ($attributeTypes, $categoryId, $collection, $selectedAttributes) {
+        $catalogQuery = function () use ($attributeTypes, $categoryId, $collection, $pricingModel, $selectedAttributes) {
             return Product::query()
                 ->with([
                     'category:id,name',
                     'images:id,product_id,path,is_primary',
-                    'varients:id,product_id,price,is_active',
+                    'varients:id,product_id,price,reseller_price,maximum_selling_price,is_active',
                     'productLevels:id,product_id,level_id,type,value',
                 ])
                 ->where('is_active', true)
                 ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
                 ->when($collection === 'best_selling', fn ($query) => $query->where('isbestseller', true))
                 ->when($collection === 'new_arrivals', fn ($query) => $query->where('created_at', '>=', now()->subDays(30)))
+                ->when($pricingModel !== 'all', fn ($query) => $query->where('pricing_model', $pricingModel))
                 ->when($selectedAttributes->isNotEmpty(), function ($query) use ($attributeTypes, $selectedAttributes) {
                     $query->whereHas('varients', function ($variantQuery) use ($attributeTypes, $selectedAttributes) {
                         $variantQuery->where('is_active', true);
@@ -234,17 +237,23 @@ class DashboardController extends Controller
         $sellerLevelId = auth()->user()?->seller?->seller_level_id;
         $presentProduct = function (Product $product) use ($sellerLevelId) {
             $primaryImage = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
+            $isReseller = $product->pricing_model === 'reseller';
             $prices = $product->varients
                 ->where('is_active', true)
-                ->pluck('price')
+                ->pluck($isReseller ? 'reseller_price' : 'price')
                 ->filter(fn ($price) => ! is_null($price));
             $minPrice = $prices->isNotEmpty() ? (float) $prices->min() : null;
-            $maxPrice = $prices->isNotEmpty() ? (float) $prices->max() : null;
+            $maximumPrices = $isReseller
+                ? $product->varients->where('is_active', true)->pluck('maximum_selling_price')->filter(fn ($price) => ! is_null($price))
+                : $prices;
+            $maxPrice = $maximumPrices->isNotEmpty() ? (float) $maximumPrices->max() : null;
             $levelCommission = $product->productLevels
                 ->first(fn ($row) => (int) $row->level_id === (int) $sellerLevelId);
 
             $commission = null;
-            if ($levelCommission && ! is_null($minPrice)) {
+            if ($isReseller && ! is_null($minPrice) && ! is_null($maxPrice)) {
+                $commission = max(0, $maxPrice - $minPrice);
+            } elseif ($levelCommission && ! is_null($minPrice)) {
                 $commission = $levelCommission->type === 'percentage'
                     ? ($minPrice * (float) $levelCommission->value) / 100
                     : (float) $levelCommission->value;
@@ -259,6 +268,7 @@ class DashboardController extends Controller
                 'min_price' => $minPrice,
                 'max_price' => $maxPrice,
                 'commission' => is_null($commission) ? null : round($commission, 2),
+                'pricing_model' => $isReseller ? 'reseller' : 'commission',
                 'isbestseller' => (bool) $product->isbestseller,
                 'rating' => (float) $product->rating,
                 'rating_user_count' => (int) $product->rating_user_count,
@@ -317,6 +327,7 @@ class DashboardController extends Controller
                     'category_id' => $categoryId,
                     'sort' => $sort,
                     'collection' => $collection,
+                    'pricing_model' => $pricingModel,
                     'attributes' => $selectedAttributes,
                 ],
                 'selected_category_id' => $categoryId,
@@ -345,7 +356,7 @@ class DashboardController extends Controller
         $product->load([
             'category:id,name',
             'images:id,product_id,path,is_primary',
-            'varients:id,product_id,sku,attributes,price,stock_quantity,reorder_level,is_active',
+            'varients:id,product_id,sku,attributes,price,reseller_price,maximum_selling_price,stock_quantity,reorder_level,is_active',
             'productLevels.level:id,level_no,level_name,points',
         ]);
 

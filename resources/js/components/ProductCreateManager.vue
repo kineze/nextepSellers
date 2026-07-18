@@ -188,6 +188,21 @@
           </div>
 
           <div class="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-800/70 dark:bg-slate-900/70">
+            <div class="mb-5">
+              <label class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Pricing Model</label>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="cursor-pointer rounded-xl border p-3 text-sm" :class="form.pricing_model === 'commission' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-500/10' : 'border-slate-200 dark:border-slate-700'">
+                  <input v-model="form.pricing_model" class="mr-2" type="radio" value="commission" />
+                  <span class="font-semibold">Commission Product</span>
+                  <span class="mt-1 block text-xs text-slate-500">Fixed selling price with level commission.</span>
+                </label>
+                <label class="cursor-pointer rounded-xl border p-3 text-sm" :class="form.pricing_model === 'reseller' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10' : 'border-slate-200 dark:border-slate-700'">
+                  <input v-model="form.pricing_model" class="mr-2" type="radio" value="reseller" />
+                  <span class="font-semibold">Margin Product</span>
+                  <span class="mt-1 block text-xs text-slate-500">Seller chooses a price within your allowed range.</span>
+                </label>
+              </div>
+            </div>
             <div class="mb-4">
               <label class="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">Has Variants?</label>
               <div class="flex gap-6 text-sm text-slate-700 dark:text-slate-200">
@@ -197,10 +212,20 @@
             </div>
 
             <div v-if="form.hasVariants === 'no'" class="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
+              <div v-if="form.pricing_model === 'commission'">
                 <label class="mb-1 block text-xs font-semibold">Price</label>
                 <input type="number" min="0" step="0.01" v-model.number="form.price" placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" />
               </div>
+              <template v-else>
+                <div>
+                  <label class="mb-1 block text-xs font-semibold">Reseller Price</label>
+                  <input type="number" min="0" step="0.01" v-model.number="form.reseller_price" placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950" />
+                </div>
+                <div>
+                  <label class="mb-1 block text-xs font-semibold">Maximum Selling Price</label>
+                  <input type="number" :min="Number(form.reseller_price || 0)" step="0.01" v-model.number="form.maximum_selling_price" placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950" />
+                </div>
+              </template>
               <div>
                 <label class="mb-1 block text-xs font-semibold">Stock Quantity</label>
                 <input type="number" min="0" v-model.number="form.stock_quantity" placeholder="0" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:ring-2 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" />
@@ -249,7 +274,11 @@
                     <tr>
                       <th v-for="key in variantKeys" :key="key" class="px-2 py-2 text-left capitalize">{{ key }}</th>
                       <th class="px-2 py-2 text-left">SKU</th>
-                      <th class="px-2 py-2 text-left">Price</th>
+                      <th v-if="form.pricing_model === 'commission'" class="px-2 py-2 text-left">Price</th>
+                      <template v-else>
+                        <th class="px-2 py-2 text-left">Reseller Price</th>
+                        <th class="px-2 py-2 text-left">Maximum Price</th>
+                      </template>
                       <th class="px-2 py-2 text-left">Stock</th>
                       <th class="px-2 py-2 text-left">Reorder</th>
                       <th class="px-2 py-2 text-left">Action</th>
@@ -265,7 +294,11 @@
                         <span v-else>{{ variant.attributes[key] || '—' }}</span>
                       </td>
                       <td class="px-2 py-2"><input type="text" v-model="variant.sku" placeholder="SKU" class="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
-                      <td class="px-2 py-2"><input type="number" min="0" step="0.01" v-model.number="variant.price" placeholder="0.00" class="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
+                      <td v-if="form.pricing_model === 'commission'" class="px-2 py-2"><input type="number" min="0" step="0.01" v-model.number="variant.price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
+                      <template v-else>
+                        <td class="px-2 py-2"><input type="number" min="0" step="0.01" v-model.number="variant.reseller_price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950" /></td>
+                        <td class="px-2 py-2"><input type="number" :min="Number(variant.reseller_price || 0)" step="0.01" v-model.number="variant.maximum_selling_price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950" /></td>
+                      </template>
                       <td class="px-2 py-2"><input type="number" min="0" v-model.number="variant.stock_quantity" placeholder="0" class="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
                       <td class="px-2 py-2"><input type="number" min="0" v-model.number="variant.reorder_level" placeholder="0" class="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
                       <td class="px-2 py-2"><button type="button" @click="variants.splice(i, 1)" class="rounded bg-rose-600 px-2 py-1 text-xs text-white">Remove</button></td>
@@ -281,8 +314,8 @@
           <div class="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p class="text-[0.7rem] uppercase tracking-[0.25em] text-slate-400 dark:text-slate-500">Level Design</p>
-              <h3 class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">Commissions by Level</h3>
-              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Set commission values for each level and apply one mode for all levels.</p>
+              <h3 class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">{{ form.pricing_model === 'reseller' ? 'Affiliate Commission by Level' : 'Commissions by Level' }}</h3>
+              <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">{{ form.pricing_model === 'reseller' ? 'Seller earnings come from margin only. Affiliate commission remains configurable.' : 'Set commission values for each level and apply one mode for all levels.' }}</p>
             </div>
 
             <div class="flex flex-wrap gap-3">
@@ -329,6 +362,7 @@
                     <div class="relative w-40">
                       <input
                         v-model.number="row.value"
+                        :disabled="form.pricing_model === 'reseller'"
                         type="number"
                         min="0"
                         step="0.01"
@@ -475,6 +509,7 @@ const variants = ref([])
 const form = ref({
   title: '',
   product_code: '',
+  pricing_model: 'commission',
   sku: '',
   category_id: null,
   delivery_fee_id: null,
@@ -489,6 +524,8 @@ const form = ref({
   rating_user_count: null,
   images: [],
   price: null,
+  reseller_price: null,
+  maximum_selling_price: null,
   stock_quantity: 0,
   reorder_level: 0,
 })
@@ -811,6 +848,8 @@ const generateCombinations = () => {
       attributes: attrs,
       sku: `${prefix}-${i + 1}`,
       price: 0,
+      reseller_price: 0,
+      maximum_selling_price: 0,
       stock_quantity: 0,
       reorder_level: 0,
       is_active: true,
@@ -840,6 +879,7 @@ const saveProduct = async () => {
     product_video: form.value.product_video || null,
     category_id: form.value.category_id,
     product_code: form.value.product_code,
+    pricing_model: form.value.pricing_model,
     is_active: form.value.is_active ? 1 : 0,
     isbestseller: form.value.isbestseller ? 1 : 0,
     rating: form.value.rating === '' || form.value.rating === null ? null : Number(form.value.rating),
@@ -852,7 +892,11 @@ const saveProduct = async () => {
       : (form.value.delivery_fee_id || defaultDeliveryFeeId.value || null),
     is_free_shipping: form.value.is_free_shipping ? 1 : 0,
     sku: form.value.hasVariants === 'no' ? form.value.sku : null,
-    price: form.value.hasVariants === 'no' ? form.value.price : null,
+    price: form.value.hasVariants === 'no'
+      ? (form.value.pricing_model === 'reseller' ? form.value.reseller_price : form.value.price)
+      : null,
+    reseller_price: form.value.hasVariants === 'no' && form.value.pricing_model === 'reseller' ? form.value.reseller_price : null,
+    maximum_selling_price: form.value.hasVariants === 'no' && form.value.pricing_model === 'reseller' ? form.value.maximum_selling_price : null,
     stock_quantity: form.value.hasVariants === 'no' ? form.value.stock_quantity : null,
     reorder_level: form.value.hasVariants === 'no' ? form.value.reorder_level : null,
     images: form.value.images.map((img) => ({ path: img.path, is_primary: img.is_primary ? 1 : 0 })),
@@ -868,7 +912,9 @@ const saveProduct = async () => {
           id: v.id || null,
           sku: v.sku,
           attributes: v.attributes,
-          price: v.price,
+          price: form.value.pricing_model === 'reseller' ? v.reseller_price : v.price,
+          reseller_price: form.value.pricing_model === 'reseller' ? v.reseller_price : null,
+          maximum_selling_price: form.value.pricing_model === 'reseller' ? v.maximum_selling_price : null,
           stock_quantity: v.stock_quantity,
           reorder_level: v.reorder_level,
           is_active: v.is_active ? 1 : 0,
@@ -906,6 +952,7 @@ const loadProduct = async () => {
 
     form.value.title = data.title || ''
     form.value.product_code = data.product_code || ''
+    form.value.pricing_model = data.pricing_model === 'reseller' ? 'reseller' : 'commission'
     form.value.sku = data.has_varients ? '' : (data.varients?.[0]?.sku || '')
     form.value.category_id = data.category_id ?? null
     form.value.is_free_shipping = !!data.is_free_shipping
@@ -930,6 +977,8 @@ const loadProduct = async () => {
     if (form.value.hasVariants === 'no') {
       const base = data.varients?.[0] || {}
       form.value.price = base.price ?? null
+      form.value.reseller_price = base.reseller_price ?? null
+      form.value.maximum_selling_price = base.maximum_selling_price ?? null
       form.value.stock_quantity = base.stock_quantity ?? 0
       form.value.reorder_level = base.reorder_level ?? 0
       variants.value = []
@@ -943,6 +992,8 @@ const loadProduct = async () => {
         attributes: variant.attributes || {},
         sku: variant.sku || '',
         price: Number(variant.price || 0),
+        reseller_price: variant.reseller_price === null ? null : Number(variant.reseller_price),
+        maximum_selling_price: variant.maximum_selling_price === null ? null : Number(variant.maximum_selling_price),
         stock_quantity: Number(variant.stock_quantity || 0),
         reorder_level: Number(variant.reorder_level || 0),
         is_active: variant.is_active !== false,

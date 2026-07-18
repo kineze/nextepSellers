@@ -1,5 +1,15 @@
 <template>
   <div class="pointer-events-none fixed bottom-5 right-5 z-[9998]">
+    <div class="flex items-center gap-2">
+      <button
+        type="button"
+        class="pointer-events-auto inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm text-white shadow-lg shadow-blue-600/30 transition hover:-translate-y-0.5 hover:bg-blue-700 md:hidden"
+        aria-label="Search products"
+        title="Search products"
+        @click="openProductSearch"
+      >
+        <i class="fas fa-search"></i>
+      </button>
     <button
       type="button"
       class="pointer-events-auto inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/30 transition hover:-translate-y-0.5 hover:bg-black dark:bg-white dark:text-slate-900"
@@ -8,6 +18,7 @@
       <i class="fas fa-plus"></i>
       New Order
     </button>
+    </div>
 
     <transition
       enter-active-class="transition duration-200 ease-out"
@@ -79,6 +90,10 @@ const isOpen = ref(false)
 
 const openModal = () => {
   isOpen.value = true
+}
+
+const openProductSearch = () => {
+  window.dispatchEvent(new CustomEvent('seller-product-search-open'))
 }
 
 onMounted(() => {

@@ -28,10 +28,10 @@
       </div>
     </header>
 
-    <nav class="flex flex-wrap gap-2" aria-label="Product pricing filters">
-      <a :href="catalogUrl({ pricing_model: 'all' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'all' ? 'border-slate-950 bg-slate-950 text-white dark:border-white dark:bg-white dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'">All products</a>
-      <a :href="catalogUrl({ pricing_model: 'reseller' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'reseller' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300'">Margin products</a>
-      <a :href="catalogUrl({ pricing_model: 'commission' })" class="rounded-full border px-4 py-2 text-xs font-black uppercase tracking-wide" :class="filterForm.pricing_model === 'commission' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-indigo-300 text-indigo-700 dark:border-indigo-700 dark:text-indigo-300'">Commission products</a>
+    <nav class="catalog-scrollbar -mx-1 flex flex-nowrap gap-2 overflow-x-auto px-1 pb-1" aria-label="Product pricing filters">
+      <a :href="catalogUrl({ pricing_model: 'all' })" class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-wide sm:text-xs" :class="filterForm.pricing_model === 'all' ? 'border-slate-950 bg-slate-950 text-white dark:border-white dark:bg-white dark:text-slate-950' : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-300'">All products</a>
+      <a :href="catalogUrl({ pricing_model: 'reseller' })" class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-wide sm:text-xs" :class="filterForm.pricing_model === 'reseller' ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-emerald-300 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300'">Margin products</a>
+      <a :href="catalogUrl({ pricing_model: 'commission' })" class="shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-wide sm:text-xs" :class="filterForm.pricing_model === 'commission' ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-indigo-300 text-indigo-700 dark:border-indigo-700 dark:text-indigo-300'">Commission products</a>
     </nav>
 
     <section aria-labelledby="best-sellers-heading">
@@ -63,10 +63,10 @@
             v-for="product in bestSellers"
             :key="`best-${product.id}`"
             :href="product.detail_url"
-            class="group relative min-w-[82%] snap-start overflow-hidden rounded-3xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-orange-500/10 sm:min-w-[420px]"
+            class="group relative min-w-full snap-start overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-amber-500/20 dark:from-amber-500/10 dark:via-slate-900 dark:to-orange-500/10 sm:min-w-[420px] sm:rounded-3xl sm:p-4"
           >
-            <div class="flex min-h-48 gap-4">
-              <div class="relative w-2/5 shrink-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-800">
+            <div class="flex min-h-40 gap-3 sm:min-h-48 sm:gap-4">
+              <div class="relative w-[38%] shrink-0 overflow-hidden rounded-xl bg-white dark:bg-slate-800 sm:w-2/5 sm:rounded-2xl">
                 <img v-if="product.image_url" :src="product.image_url" :alt="product.title" class="h-full w-full object-contain transition duration-500 group-hover:scale-105" />
                 <div v-else class="flex h-full items-center justify-center text-xs text-slate-400">No image</div>
                 <span class="absolute left-2 top-2 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950">Best seller</span>
@@ -74,8 +74,8 @@
               </div>
               <div class="flex min-w-0 flex-1 flex-col py-1">
                 <span class="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">{{ product.category }}</span>
-                <h3 class="mt-2 line-clamp-2 text-lg font-black leading-6 text-slate-950 dark:text-white">{{ product.title }}</h3>
-                <p class="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 dark:text-slate-300">{{ product.small_description }}</p>
+                <h3 class="mt-1.5 line-clamp-2 text-sm font-black leading-5 text-slate-950 dark:text-white sm:mt-2 sm:text-lg sm:leading-6">{{ product.title }}</h3>
+                <p class="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-600 dark:text-slate-300 sm:mt-2 sm:text-xs sm:leading-5">{{ product.small_description }}</p>
                 <div class="mt-2 flex items-center gap-1.5 text-xs">
                   <span class="flex gap-0.5 text-amber-400" :aria-label="`${product.rating} out of 5 stars`">
                     <i v-for="star in 5" :key="star" :class="starIcon(product.rating, star)"></i>

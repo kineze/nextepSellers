@@ -16,20 +16,22 @@
         </a>
       </div>
 
-      <div class="grid gap-6 xl:grid-cols-5">
-        <div class="xl:col-span-2 xl:sticky xl:top-24 xl:self-start">
-          <div class="relative aspect-square overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800">
+      <div class="grid min-w-0 gap-4 sm:gap-6 xl:grid-cols-5">
+        <div class="min-w-0 max-w-full overflow-hidden xl:col-span-2 xl:sticky xl:top-24 xl:self-start">
+          <div class="relative aspect-[4/3] w-full max-w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800 sm:aspect-square">
             <video
               v-if="selectedMedia?.type === 'video'"
               :src="selectedMedia.src"
               controls
-              class="h-full w-full bg-black object-contain"
+              playsinline
+              preload="metadata"
+              class="block h-full max-h-full w-full max-w-full bg-black object-contain"
             ></video>
             <img
               v-else-if="selectedMedia?.type === 'image'"
               :src="selectedMedia.src"
               :alt="product.title"
-              class="h-full w-full object-contain"
+              class="block h-full max-h-full w-full max-w-full object-contain"
             />
             <div v-else class="flex h-full items-center justify-center text-sm text-slate-400 dark:text-slate-500">No media available</div>
             <a
@@ -44,11 +46,11 @@
             </a>
           </div>
 
-          <div v-if="galleryItems.length" class="mt-3 grid grid-cols-5 gap-2">
+          <div v-if="galleryItems.length" class="media-thumbnail-scroll mt-3 flex max-w-full gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-5 sm:overflow-visible sm:pb-0">
             <div
               v-for="item in galleryItems"
               :key="item.key"
-              class="group relative aspect-square"
+              class="group relative aspect-square w-20 shrink-0 sm:w-auto"
             >
               <button
                 type="button"
@@ -79,7 +81,7 @@
           </div>
         </div>
 
-        <div class="space-y-4 xl:col-span-3">
+        <div class="min-w-0 max-w-full space-y-4 overflow-hidden xl:col-span-3">
           <div class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -403,3 +405,14 @@ const isCurrentLevel = (row) => Number(row.level_id) === Number(seller.value?.se
 
 onMounted(fetchData)
 </script>
+
+<style scoped>
+.media-thumbnail-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.media-thumbnail-scroll::-webkit-scrollbar {
+  display: none;
+}
+</style>

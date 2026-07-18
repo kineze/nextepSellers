@@ -26,6 +26,7 @@ import SellerProductShow from './components/SellerProductShow.vue';
 import SellerProductCatalog from './components/SellerProductCatalog.vue';
 import SellerCartNavLink from './components/SellerCartNavLink.vue';
 import SellerNewOrderButton from './components/SellerNewOrderButton.vue';
+import SellerProductSearch from './components/SellerProductSearch.vue';
 import CurfoxLogin from './components/CurfoxLogin.vue';
 import CitySync from './components/CitySync.vue';
 import StateMatcher from './components/StateMatcher.vue';
@@ -104,6 +105,7 @@ app.use(Toast, {
 .component('seller-product-catalog', SellerProductCatalog)
 .component('seller-cart-nav-link', SellerCartNavLink)
 .component('seller-new-order-button', SellerNewOrderButton)
+.component('seller-product-search', SellerProductSearch)
 .component('curfox-login', CurfoxLogin)
 .component('city-sync', CitySync)
 .component('state-matcher', StateMatcher)

@@ -16,6 +16,8 @@
           <img src="{{ asset('assets/img/nextep-logo-dark.webp') }}" alt="Nextep" class="hidden h-10 w-auto dark:block">
         </a>
 
+        <seller-product-search :products-url='@json(route("sellerProducts"))'></seller-product-search>
+
         <div class="flex items-center gap-2">
           <a href="{{ route('learningMaterials') }}" class="hidden items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 md:inline-flex">
             <i class="fas fa-graduation-cap text-[0.72rem]"></i>

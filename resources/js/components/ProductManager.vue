@@ -32,6 +32,29 @@
             </div>
           </div>
 
+          <div class="inline-flex self-start rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800" aria-label="Product view options">
+            <button
+              type="button"
+              class="inline-flex h-8 items-center gap-2 rounded-lg px-3 text-xs font-semibold transition"
+              :class="viewMode === 'list' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+              :aria-pressed="viewMode === 'list'"
+              @click="setViewMode('list')"
+            >
+              <i class="fas fa-list"></i>
+              <span class="hidden md:inline">List</span>
+            </button>
+            <button
+              type="button"
+              class="inline-flex h-8 items-center gap-2 rounded-lg px-3 text-xs font-semibold transition"
+              :class="viewMode === 'card' ? 'bg-white text-slate-950 shadow-sm dark:bg-slate-700 dark:text-white' : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'"
+              :aria-pressed="viewMode === 'card'"
+              @click="setViewMode('card')"
+            >
+              <i class="fas fa-grip"></i>
+              <span class="hidden md:inline">Cards</span>
+            </button>
+          </div>
+
           <button
             @click="openCreateDrawer"
             class="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-white shadow-lg shadow-slate-900/25 transition hover:bg-black dark:bg-white dark:text-slate-900"
@@ -41,7 +64,7 @@
         </div>
       </div>
 
-      <div class="overflow-x-auto p-4">
+      <div v-if="viewMode === 'list'" class="overflow-x-auto p-4">
         <table class="w-full text-left text-sm text-slate-700 dark:text-slate-200">
           <thead class="text-[0.7rem] uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <tr>
@@ -107,6 +130,81 @@
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <div v-else class="grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div v-if="products.length === 0" class="col-span-full py-10 text-center text-sm text-slate-500 dark:text-slate-400">
+          No products found
+        </div>
+
+        <article
+          v-for="product in products"
+          :key="product.id"
+          class="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900"
+        >
+          <button type="button" class="relative block aspect-[4/3] w-full overflow-hidden bg-slate-100 text-left dark:bg-slate-800" @click="viewProduct(product)">
+            <img
+              v-if="productImage(product)"
+              :src="productImage(product)"
+              :alt="product.title"
+              class="h-full w-full object-contain transition duration-500 group-hover:scale-105"
+            >
+            <span v-else class="flex h-full items-center justify-center text-xs text-slate-400 dark:text-slate-500">No image</span>
+            <span class="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm dark:bg-slate-950/90 dark:text-slate-200">
+              {{ product.category?.name || 'Uncategorized' }}
+            </span>
+            <span v-if="product.isbestseller" class="absolute right-3 top-3 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-950 shadow-sm">
+              <i class="fas fa-fire mr-1"></i> Best seller
+            </span>
+          </button>
+
+          <div class="flex flex-1 flex-col p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <h3 class="line-clamp-2 text-sm font-bold leading-5 text-slate-950 dark:text-white">{{ product.title }}</h3>
+                <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ product.product_code }}</p>
+                <div class="mt-2 flex min-w-0 items-center gap-1.5 text-[10px]">
+                  <span class="flex shrink-0 gap-px text-amber-400" :aria-label="`${product.rating} out of 5 stars`">
+                    <i v-for="star in 5" :key="star" :class="starIcon(product.rating, star)"></i>
+                  </span>
+                  <span class="truncate font-bold text-slate-600 dark:text-slate-300">{{ ratingLabel(product) }}</span>
+                </div>
+              </div>
+              <span
+                class="shrink-0 rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-wide"
+                :class="product.has_varients ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'"
+              >
+                {{ product.has_varients ? 'Variants' : 'Single' }}
+              </span>
+            </div>
+
+            <div class="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+              <label class="inline-flex cursor-pointer items-center">
+                <input
+                  type="checkbox"
+                  class="peer sr-only"
+                  :checked="!!product.is_active"
+                  :disabled="!!togglingStatus[product.id]"
+                  @change="toggleProductStatus(product, $event.target.checked)"
+                >
+                <span class="relative h-5 w-9 rounded-full bg-slate-300 transition-all peer-checked:bg-emerald-600 peer-disabled:opacity-50 dark:bg-slate-700 after:absolute after:start-[2px] after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:after:translate-x-full"></span>
+                <span class="ml-2 text-xs font-semibold" :class="product.is_active ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'">
+                  {{ product.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </label>
+              <span class="text-xs text-slate-500 dark:text-slate-400">{{ product.images_count ?? 0 }} images</span>
+            </div>
+
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" @click="viewProduct(product)" class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
+                View
+              </button>
+              <button type="button" @click="editProduct(product)" class="rounded-xl bg-slate-950 px-3 py-2 text-xs font-semibold text-white transition hover:bg-black dark:bg-white dark:text-slate-950 dark:hover:bg-slate-200">
+                Edit
+              </button>
+            </div>
+          </div>
+        </article>
       </div>
 
       <div class="flex flex-col gap-3 border-t border-slate-200/70 px-4 py-4 text-sm text-slate-600 dark:border-slate-800/70 dark:text-slate-300 sm:flex-row sm:items-center sm:justify-between">
@@ -300,9 +398,20 @@ import axios from 'axios'
 import { useToast } from 'vue-toastification'
 
 const toast = useToast()
+const viewStorageKey = 'admin.products.view-mode'
+
+const initialViewMode = () => {
+  try {
+    const savedView = window.localStorage.getItem(viewStorageKey)
+    return ['list', 'card'].includes(savedView) ? savedView : 'list'
+  } catch {
+    return 'list'
+  }
+}
 
 const products = ref([])
 const search = ref('')
+const viewMode = ref(initialViewMode())
 const pagination = ref({ current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 })
 const showViewModal = ref(false)
 const viewingProduct = ref(null)
@@ -310,6 +419,16 @@ const loadingView = ref(false)
 const selectedPreviewImage = ref('')
 const togglingStatus = ref({})
 let searchTimeout = null
+
+const setViewMode = (mode) => {
+  if (!['list', 'card'].includes(mode)) return
+  viewMode.value = mode
+  try {
+    window.localStorage.setItem(viewStorageKey, mode)
+  } catch {
+    // The selected view still works when browser storage is unavailable.
+  }
+}
 
 const fetchProducts = async (page = 1) => {
   try {
@@ -345,6 +464,21 @@ const imageUrl = (path) => {
   if (!path) return ''
   if (path.startsWith('http://') || path.startsWith('https://')) return path
   return `/storage/${path}`
+}
+
+const productImage = (product) => {
+  const images = Array.isArray(product?.images) ? product.images : []
+  const primary = images.find((image) => !!image.is_primary)
+  return imageUrl((primary || images[0] || {}).path || '')
+}
+
+const ratingLabel = (product) => `${Number(product.rating || 0).toFixed(1)} (${Number(product.rating_user_count || 0).toLocaleString('en-LK')})`
+
+const starIcon = (rating, star) => {
+  const value = Number(rating || 0)
+  if (value >= star) return 'fas fa-star'
+  if (value >= star - 0.5) return 'fas fa-star-half-alt'
+  return 'far fa-star'
 }
 
 const videoUrl = (path) => {

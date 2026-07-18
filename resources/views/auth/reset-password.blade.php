@@ -1,36 +1,63 @@
-<x-guest-layout>
-    <x-authentication-card>
-        <x-slot name="logo">
-            <x-authentication-card-logo />
-        </x-slot>
+@extends('auth.layouts.app')
 
-        <x-validation-errors class="mb-4" />
+@section('content')
+<div class="relative min-h-screen w-full overflow-hidden bg-slate-950 text-white">
+    <video autoplay muted loop playsinline class="absolute inset-0 h-full w-full object-cover opacity-30">
+        <source src="{{ asset('assets/videos/login-bg.mp4') }}" type="video/mp4">
+    </video>
+    <div class="absolute inset-0 bg-gradient-to-br from-slate-950/95 via-slate-900/80 to-black/95"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(148,163,184,0.2),_transparent_45%)]"></div>
 
-        <form method="POST" action="{{ route('password.update') }}">
-            @csrf
+    <div class="relative z-10 flex min-h-screen items-center justify-center px-6 py-10">
+        <div class="w-full max-w-md rounded-3xl border border-white/10 bg-white p-8 text-slate-900 shadow-2xl sm:p-10">
+            <a href="{{ url('/') }}" class="inline-flex items-center">
+                <img src="{{ asset('assets/img/nextep-logo.webp') }}" alt="Nextep" class="h-10 w-auto">
+            </a>
 
-            <input type="hidden" name="token" value="{{ $request->route('token') }}">
-
-            <div class="block">
-                <x-label for="email" value="{{ __('Email') }}" />
-                <x-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
+            <div class="mt-8">
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Account recovery</p>
+                <h1 class="mt-2 text-2xl font-semibold text-slate-950">Choose a new password</h1>
+                <p class="mt-3 text-sm leading-6 text-slate-500">Use a strong password that you don’t use for another account.</p>
             </div>
 
-            <div class="mt-4">
-                <x-label for="password" value="{{ __('Password') }}" />
-                <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            </div>
+            @if ($errors->any())
+                <div class="mt-6 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    <ul class="list-inside list-disc space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
 
-            <div class="mt-4">
-                <x-label for="password_confirmation" value="{{ __('Confirm Password') }}" />
-                <x-input id="password_confirmation" class="block mt-1 w-full" type="password" name="password_confirmation" required autocomplete="new-password" />
-            </div>
+            <form method="POST" action="{{ route('password.update') }}" class="mt-7 space-y-5">
+                @csrf
+                <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-            <div class="flex items-center justify-end mt-4">
-                <x-button>
-                    {{ __('Reset Password') }}
-                </x-button>
-            </div>
-        </form>
-    </x-authentication-card>
-</x-guest-layout>
+                <div>
+                    <label for="email" class="text-sm font-medium text-slate-700">Email address</label>
+                    <input id="email" type="email" name="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="email" class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                </div>
+
+                <div>
+                    <label for="password" class="text-sm font-medium text-slate-700">New password</label>
+                    <input id="password" type="password" name="password" required autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                </div>
+
+                <div>
+                    <label for="password_confirmation" class="text-sm font-medium text-slate-700">Confirm new password</label>
+                    <input id="password_confirmation" type="password" name="password_confirmation" required autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10">
+                </div>
+
+                <button type="submit" class="w-full rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-black">
+                    Reset password
+                </button>
+            </form>
+
+            <a href="{{ route('login') }}" class="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-slate-950">
+                <i class="fas fa-arrow-left text-xs"></i> Back to login
+            </a>
+        </div>
+    </div>
+</div>
+@endsection

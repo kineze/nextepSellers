@@ -2,14 +2,15 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
-use Brevo\Client\Configuration;
 use Brevo\Client\Api\TransactionalEmailsApi;
+use Brevo\Client\Configuration;
 use GuzzleHttp\Client as GuzzleClient;
+use Illuminate\Support\Facades\Http;
 
 class BrevoMailer
 {
     protected $apiKey;
+
     protected $apiInstance;
 
     public function __construct()
@@ -17,7 +18,7 @@ class BrevoMailer
         $this->apiKey = config('services.brevo.key');
 
         $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', $this->apiKey);
-        $this->apiInstance = new TransactionalEmailsApi(new GuzzleClient(), $config);
+        $this->apiInstance = new TransactionalEmailsApi(new GuzzleClient, $config);
     }
 
     public function sendWelcomeEmail($toEmail, $toName, $password)
@@ -66,6 +67,28 @@ class BrevoMailer
         ])->successful();
     }
 
+    public function sendPasswordResetLinkEmail(string $toEmail, string $toName, string $resetUrl): bool
+    {
+        return Http::withHeaders([
+            'api-key' => $this->apiKey,
+            'accept' => 'application/json',
+            'content-type' => 'application/json',
+        ])->post('https://api.brevo.com/v3/smtp/email', [
+            'sender' => [
+                'name' => 'Nextep Support',
+                'email' => 'helliumgk@gmail.com',
+            ],
+            'to' => [
+                ['email' => $toEmail, 'name' => $toName],
+            ],
+            'subject' => 'Reset your Nextep password',
+            'htmlContent' => view('emails.password-reset-link', [
+                'name' => $toName,
+                'resetUrl' => $resetUrl,
+            ])->render(),
+        ])->successful();
+    }
+
     public function sendSellerEmailOtp(string $toEmail, string $toName, string $otp): bool
     {
         return Http::withHeaders([
@@ -94,8 +117,7 @@ class BrevoMailer
         string $password,
         string $levelName,
         int $points
-    ): bool
-    {
+    ): bool {
         return Http::withHeaders([
             'api-key' => $this->apiKey,
             'accept' => 'application/json',
@@ -167,5 +189,4 @@ class BrevoMailer
             ])->render(),
         ])->successful();
     }
-
 }

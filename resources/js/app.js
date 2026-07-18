@@ -23,6 +23,7 @@ import AttributeManager from './components/AttributeManager.vue';
 import ProductCreateManager from './components/ProductCreateManager.vue';
 import SellerProductVariantSelector from './components/SellerProductVariantSelector.vue';
 import SellerProductShow from './components/SellerProductShow.vue';
+import SellerProductCatalog from './components/SellerProductCatalog.vue';
 import SellerCartNavLink from './components/SellerCartNavLink.vue';
 import SellerNewOrderButton from './components/SellerNewOrderButton.vue';
 import CurfoxLogin from './components/CurfoxLogin.vue';
@@ -100,6 +101,7 @@ app.use(Toast, {
 .component('product-create-manager', ProductCreateManager)
 .component('seller-product-variant-selector', SellerProductVariantSelector)
 .component('seller-product-show', SellerProductShow)
+.component('seller-product-catalog', SellerProductCatalog)
 .component('seller-cart-nav-link', SellerCartNavLink)
 .component('seller-new-order-button', SellerNewOrderButton)
 .component('curfox-login', CurfoxLogin)

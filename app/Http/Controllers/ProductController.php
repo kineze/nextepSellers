@@ -36,7 +36,10 @@ class ProductController extends Controller
         $perPage = max(1, min($perPage, 100));
 
         $query = Product::query()
-            ->with(['category:id,name'])
+            ->with([
+                'category:id,name',
+                'images:id,product_id,path,is_primary',
+            ])
             ->withCount('images');
 
         if ($search) {
@@ -143,6 +146,9 @@ class ProductController extends Controller
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', 'unique:products,product_code'],
             'is_active' => ['nullable', 'boolean'],
+            'isbestseller' => ['nullable', 'boolean'],
+            'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'rating_user_count' => ['nullable', 'integer', 'min:0'],
             'has_varients' => ['required', 'boolean'],
             'delivery_fee_id' => ['nullable', 'integer', 'exists:delivery_fees,id'],
             'is_free_shipping' => ['nullable', 'boolean'],
@@ -199,6 +205,9 @@ class ProductController extends Controller
                 'is_active' => array_key_exists('is_active', $validated)
                     ? (bool) $validated['is_active']
                     : true,
+                'isbestseller' => (bool) ($validated['isbestseller'] ?? false),
+                'rating' => $validated['rating'] ?? null,
+                'rating_user_count' => $validated['rating_user_count'] ?? null,
                 'has_varients' => (bool) $validated['has_varients'],
                 'delivery_fee' => $resolvedDeliveryFee,
                 'is_free_shipping' => $isFreeShipping,
@@ -278,6 +287,9 @@ class ProductController extends Controller
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'product_code' => ['required', 'string', 'max:255', Rule::unique('products', 'product_code')->ignore($product->id)],
             'is_active' => ['nullable', 'boolean'],
+            'isbestseller' => ['nullable', 'boolean'],
+            'rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'rating_user_count' => ['nullable', 'integer', 'min:0'],
             'has_varients' => ['required', 'boolean'],
             'delivery_fee_id' => ['nullable', 'integer', 'exists:delivery_fees,id'],
             'is_free_shipping' => ['nullable', 'boolean'],
@@ -375,6 +387,9 @@ class ProductController extends Controller
                 'is_active' => array_key_exists('is_active', $validated)
                     ? (bool) $validated['is_active']
                     : true,
+                'isbestseller' => (bool) ($validated['isbestseller'] ?? false),
+                'rating' => $validated['rating'] ?? $product->rating,
+                'rating_user_count' => $validated['rating_user_count'] ?? $product->rating_user_count,
                 'has_varients' => (bool) $validated['has_varients'],
                 'delivery_fee' => $resolvedDeliveryFee,
                 'is_free_shipping' => $isFreeShipping,

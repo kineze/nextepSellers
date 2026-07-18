@@ -2,12 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\AffiliateCommission;
-use App\Models\Product;
-use App\Models\Order;
-use App\Models\Level;
 use App\Models\Category;
 use App\Models\Invoice;
+use App\Models\Order;
+use App\Models\Product;
 use App\Models\Seller;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,8 +14,8 @@ use Illuminate\Support\Str;
 
 class DashboardController extends Controller
 {
-    public function getAdminDashboard(){
-
+    public function getAdminDashboard()
+    {
 
         return view('dashboards.admin.dashboard');
     }
@@ -136,23 +134,87 @@ class DashboardController extends Controller
 
         $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
 
-        $productQuery = Product::query()
-            ->with([
-                'category:id,name',
-                'images:id,product_id,path,is_primary',
-                'varients:id,product_id,price,is_active',
-                'productLevels:id,product_id,level_id,type,value',
-            ])
-            ->where('is_active', true);
+        $catalogQuery = function () use ($categoryId) {
+            return Product::query()
+                ->with([
+                    'category:id,name',
+                    'images:id,product_id,path,is_primary',
+                    'varients:id,product_id,price,is_active',
+                    'productLevels:id,product_id,level_id,type,value',
+                ])
+                ->where('is_active', true)
+                ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId));
+        };
 
-        if ($categoryId) {
-            $productQuery->where('category_id', $categoryId);
+        $products = $catalogQuery()
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
+
+        $sellerLevelId = auth()->user()?->seller?->seller_level_id;
+        $presentProduct = function (Product $product) use ($sellerLevelId) {
+            $primaryImage = $product->images->firstWhere('is_primary', true) ?? $product->images->first();
+            $prices = $product->varients
+                ->where('is_active', true)
+                ->pluck('price')
+                ->filter(fn ($price) => ! is_null($price));
+            $minPrice = $prices->isNotEmpty() ? (float) $prices->min() : null;
+            $maxPrice = $prices->isNotEmpty() ? (float) $prices->max() : null;
+            $levelCommission = $product->productLevels
+                ->first(fn ($row) => (int) $row->level_id === (int) $sellerLevelId);
+
+            $commission = null;
+            if ($levelCommission && ! is_null($minPrice)) {
+                $commission = $levelCommission->type === 'percentage'
+                    ? ($minPrice * (float) $levelCommission->value) / 100
+                    : (float) $levelCommission->value;
+            }
+
+            return [
+                'id' => (int) $product->id,
+                'title' => $product->title,
+                'small_description' => Str::limit($product->small_description, 90),
+                'category' => $product->category?->name ?? 'Uncategorized',
+                'image_url' => $primaryImage ? asset('storage/'.$primaryImage->path) : null,
+                'min_price' => $minPrice,
+                'max_price' => $maxPrice,
+                'commission' => is_null($commission) ? null : round($commission, 2),
+                'isbestseller' => (bool) $product->isbestseller,
+                'rating' => (float) $product->rating,
+                'rating_user_count' => (int) $product->rating_user_count,
+                'detail_url' => route('sellerProducts.show', $product),
+            ];
+        };
+
+        $productRows = $products->getCollection()->map($presentProduct)->values();
+        $pagination = [
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'next_page_url' => $products->nextPageUrl(),
+            'total' => $products->total(),
+        ];
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'products' => $productRows,
+                'pagination' => $pagination,
+            ]);
         }
 
-        $products = $productQuery
+        $bestSellers = $catalogQuery()
+            ->where('isbestseller', true)
             ->latest()
-            ->paginate(12)
-            ->withQueryString();
+            ->limit(12)
+            ->get()
+            ->map($presentProduct)
+            ->values();
+
+        $newArrivals = $catalogQuery()
+            ->latest()
+            ->limit(6)
+            ->get()
+            ->map($presentProduct)
+            ->values();
 
         $categories = Category::query()
             ->select('categories.id', 'categories.name')
@@ -164,15 +226,21 @@ class DashboardController extends Controller
             ->get();
 
         return view('dashboards.seller.products', [
-            'products' => $products,
-            'categories' => $categories,
+            'catalog' => [
+                'products' => $productRows,
+                'best_sellers' => $bestSellers,
+                'new_arrivals' => $newArrivals,
+                'pagination' => $pagination,
+                'categories' => $categories,
+                'selected_category_id' => $categoryId,
+            ],
             'selectedCategoryId' => $categoryId,
         ]);
     }
 
     public function getSellerProductShow(Product $product)
     {
-        if (!$product->is_active) {
+        if (! $product->is_active) {
             abort(404);
         }
 
@@ -183,7 +251,7 @@ class DashboardController extends Controller
 
     public function getSellerProductData(Product $product)
     {
-        if (!$product->is_active) {
+        if (! $product->is_active) {
             abort(404);
         }
 
@@ -233,25 +301,25 @@ class DashboardController extends Controller
     public function postSellerAffiliateGenerate(Request $request)
     {
         $seller = $request->user()?->seller;
-        if (!$seller) {
+        if (! $seller) {
             abort(403, 'Seller profile not found.');
         }
 
         $code = null;
         for ($attempt = 0; $attempt < 10; $attempt++) {
-            $candidate = strtoupper('NEX-' . Str::random(8));
+            $candidate = strtoupper('NEX-'.Str::random(8));
             $exists = Seller::query()
                 ->where('referral_code', $candidate)
                 ->where('id', '!=', $seller->id)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 $code = $candidate;
                 break;
             }
         }
 
-        if (!$code) {
+        if (! $code) {
             return redirect()
                 ->route('sellerAffiliate')
                 ->withErrors(['affiliate' => 'Unable to generate referral code. Please try again.']);
@@ -277,7 +345,7 @@ class DashboardController extends Controller
     public function getSellerOrderShow(Order $order)
     {
         $seller = auth()->user()?->seller;
-        if (!$seller || (int) $order->seller_id !== (int) $seller->id) {
+        if (! $seller || (int) $order->seller_id !== (int) $seller->id) {
             abort(404);
         }
 

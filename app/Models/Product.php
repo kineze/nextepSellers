@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
@@ -16,6 +16,9 @@ class Product extends Model
         'category_id',
         'product_code',
         'is_active',
+        'isbestseller',
+        'rating',
+        'rating_user_count',
         'has_varients',
         'delivery_fee',
         'is_free_shipping',
@@ -23,10 +26,26 @@ class Product extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'isbestseller' => 'boolean',
+        'rating' => 'decimal:1',
+        'rating_user_count' => 'integer',
         'has_varients' => 'boolean',
         'delivery_fee' => 'decimal:2',
         'is_free_shipping' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Product $product) {
+            if (is_null($product->rating)) {
+                $product->rating = random_int(40, 50) / 10;
+            }
+
+            if (is_null($product->rating_user_count)) {
+                $product->rating_user_count = random_int(1, 999);
+            }
+        });
+    }
 
     public function category(): BelongsTo
     {

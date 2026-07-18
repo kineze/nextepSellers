@@ -99,11 +99,11 @@
                                 <x-checkbox id="remember_me" name="remember" />
                                 <span>{{ __('Remember me') }}</span>
                             </label>
-                            {{-- @if (Route::has('password.request'))
+                            @if (Route::has('password.request'))
                                 <a class="font-medium text-slate-600 hover:text-slate-900" href="{{ route('password.request') }}">
                                     {{ __('Forgot your password?') }}
                                 </a>
-                            @endif --}}
+                            @endif
                         </div>
 
                         <button class="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold uppercase tracking-wide text-white shadow-lg transition hover:bg-black">

@@ -361,11 +361,59 @@
         </div>
       </div>
 
+      <div class="rounded-2xl border border-amber-200/70 bg-amber-50/60 p-4 dark:border-amber-500/20 dark:bg-amber-500/5">
+        <div class="mb-3">
+          <p class="text-sm font-bold text-slate-900 dark:text-white">Product Rating</p>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Leave these empty on a new product to generate a 4.0–5.0 rating and a user count automatically.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="product-rating" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Rating</label>
+            <div class="relative">
+              <input
+                id="product-rating"
+                v-model.number="form.rating"
+                type="number"
+                min="0"
+                max="5"
+                step="0.1"
+                placeholder="Auto: 4.0–5.0"
+                class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-amber-500/30 dark:bg-slate-950 dark:text-white"
+              />
+              <i class="fas fa-star pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-amber-400"></i>
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Enter a value from 0.0 to 5.0.</p>
+          </div>
+          <div>
+            <label for="rating-user-count" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Rating User Count</label>
+            <div class="relative">
+              <input
+                id="rating-user-count"
+                v-model.number="form.rating_user_count"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Auto: 1–999"
+                class="w-full rounded-xl border border-amber-200 bg-white px-3 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 dark:border-amber-500/30 dark:bg-slate-950 dark:text-white"
+              />
+              <i class="fas fa-users pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-amber-500"></i>
+            </div>
+            <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Number of users represented by the rating.</p>
+          </div>
+        </div>
+      </div>
+
       <div class="flex items-center justify-between">
-        <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
-          <input type="checkbox" v-model="form.is_active" class="rounded border-slate-300 accent-slate-700 dark:border-slate-700 dark:accent-slate-300" />
-          Active Product
-        </label>
+        <div class="flex flex-wrap items-center gap-5">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
+            <input type="checkbox" v-model="form.is_active" class="rounded border-slate-300 accent-slate-700 dark:border-slate-700 dark:accent-slate-300" />
+            Active Product
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-300">
+            <input type="checkbox" v-model="form.isbestseller" class="rounded border-amber-300 accent-amber-500 dark:border-amber-700" />
+            Show as Best Seller
+          </label>
+        </div>
         <button type="submit" :disabled="saving" class="rounded-xl bg-slate-900 px-8 py-2.5 text-xs font-bold uppercase tracking-wide text-white hover:bg-black disabled:opacity-50 dark:bg-white dark:text-slate-900">
           {{ saving ? 'Saving...' : 'Save Product' }}
         </button>
@@ -436,6 +484,9 @@ const form = ref({
   product_video: '',
   hasVariants: 'no',
   is_active: true,
+  isbestseller: false,
+  rating: null,
+  rating_user_count: null,
   images: [],
   price: null,
   stock_quantity: 0,
@@ -790,6 +841,11 @@ const saveProduct = async () => {
     category_id: form.value.category_id,
     product_code: form.value.product_code,
     is_active: form.value.is_active ? 1 : 0,
+    isbestseller: form.value.isbestseller ? 1 : 0,
+    rating: form.value.rating === '' || form.value.rating === null ? null : Number(form.value.rating),
+    rating_user_count: form.value.rating_user_count === '' || form.value.rating_user_count === null
+      ? null
+      : Number(form.value.rating_user_count),
     has_varients: form.value.hasVariants === 'yes' ? 1 : 0,
     delivery_fee_id: form.value.is_free_shipping
       ? null
@@ -858,6 +914,11 @@ const loadProduct = async () => {
     form.value.product_video = data.product_video || ''
     form.value.hasVariants = data.has_varients ? 'yes' : 'no'
     form.value.is_active = !!data.is_active
+    form.value.isbestseller = !!data.isbestseller
+    form.value.rating = data.rating === null || data.rating === undefined ? null : Number(data.rating)
+    form.value.rating_user_count = data.rating_user_count === null || data.rating_user_count === undefined
+      ? null
+      : Number(data.rating_user_count)
     form.value.images = (data.images || []).map((img) => ({
       preview: `/storage/${img.path}`,
       path: img.path,

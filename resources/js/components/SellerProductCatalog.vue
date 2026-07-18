@@ -9,7 +9,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <a
-            :href="productsUrl"
+            :href="categoryUrl(null)"
             class="rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-wide transition"
             :class="!selectedCategoryId ? 'border-white bg-white text-slate-950' : 'border-slate-700 text-slate-200 hover:border-slate-500'"
           >
@@ -27,6 +27,77 @@
         </div>
       </div>
     </header>
+
+    <section class="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <button
+        type="button"
+        class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+        :aria-expanded="showAdvancedFilters"
+        @click="showAdvancedFilters = !showAdvancedFilters"
+      >
+        <span class="flex items-center gap-3">
+          <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+            <i class="fas fa-sliders"></i>
+          </span>
+          <span>
+            <span class="block text-sm font-black text-slate-950 dark:text-white">Advanced filters</span>
+            <span class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">Category, product collection, date order, and available attributes</span>
+          </span>
+        </span>
+        <span class="flex items-center gap-3">
+          <span v-if="activeFilterCount" class="rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+            {{ activeFilterCount }} active
+          </span>
+          <i class="fas fa-chevron-down text-xs text-slate-400 transition" :class="showAdvancedFilters ? 'rotate-180' : ''"></i>
+        </span>
+      </button>
+
+      <div v-show="showAdvancedFilters" class="border-t border-slate-200 px-5 py-5 dark:border-slate-800">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <label for="catalog-category" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Category</label>
+            <select id="catalog-category" v-model="filterForm.category_id" class="filter-select">
+              <option value="">All categories</option>
+              <option v-for="category in categories" :key="category.id" :value="String(category.id)">{{ category.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="catalog-sort" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Date order</label>
+            <select id="catalog-sort" v-model="filterForm.sort" class="filter-select">
+              <option value="latest">Latest to oldest</option>
+              <option value="oldest">Oldest to latest</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="catalog-collection" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Collection</label>
+            <select id="catalog-collection" v-model="filterForm.collection" class="filter-select">
+              <option value="all">All products</option>
+              <option value="best_selling">Best selling</option>
+              <option value="new_arrivals">New arrivals (30 days)</option>
+            </select>
+          </div>
+
+          <div v-for="attribute in filterAttributes" :key="attribute.slug">
+            <label :for="`catalog-attribute-${attribute.slug}`" class="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ attribute.name }}</label>
+            <select :id="`catalog-attribute-${attribute.slug}`" v-model="filterForm.attributes[attribute.slug]" class="filter-select">
+              <option value="">Any {{ attribute.name.toLowerCase() }}</option>
+              <option v-for="option in attribute.options" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap items-center justify-end gap-2">
+          <button type="button" class="rounded-xl border border-slate-300 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" @click="clearFilters">
+            Clear filters
+          </button>
+          <button type="button" class="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-white transition hover:bg-black dark:bg-white dark:text-slate-950" @click="applyFilters">
+            <i class="fas fa-filter"></i> Apply filters
+          </button>
+        </div>
+      </div>
+    </section>
 
     <section aria-labelledby="best-sellers-heading">
       <div class="mb-4 flex items-end justify-between gap-4">
@@ -192,7 +263,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 
 const props = defineProps({
   initialCatalog: { type: Object, required: true },
@@ -203,7 +274,19 @@ const products = ref(Array.isArray(props.initialCatalog.products) ? props.initia
 const bestSellers = ref(Array.isArray(props.initialCatalog.best_sellers) ? props.initialCatalog.best_sellers : [])
 const newArrivals = ref(Array.isArray(props.initialCatalog.new_arrivals) ? props.initialCatalog.new_arrivals : [])
 const categories = Array.isArray(props.initialCatalog.categories) ? props.initialCatalog.categories : []
+const filterAttributes = Array.isArray(props.initialCatalog.filter_attributes) ? props.initialCatalog.filter_attributes : []
+const initialFilters = props.initialCatalog.filters || {}
 const selectedCategoryId = props.initialCatalog.selected_category_id
+const filterForm = reactive({
+  category_id: initialFilters.category_id ? String(initialFilters.category_id) : '',
+  sort: initialFilters.sort || 'latest',
+  collection: initialFilters.collection || 'all',
+  attributes: Object.fromEntries(filterAttributes.map((attribute) => [
+    attribute.slug,
+    initialFilters.attributes?.[attribute.slug] || '',
+  ])),
+})
+const showAdvancedFilters = ref(false)
 const total = ref(Number(props.initialCatalog.pagination?.total || products.value.length))
 const nextPageUrl = ref(props.initialCatalog.pagination?.next_page_url || null)
 const loadingMore = ref(false)
@@ -212,6 +295,15 @@ const carouselTrack = ref(null)
 const loadTrigger = ref(null)
 let carouselTimer = null
 let observer = null
+
+const activeFilterCount = computed(() => {
+  return Number(!!filterForm.category_id)
+    + Number(filterForm.sort !== 'latest')
+    + Number(filterForm.collection !== 'all')
+    + Object.values(filterForm.attributes).filter(Boolean).length
+})
+
+showAdvancedFilters.value = activeFilterCount.value > 0
 
 const money = (value) => Number(value || 0).toLocaleString('en-LK', {
   minimumFractionDigits: 2,
@@ -237,7 +329,32 @@ const starIcon = (rating, star) => {
   return 'far fa-star'
 }
 
-const categoryUrl = (categoryId) => `${props.productsUrl}?category_id=${encodeURIComponent(categoryId)}`
+const catalogUrl = (overrides = {}) => {
+  const url = new URL(props.productsUrl, window.location.origin)
+  const categoryId = Object.prototype.hasOwnProperty.call(overrides, 'category_id')
+    ? overrides.category_id
+    : filterForm.category_id
+
+  if (categoryId) url.searchParams.set('category_id', categoryId)
+  if (filterForm.sort !== 'latest') url.searchParams.set('sort', filterForm.sort)
+  if (filterForm.collection !== 'all') url.searchParams.set('collection', filterForm.collection)
+
+  Object.entries(filterForm.attributes).forEach(([slug, value]) => {
+    if (value) url.searchParams.set(`attributes[${slug}]`, value)
+  })
+
+  return `${url.pathname}${url.search}`
+}
+
+const categoryUrl = (categoryId) => catalogUrl({ category_id: categoryId })
+
+const applyFilters = () => {
+  window.location.href = catalogUrl()
+}
+
+const clearFilters = () => {
+  window.location.href = props.productsUrl
+}
 
 const moveCarousel = (direction = 1) => {
   const track = carouselTrack.value
@@ -322,7 +439,34 @@ onBeforeUnmount(() => {
 }
 
 .catalog-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(203 213 225) transparent;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.catalog-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-select {
+  width: 100%;
+  border: 1px solid rgb(203 213 225);
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.65rem 2.25rem 0.65rem 0.75rem;
+  color: rgb(15 23 42);
+  font-size: 0.75rem;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.filter-select:focus {
+  border-color: rgb(71 85 105);
+  box-shadow: 0 0 0 3px rgb(100 116 139 / 12%);
+}
+
+:global(.dark) .filter-select {
+  border-color: rgb(51 65 85);
+  background: rgb(2 6 23);
+  color: rgb(241 245 249);
 }
 </style>

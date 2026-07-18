@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Invoice;
 use App\Models\Order;
@@ -130,11 +131,70 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
+            'sort' => ['nullable', 'in:latest,oldest'],
+            'collection' => ['nullable', 'in:all,best_selling,new_arrivals'],
+            'attributes' => ['nullable', 'array'],
+            'attributes.*' => ['nullable', 'string', 'max:100'],
         ]);
 
         $categoryId = isset($validated['category_id']) ? (int) $validated['category_id'] : null;
+        $sort = $validated['sort'] ?? 'latest';
+        $collection = $validated['collection'] ?? 'all';
 
-        $catalogQuery = function () use ($categoryId) {
+        $filterAttributes = Attribute::query()
+            ->orderBy('name')
+            ->get(['name', 'slug', 'type', 'values'])
+            ->map(function (Attribute $attribute) {
+                $options = collect($attribute->values ?? [])
+                    ->map(function ($value) use ($attribute) {
+                        if ($attribute->type === 'color') {
+                            $name = trim((string) ($value['name'] ?? ''));
+                            if ($name === '') {
+                                return null;
+                            }
+
+                            return [
+                                'value' => $name,
+                                'label' => $name,
+                                'color' => $value['color'] ?? null,
+                            ];
+                        }
+
+                        $label = trim((string) $value);
+
+                        return $label === '' ? null : [
+                            'value' => $label,
+                            'label' => $label,
+                            'color' => null,
+                        ];
+                    })
+                    ->filter()
+                    ->unique('value')
+                    ->values();
+
+                return [
+                    'name' => $attribute->name,
+                    'slug' => $attribute->slug,
+                    'type' => $attribute->type,
+                    'options' => $options,
+                ];
+            })
+            ->filter(fn ($attribute) => $attribute['options']->isNotEmpty())
+            ->values();
+
+        $requestedAttributes = collect($validated['attributes'] ?? []);
+        $selectedAttributes = $filterAttributes
+            ->mapWithKeys(function ($attribute) use ($requestedAttributes) {
+                $selected = $requestedAttributes->get($attribute['slug']);
+                $valid = $attribute['options']->contains(
+                    fn ($option) => $option['value'] === $selected
+                );
+
+                return $valid ? [$attribute['slug'] => $selected] : [];
+            });
+        $attributeTypes = $filterAttributes->pluck('type', 'slug');
+
+        $catalogQuery = function () use ($attributeTypes, $categoryId, $collection, $selectedAttributes) {
             return Product::query()
                 ->with([
                     'category:id,name',
@@ -143,11 +203,31 @@ class DashboardController extends Controller
                     'productLevels:id,product_id,level_id,type,value',
                 ])
                 ->where('is_active', true)
-                ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId));
+                ->when($categoryId, fn ($query) => $query->where('category_id', $categoryId))
+                ->when($collection === 'best_selling', fn ($query) => $query->where('isbestseller', true))
+                ->when($collection === 'new_arrivals', fn ($query) => $query->where('created_at', '>=', now()->subDays(30)))
+                ->when($selectedAttributes->isNotEmpty(), function ($query) use ($attributeTypes, $selectedAttributes) {
+                    $query->whereHas('varients', function ($variantQuery) use ($attributeTypes, $selectedAttributes) {
+                        $variantQuery->where('is_active', true);
+
+                        foreach ($selectedAttributes as $slug => $value) {
+                            $jsonPath = $attributeTypes->get($slug) === 'color'
+                                ? "attributes->{$slug}->name"
+                                : "attributes->{$slug}";
+                            $variantQuery->where($jsonPath, $value);
+                        }
+                    });
+                });
         };
 
-        $products = $catalogQuery()
-            ->latest()
+        $productsQuery = $catalogQuery();
+        if ($sort === 'oldest') {
+            $productsQuery->oldest();
+        } else {
+            $productsQuery->latest();
+        }
+
+        $products = $productsQuery
             ->paginate(15)
             ->withQueryString();
 
@@ -232,6 +312,13 @@ class DashboardController extends Controller
                 'new_arrivals' => $newArrivals,
                 'pagination' => $pagination,
                 'categories' => $categories,
+                'filter_attributes' => $filterAttributes,
+                'filters' => [
+                    'category_id' => $categoryId,
+                    'sort' => $sort,
+                    'collection' => $collection,
+                    'attributes' => $selectedAttributes,
+                ],
                 'selected_category_id' => $categoryId,
             ],
             'selectedCategoryId' => $categoryId,

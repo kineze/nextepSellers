@@ -68,6 +68,7 @@
         <table class="w-full text-left text-sm text-slate-700 dark:text-slate-200">
           <thead class="text-[0.7rem] uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <tr>
+              <th class="px-3 py-3">Image</th>
               <th class="px-3 py-3">Title</th>
               <th class="px-3 py-3">Code</th>
               <th class="px-3 py-3">Category</th>
@@ -79,9 +80,26 @@
           </thead>
           <tbody class="divide-y divide-slate-200/70 dark:divide-slate-800/70">
             <tr v-if="products.length === 0">
-              <td colspan="7" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No products found</td>
+              <td colspan="8" class="px-3 py-6 text-center text-slate-500 dark:text-slate-400">No products found</td>
             </tr>
             <tr v-for="product in products" :key="product.id" class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+              <td class="px-3 py-3">
+                <button
+                  type="button"
+                  class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 transition hover:border-slate-400 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-slate-500"
+                  :aria-label="`View ${product.title}`"
+                  @click="viewProduct(product)"
+                >
+                  <img
+                    v-if="productImage(product)"
+                    :src="productImage(product)"
+                    :alt="product.title"
+                    loading="lazy"
+                    class="h-full w-full object-contain"
+                  >
+                  <i v-else class="fas fa-image text-slate-400 dark:text-slate-500"></i>
+                </button>
+              </td>
               <td class="px-3 py-4 font-medium text-slate-900 dark:text-white">{{ product.title }}</td>
               <td class="px-3 py-4">{{ product.product_code }}</td>
               <td class="px-3 py-4">{{ product.category?.name || '-' }}</td>

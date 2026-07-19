@@ -69,7 +69,7 @@ class GenaralController extends Controller
                 } elseif ($user->hasRole('Admin')) {
                     return redirect()->route('adminDashboard');
                 } elseif ($user->hasRole('Seller')) {
-                    return redirect()->route('sellerDashboard');
+                    return redirect()->route('sellerProducts');
                 } else {
                     return redirect()->route('setDashboard');
                 }
@@ -118,7 +118,7 @@ class GenaralController extends Controller
         }
 
         if ($user->hasRole('Seller')) {
-            return redirect()->route('sellerDashboard');
+            return redirect()->route('sellerProducts');
         }
 
         return redirect('/');

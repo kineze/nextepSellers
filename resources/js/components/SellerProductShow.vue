@@ -99,6 +99,7 @@
 
             <div class="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm dark:bg-slate-800/70">
               <span v-if="priceRange.min === null" class="text-slate-500 dark:text-slate-400">Price unavailable</span>
+              <span v-else-if="priceRange.unlimited" class="font-bold text-slate-900 dark:text-white">LKR {{ toMoney(priceRange.min) }} or higher</span>
               <span v-else-if="priceRange.min === priceRange.max" class="font-bold text-slate-900 dark:text-white">LKR {{ toMoney(priceRange.min) }}</span>
               <span v-else class="font-bold text-slate-900 dark:text-white">LKR {{ toMoney(priceRange.min) }} - {{ toMoney(priceRange.max) }}</span>
             </div>
@@ -149,7 +150,7 @@
                     <td class="px-3 py-2 font-semibold text-slate-900 dark:text-white">{{ variant.sku || '-' }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ formatAttributes(variant.attributes) }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(isReseller ? variant.reseller_price : variant.price || 0)) }}</td>
-                    <td v-if="isReseller" class="px-3 py-2 text-slate-700 dark:text-slate-200">LKR {{ toMoney(Number(variant.maximum_selling_price || 0)) }}</td>
+                    <td v-if="isReseller" class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ variant.maximum_selling_price === null || variant.maximum_selling_price === undefined ? 'No limit' : `LKR ${toMoney(Number(variant.maximum_selling_price))}` }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.stock_quantity || 0).toLocaleString() }}</td>
                     <td class="px-3 py-2 text-slate-700 dark:text-slate-200">{{ Number(variant.reorder_level || 0).toLocaleString() }}</td>
                   </tr>
@@ -160,7 +161,7 @@
 
           <div v-if="isReseller" class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm dark:border-emerald-500/30 dark:bg-emerald-500/10">
             <h2 class="text-sm font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Margin Product</h2>
-            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Choose any customer selling price between the reseller price and maximum price. Your earning is the difference between those prices; no level commission is added.</p>
+            <p class="mt-2 text-sm text-slate-700 dark:text-slate-200">Choose any customer selling price at or above the reseller price. A maximum applies only when one is shown. Your earning is the difference between the selling and reseller prices; no level commission is added.</p>
           </div>
 
           <div v-else class="rounded-2xl border border-slate-200/70 bg-white/90 p-5 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
@@ -323,8 +324,13 @@ const priceRange = computed(() => {
     .map((v) => Number(v))
     .filter((v) => Number.isFinite(v))
 
-  if (!minimumVals.length || !maximumVals.length) return { min: null, max: null }
-  return { min: Math.min(...minimumVals), max: Math.max(...maximumVals) }
+  if (!minimumVals.length) return { min: null, max: null, unlimited: false }
+  const unlimited = isReseller.value && variants.value.some((variant) => variant?.maximum_selling_price === null || variant?.maximum_selling_price === undefined)
+  return {
+    min: Math.min(...minimumVals),
+    max: maximumVals.length ? Math.max(...maximumVals) : null,
+    unlimited,
+  }
 })
 
 const fetchData = async () => {

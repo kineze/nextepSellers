@@ -47,23 +47,29 @@ class OrderPricingService
             $pricingModel = $variant->product->pricing_model === 'reseller' ? 'reseller' : 'commission';
 
             if ($pricingModel === 'reseller') {
-                if ($variant->reseller_price === null || $variant->maximum_selling_price === null) {
+                if ($variant->reseller_price === null) {
                     throw ValidationException::withMessages([
-                        "items.{$index}.price" => 'This reseller product does not have a complete price range.',
+                        "items.{$index}.price" => 'This reseller product does not have a reseller price.',
                     ]);
                 }
 
                 $resellerPrice = round((float) $variant->reseller_price, 2);
-                $maximumPrice = round((float) $variant->maximum_selling_price, 2);
+                $maximumPrice = $variant->maximum_selling_price === null
+                    ? null
+                    : round((float) $variant->maximum_selling_price, 2);
                 $sellingPrice = round((float) $item['price'], 2);
 
-                if ($maximumPrice < $resellerPrice || $sellingPrice < $resellerPrice || $sellingPrice > $maximumPrice) {
-                    throw ValidationException::withMessages([
-                        "items.{$index}.price" => sprintf(
+                if ($sellingPrice < $resellerPrice || ($maximumPrice !== null && $sellingPrice > $maximumPrice)) {
+                    $message = $maximumPrice === null
+                        ? sprintf('Selling price must be at least LKR %s.', number_format($resellerPrice, 2))
+                        : sprintf(
                             'Selling price must be between LKR %s and LKR %s.',
                             number_format($resellerPrice, 2),
                             number_format($maximumPrice, 2)
-                        ),
+                        );
+
+                    throw ValidationException::withMessages([
+                        "items.{$index}.price" => $message,
                     ]);
                 }
 

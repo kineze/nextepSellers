@@ -427,8 +427,10 @@ const initialViewMode = () => {
   }
 }
 
+const initialListParams = new URLSearchParams(window.location.search)
+const initialPage = Math.max(1, Number.parseInt(initialListParams.get('page') || '1', 10) || 1)
 const products = ref([])
-const search = ref('')
+const search = ref(initialListParams.get('search') || '')
 const viewMode = ref(initialViewMode())
 const pagination = ref({ current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 })
 const showViewModal = ref(false)
@@ -448,6 +450,14 @@ const setViewMode = (mode) => {
   }
 }
 
+const syncListUrl = (page) => {
+  const params = new URLSearchParams()
+  if (Number(page) > 1) params.set('page', String(page))
+  if (search.value.trim()) params.set('search', search.value.trim())
+  const query = params.toString()
+  window.history.replaceState({}, '', query ? `/products?${query}` : '/products')
+}
+
 const fetchProducts = async (page = 1) => {
   try {
     const res = await axios.get('/api/products', {
@@ -455,6 +465,7 @@ const fetchProducts = async (page = 1) => {
     })
     products.value = res.data.products || []
     pagination.value = res.data.pagination || pagination.value
+    syncListUrl(pagination.value.current_page || page)
   } catch {
     toast.error('Failed to load products')
   }
@@ -471,11 +482,19 @@ const changePage = (page) => {
 }
 
 const openCreateDrawer = () => {
-  window.location.href = '/products/create'
+  const params = new URLSearchParams({
+    return_page: String(pagination.value.current_page || 1),
+  })
+  if (search.value.trim()) params.set('return_search', search.value.trim())
+  window.location.href = `/products/create?${params.toString()}`
 }
 
 const editProduct = (product) => {
-  window.location.href = `/products/${product.id}/edit`
+  const params = new URLSearchParams({
+    return_page: String(pagination.value.current_page || 1),
+  })
+  if (search.value.trim()) params.set('return_search', search.value.trim())
+  window.location.href = `/products/${product.id}/edit?${params.toString()}`
 }
 
 const imageUrl = (path) => {
@@ -556,6 +575,6 @@ const toggleProductStatus = async (product, checked) => {
 }
 
 onMounted(() => {
-  fetchProducts(1)
+  fetchProducts(initialPage)
 })
 </script>

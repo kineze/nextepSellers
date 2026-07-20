@@ -89,6 +89,13 @@ class SellerProductFilterTest extends TestCase
         $marginResponse->assertJsonCount(1, 'products');
         $marginResponse->assertJsonPath('products.0.id', $newLarge->id);
         $marginResponse->assertJsonPath('products.0.pricing_model', 'reseller');
+        $marginResponse->assertJsonPath('products.0.max_price', 1200);
+
+        $newLarge->varients()->update(['maximum_selling_price' => null]);
+        $unlimitedMarginResponse = $this->getJson(route('sellerProducts', ['pricing_model' => 'reseller']));
+        $unlimitedMarginResponse->assertOk();
+        $unlimitedMarginResponse->assertJsonPath('products.0.max_price', null);
+        $unlimitedMarginResponse->assertJsonPath('products.0.commission', null);
 
         $commissionResponse = $this->getJson(route('sellerProducts', ['pricing_model' => 'commission']));
         $commissionResponse->assertOk();

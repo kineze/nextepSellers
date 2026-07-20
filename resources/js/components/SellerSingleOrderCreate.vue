@@ -253,7 +253,7 @@
                 >
                   <i :class="item.pricing_model === 'reseller' ? 'fas fa-tags' : 'fas fa-tag'"></i>
                   <template v-if="item.pricing_model === 'reseller'">
-                    Allowed selling range: LKR {{ toMoney(item.reseller_price) }} – LKR {{ toMoney(item.maximum_selling_price) }}
+                    Allowed selling price: LKR {{ toMoney(item.reseller_price) }}{{ hasMaximumPrice(item.maximum_selling_price) ? ` – LKR ${toMoney(item.maximum_selling_price)}` : ' or higher' }}
                   </template>
                   <template v-else>
                     Fixed selling price: LKR {{ toMoney(item.price) }}
@@ -267,8 +267,8 @@
 
             <div v-if="item.pricing_model === 'reseller'" class="mt-3 rounded-xl bg-emerald-50 p-3 dark:bg-emerald-500/10">
               <label class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Customer selling price</label>
-              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="item.maximum_selling_price" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold dark:border-emerald-700 dark:bg-slate-950" />
-              <p class="mt-1 text-[10px] text-slate-500">Enter a price within the allowed selling range shown above.</p>
+              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="hasMaximumPrice(item.maximum_selling_price) ? item.maximum_selling_price : undefined" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold dark:border-emerald-700 dark:bg-slate-950" />
+              <p class="mt-1 text-[10px] text-slate-500">Enter a price at or above the reseller price{{ hasMaximumPrice(item.maximum_selling_price) ? ' and within the maximum' : '' }}.</p>
             </div>
 
             <div class="mt-3 grid grid-cols-[auto_1fr] items-center gap-2">
@@ -387,7 +387,7 @@
                 </td>
                 <td class="px-3 py-2 font-semibold text-slate-800 dark:text-slate-100">{{ formatVariantLabel(variant) }}</td>
                 <td class="px-3 py-2 text-right text-slate-700 dark:text-slate-200">
-                  <input v-if="modalProduct?.pricing_model === 'reseller'" v-model.number="variant.selling_price" type="number" step="0.01" :min="variant.reseller_price" :max="variant.maximum_selling_price" class="w-28 rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-right text-xs dark:border-emerald-700 dark:bg-slate-950" />
+                  <input v-if="modalProduct?.pricing_model === 'reseller'" v-model.number="variant.selling_price" type="number" step="0.01" :min="variant.reseller_price" :max="hasMaximumPrice(variant.maximum_selling_price) ? variant.maximum_selling_price : undefined" class="w-28 rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-right text-xs dark:border-emerald-700 dark:bg-slate-950" />
                   <span v-else>LKR {{ toMoney(variant.price) }}</span>
                 </td>
                 <td class="px-3 py-2 text-right font-semibold text-emerald-600 dark:text-emerald-300">LKR {{ toMoney(variantCommission(variant, modalProduct)) }}</td>
@@ -690,6 +690,8 @@ const clearSelectedCity = () => {
   citySearch.value = ''
 }
 
+const hasMaximumPrice = (value) => value !== null && value !== undefined && value !== ''
+
 const normalizeVariant = (variant) => {
   const rawAttrs = variant?.attributes || {}
   const attrs = {}
@@ -845,7 +847,9 @@ const addItemToCart = (product, variant, quantity = 1) => {
     price: Number(product.pricing_model === 'reseller' ? (variant.selling_price ?? variant.reseller_price) : variant.price || 0),
     pricing_model: product.pricing_model === 'reseller' ? 'reseller' : 'commission',
     reseller_price: Number(variant.reseller_price || 0),
-    maximum_selling_price: Number(variant.maximum_selling_price || 0),
+    maximum_selling_price: hasMaximumPrice(variant.maximum_selling_price)
+      ? Number(variant.maximum_selling_price)
+      : null,
     delivery_fee: Number(product.delivery_fee || 0),
     is_free_shipping: Boolean(product.is_free_shipping),
     commission_rule: product.commission_rule || null,
@@ -927,7 +931,7 @@ const openSubmitConfirmation = () => {
 
   const invalidPrice = items.value.find((item) => item.pricing_model === 'reseller' && (
     Number(item.price) < Number(item.reseller_price)
-    || Number(item.price) > Number(item.maximum_selling_price)
+    || (hasMaximumPrice(item.maximum_selling_price) && Number(item.price) > Number(item.maximum_selling_price))
   ))
   if (invalidPrice) {
     toast.error(`Selling price for ${invalidPrice.product_title} must be within its allowed range.`)

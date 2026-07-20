@@ -347,12 +347,15 @@ const money = (value) => Number(value || 0).toLocaleString('en-LK', {
 
 const priceLabel = (product) => {
   if (product.min_price === null || product.min_price === undefined) return 'Price unavailable'
+  if (product.pricing_model === 'reseller' && (product.max_price === null || product.max_price === undefined)) {
+    return `LKR ${money(product.min_price)} or higher`
+  }
   if (Number(product.min_price) === Number(product.max_price)) return `LKR ${money(product.min_price)}`
   return `LKR ${money(product.min_price)} – ${money(product.max_price)}`
 }
 
 const commissionLabel = (product) => product.commission === null || product.commission === undefined
-  ? (product.pricing_model === 'reseller' ? 'Margin unavailable' : 'Commission not configured')
+  ? (product.pricing_model === 'reseller' ? 'No maximum margin' : 'Commission not configured')
   : `${product.pricing_model === 'reseller' ? 'Margin up to' : 'Earn'} LKR ${money(product.commission)}`
 
 const ratingLabel = (product) => `${Number(product.rating || 0).toFixed(1)} (${Number(product.rating_user_count || 0).toLocaleString('en-LK')})`

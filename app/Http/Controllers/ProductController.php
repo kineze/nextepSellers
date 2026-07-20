@@ -240,12 +240,13 @@ class ProductController extends Controller
             if ((bool) $validated['has_varients']) {
                 $rows = collect($validated['varients'] ?? [])->map(function ($row) use ($validated) {
                     $isReseller = $validated['pricing_model'] === 'reseller';
+
                     return [
                         'sku' => $row['sku'],
                         'attributes' => $row['attributes'],
                         'price' => $isReseller ? $row['reseller_price'] : $row['price'],
                         'reseller_price' => $isReseller ? $row['reseller_price'] : null,
-                        'maximum_selling_price' => $isReseller ? $row['maximum_selling_price'] : null,
+                        'maximum_selling_price' => $isReseller ? ($row['maximum_selling_price'] ?? null) : null,
                         'stock_quantity' => (int) ($row['stock_quantity'] ?? 0),
                         'reorder_level' => (int) ($row['reorder_level'] ?? 0),
                         'is_active' => array_key_exists('is_active', $row)
@@ -262,7 +263,7 @@ class ProductController extends Controller
                     'attributes' => [],
                     'price' => $isReseller ? $validated['reseller_price'] : $validated['price'],
                     'reseller_price' => $isReseller ? $validated['reseller_price'] : null,
-                    'maximum_selling_price' => $isReseller ? $validated['maximum_selling_price'] : null,
+                    'maximum_selling_price' => $isReseller ? ($validated['maximum_selling_price'] ?? null) : null,
                     'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                     'reorder_level' => (int) ($validated['reorder_level'] ?? 0),
                     'is_active' => true,
@@ -445,7 +446,7 @@ class ProductController extends Controller
                         'attributes' => $row['attributes'],
                         'price' => $isReseller ? $row['reseller_price'] : $row['price'],
                         'reseller_price' => $isReseller ? $row['reseller_price'] : null,
-                        'maximum_selling_price' => $isReseller ? $row['maximum_selling_price'] : null,
+                        'maximum_selling_price' => $isReseller ? ($row['maximum_selling_price'] ?? null) : null,
                         'stock_quantity' => (int) ($row['stock_quantity'] ?? 0),
                         'reorder_level' => (int) ($row['reorder_level'] ?? 0),
                         'is_active' => array_key_exists('is_active', $row)
@@ -481,7 +482,7 @@ class ProductController extends Controller
                     'attributes' => [],
                     'price' => $isReseller ? $validated['reseller_price'] : $validated['price'],
                     'reseller_price' => $isReseller ? $validated['reseller_price'] : null,
-                    'maximum_selling_price' => $isReseller ? $validated['maximum_selling_price'] : null,
+                    'maximum_selling_price' => $isReseller ? ($validated['maximum_selling_price'] ?? null) : null,
                     'stock_quantity' => (int) ($validated['stock_quantity'] ?? 0),
                     'reorder_level' => (int) ($validated['reorder_level'] ?? 0),
                     'is_active' => true,
@@ -576,9 +577,7 @@ class ProductController extends Controller
             if (! isset($row['reseller_price'])) {
                 $errors[$prefix.'reseller_price'] = 'The reseller price is required for reseller products.';
             }
-            if (! isset($row['maximum_selling_price'])) {
-                $errors[$prefix.'maximum_selling_price'] = 'The maximum selling price is required for reseller products.';
-            } elseif (isset($row['reseller_price']) && (float) $row['maximum_selling_price'] < (float) $row['reseller_price']) {
+            if (isset($row['maximum_selling_price'], $row['reseller_price']) && (float) $row['maximum_selling_price'] < (float) $row['reseller_price']) {
                 $errors[$prefix.'maximum_selling_price'] = 'The maximum selling price must be greater than or equal to the reseller price.';
             }
         }

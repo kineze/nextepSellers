@@ -163,7 +163,7 @@
               </td>
               <td class="px-2 py-2"><input v-model.number="row.qty" min="1" type="number" :class="[cellClass, 'w-20']" @input="recalculateUploadRow(row)" /></td>
               <td class="px-2 py-2 font-semibold">
-                <input v-if="row.pricing_model === 'reseller'" v-model.number="row.price" type="number" step="0.01" :min="row.reseller_price" :max="row.maximum_selling_price" :class="[cellClass, 'w-28']" @input="recalculateUploadRow(row)" />
+                <input v-if="row.pricing_model === 'reseller'" v-model.number="row.price" type="number" step="0.01" :min="row.reseller_price" :max="hasMaximumPrice(row.maximum_selling_price) ? row.maximum_selling_price : undefined" :class="[cellClass, 'w-28']" @input="recalculateUploadRow(row)" />
                 <span v-else>LKR {{ toMoney(uploadRowTotal(row)) }}</span>
                 <p v-if="row.pricing_model === 'reseller'" class="mt-1 text-[9px] text-slate-500">Total: LKR {{ toMoney(uploadRowTotal(row)) }}</p>
               </td>
@@ -328,8 +328,8 @@
             </div>
             <div v-if="item.pricing_model === 'reseller'" class="mt-3">
               <label class="text-[10px] font-bold uppercase text-emerald-700">Customer selling price</label>
-              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="item.maximum_selling_price" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-xs dark:border-emerald-700 dark:bg-slate-950" />
-              <p class="mt-1 text-[10px] text-slate-500">Allowed LKR {{ toMoney(item.reseller_price) }} – {{ toMoney(item.maximum_selling_price) }}</p>
+              <input v-model.number="item.price" type="number" step="0.01" :min="item.reseller_price" :max="hasMaximumPrice(item.maximum_selling_price) ? item.maximum_selling_price : undefined" class="mt-1 w-full rounded-lg border border-emerald-300 bg-white px-2 py-1.5 text-xs dark:border-emerald-700 dark:bg-slate-950" />
+              <p class="mt-1 text-[10px] text-slate-500">Allowed LKR {{ toMoney(item.reseller_price) }}{{ hasMaximumPrice(item.maximum_selling_price) ? ` – ${toMoney(item.maximum_selling_price)}` : ' or higher' }}</p>
             </div>
             <div class="mt-3 flex items-center justify-between gap-3">
               <input
@@ -697,6 +697,7 @@ const uploadCommission = computed(() => uploadCreatableOrders.value.flat().reduc
 const uploadPoints = computed(() => uploadCreatableOrders.value.flat().reduce((sum, row) => sum + Number(row.points_earned || 0), 0))
 
 const rowId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+const hasMaximumPrice = (value) => value !== null && value !== undefined && value !== ''
 
 const createRowItem = (selectedProduct, chosenVariant, quantity = 1) => ({
   id: rowId(),
@@ -708,7 +709,9 @@ const createRowItem = (selectedProduct, chosenVariant, quantity = 1) => ({
   price: Number(selectedProduct.pricing_model === 'reseller' ? chosenVariant.reseller_price : chosenVariant.price || 0),
   pricing_model: selectedProduct.pricing_model === 'reseller' ? 'reseller' : 'commission',
   reseller_price: Number(chosenVariant.reseller_price || 0),
-  maximum_selling_price: Number(chosenVariant.maximum_selling_price || 0),
+  maximum_selling_price: hasMaximumPrice(chosenVariant.maximum_selling_price)
+    ? Number(chosenVariant.maximum_selling_price)
+    : null,
   quantity: Math.max(1, Number(quantity || 1)),
   commission_rule: selectedProduct.commission_rule || null,
 })
@@ -1057,8 +1060,10 @@ const validateUploadRow = (row) => {
 
   if (row.pricing_model === 'reseller' && (
     Number(row.price) < Number(row.reseller_price)
-    || Number(row.price) > Number(row.maximum_selling_price)
-  )) errors.price = `Price must be between LKR ${toMoney(row.reseller_price)} and LKR ${toMoney(row.maximum_selling_price)}.`
+    || (hasMaximumPrice(row.maximum_selling_price) && Number(row.price) > Number(row.maximum_selling_price))
+  )) errors.price = hasMaximumPrice(row.maximum_selling_price)
+    ? `Price must be between LKR ${toMoney(row.reseller_price)} and LKR ${toMoney(row.maximum_selling_price)}.`
+    : `Price must be at least LKR ${toMoney(row.reseller_price)}.`
   else delete errors.price
 
   row.errors = errors
@@ -1130,7 +1135,9 @@ const selectVariantForUploadRow = (row, product, variant) => {
   row.variant_label = formatVariantLabel(variant)
   row.pricing_model = product?.pricing_model === 'reseller' ? 'reseller' : 'commission'
   row.reseller_price = Number(variant?.reseller_price || 0)
-  row.maximum_selling_price = Number(variant?.maximum_selling_price || 0)
+  row.maximum_selling_price = hasMaximumPrice(variant?.maximum_selling_price)
+    ? Number(variant.maximum_selling_price)
+    : null
   row.price = Number(row.pricing_model === 'reseller' ? variant?.reseller_price : variant?.price || row.price || 0)
   row.commission_rule = product?.commission_rule || null
   row.commission_amount = row.pricing_model === 'reseller'
@@ -1404,7 +1411,7 @@ const validateBeforeSubmit = () => {
         }
         if (items[ii].pricing_model === 'reseller' && (
           Number(items[ii].price) < Number(items[ii].reseller_price)
-          || Number(items[ii].price) > Number(items[ii].maximum_selling_price)
+          || (hasMaximumPrice(items[ii].maximum_selling_price) && Number(items[ii].price) > Number(items[ii].maximum_selling_price))
         )) {
           toast.error(`Batch ${bi + 1}, Row ${ri + 1}, Product ${ii + 1}: selling price is outside the allowed range.`)
           return false

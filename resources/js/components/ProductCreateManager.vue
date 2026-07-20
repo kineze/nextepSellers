@@ -222,8 +222,8 @@
                   <input type="number" min="0" step="0.01" v-model.number="form.reseller_price" placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950" />
                 </div>
                 <div>
-                  <label class="mb-1 block text-xs font-semibold">Maximum Selling Price</label>
-                  <input type="number" :min="Number(form.reseller_price || 0)" step="0.01" v-model.number="form.maximum_selling_price" placeholder="0.00" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950" />
+                  <label class="mb-1 block text-xs font-semibold">Maximum Selling Price <span class="font-normal text-slate-400">(optional)</span></label>
+                  <input type="number" :min="Number(form.reseller_price || 0)" step="0.01" v-model.number="form.maximum_selling_price" placeholder="No maximum" class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950" />
                 </div>
               </template>
               <div>
@@ -297,7 +297,7 @@
                       <td v-if="form.pricing_model === 'commission'" class="px-2 py-2"><input type="number" min="0" step="0.01" v-model.number="variant.price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
                       <template v-else>
                         <td class="px-2 py-2"><input type="number" min="0" step="0.01" v-model.number="variant.reseller_price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950" /></td>
-                        <td class="px-2 py-2"><input type="number" :min="Number(variant.reseller_price || 0)" step="0.01" v-model.number="variant.maximum_selling_price" placeholder="0.00" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950" /></td>
+                        <td class="px-2 py-2"><input type="number" :min="Number(variant.reseller_price || 0)" step="0.01" v-model.number="variant.maximum_selling_price" placeholder="No maximum" class="w-24 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs dark:border-slate-700 dark:bg-slate-950" /></td>
                       </template>
                       <td class="px-2 py-2"><input type="number" min="0" v-model.number="variant.stock_quantity" placeholder="0" class="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
                       <td class="px-2 py-2"><input type="number" min="0" v-model.number="variant.reorder_level" placeholder="0" class="w-20 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs focus:border-slate-500 focus:ring-1 focus:ring-slate-500/20 dark:border-slate-700 dark:bg-slate-950" /></td>
@@ -531,7 +531,14 @@ const form = ref({
 })
 
 const goToProducts = () => {
-  window.location.href = '/products'
+  const sourceParams = new URLSearchParams(window.location.search)
+  const returnPage = Math.max(1, Number.parseInt(sourceParams.get('return_page') || '1', 10) || 1)
+  const returnSearch = sourceParams.get('return_search') || ''
+  const listParams = new URLSearchParams()
+  if (returnPage > 1) listParams.set('page', String(returnPage))
+  if (returnSearch.trim()) listParams.set('search', returnSearch.trim())
+  const query = listParams.toString()
+  window.location.href = query ? `/products?${query}` : '/products'
 }
 
 const loadOptions = async () => {
@@ -849,7 +856,7 @@ const generateCombinations = () => {
       sku: `${prefix}-${i + 1}`,
       price: 0,
       reseller_price: 0,
-      maximum_selling_price: 0,
+      maximum_selling_price: null,
       stock_quantity: 0,
       reorder_level: 0,
       is_active: true,

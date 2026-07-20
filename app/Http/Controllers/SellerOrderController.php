@@ -1462,9 +1462,11 @@ class SellerOrderController extends Controller
 
         if ($variant && $isReseller) {
             $minimum = (float) ($variant->reseller_price ?? 0);
-            $maximum = (float) ($variant->maximum_selling_price ?? 0);
-            if ($variant->reseller_price === null || $variant->maximum_selling_price === null || $price < $minimum || $price > $maximum) {
-                $errors['price'] = sprintf('Selling price must be between LKR %s and LKR %s.', number_format($minimum, 2), number_format($maximum, 2));
+            $maximum = $variant->maximum_selling_price === null ? null : (float) $variant->maximum_selling_price;
+            if ($variant->reseller_price === null || $price < $minimum || ($maximum !== null && $price > $maximum)) {
+                $errors['price'] = $maximum === null
+                    ? sprintf('Selling price must be at least LKR %s.', number_format($minimum, 2))
+                    : sprintf('Selling price must be between LKR %s and LKR %s.', number_format($minimum, 2), number_format($maximum, 2));
             }
         }
 
@@ -1506,7 +1508,9 @@ class SellerOrderController extends Controller
             'price' => $price,
             'pricing_model' => $isReseller ? 'reseller' : 'commission',
             'reseller_price' => $isReseller ? (float) $variant?->reseller_price : null,
-            'maximum_selling_price' => $isReseller ? (float) $variant?->maximum_selling_price : null,
+            'maximum_selling_price' => $isReseller && $variant?->maximum_selling_price !== null
+                ? (float) $variant->maximum_selling_price
+                : null,
             'qty' => $qty,
             'notes' => trim((string) ($row['notes'] ?? '')),
             'commission_rule' => $commissionRule ? [

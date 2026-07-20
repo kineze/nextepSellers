@@ -44,7 +44,10 @@ const priceLabel = (product) => {
 
   if (product.pricing_model === 'reseller') {
     const minimum = Math.min(...variants.map((variant) => Number(variant.reseller_price || 0)))
-    const maximum = Math.max(...variants.map((variant) => Number(variant.maximum_selling_price || 0)))
+    if (variants.some((variant) => variant.maximum_selling_price === null || variant.maximum_selling_price === undefined)) {
+      return `LKR ${money(minimum)} or higher`
+    }
+    const maximum = Math.max(...variants.map((variant) => Number(variant.maximum_selling_price)))
     return `LKR ${money(minimum)} – ${money(maximum)}`
   }
 

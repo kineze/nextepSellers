@@ -243,17 +243,19 @@ class DashboardController extends Controller
                 ->pluck($isReseller ? 'reseller_price' : 'price')
                 ->filter(fn ($price) => ! is_null($price));
             $minPrice = $prices->isNotEmpty() ? (float) $prices->min() : null;
+            $activeVariants = $product->varients->where('is_active', true);
             $maximumPrices = $isReseller
-                ? $product->varients->where('is_active', true)->pluck('maximum_selling_price')->filter(fn ($price) => ! is_null($price))
+                ? $activeVariants->pluck('maximum_selling_price')->filter(fn ($price) => ! is_null($price))
                 : $prices;
-            $maxPrice = $maximumPrices->isNotEmpty() ? (float) $maximumPrices->max() : null;
+            $hasUnlimitedPrice = $isReseller && $activeVariants->contains(fn ($variant) => is_null($variant->maximum_selling_price));
+            $maxPrice = $hasUnlimitedPrice || $maximumPrices->isEmpty() ? null : (float) $maximumPrices->max();
             $levelCommission = $product->productLevels
                 ->first(fn ($row) => (int) $row->level_id === (int) $sellerLevelId);
 
             $commission = null;
             if ($isReseller && ! is_null($minPrice) && ! is_null($maxPrice)) {
                 $commission = max(0, $maxPrice - $minPrice);
-            } elseif ($levelCommission && ! is_null($minPrice)) {
+            } elseif (! $isReseller && $levelCommission && ! is_null($minPrice)) {
                 $commission = $levelCommission->type === 'percentage'
                     ? ($minPrice * (float) $levelCommission->value) / 100
                     : (float) $levelCommission->value;

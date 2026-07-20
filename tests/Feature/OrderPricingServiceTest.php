@@ -77,6 +77,38 @@ class OrderPricingServiceTest extends TestCase
         }
     }
 
+    public function test_reseller_price_without_a_maximum_has_no_upper_limit(): void
+    {
+        [$level, $product, $variant] = $this->createProduct('reseller');
+        $variant->update(['maximum_selling_price' => null]);
+        $service = app(OrderPricingService::class);
+
+        $result = $service->normalize([[
+            'product_id' => $product->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+            'price' => 5000,
+        ]], $level->id);
+
+        $this->assertSame(5000.0, $result[0]['price']);
+        $this->assertSame(8000.0, $result[0]['seller_earning_amount']);
+
+        try {
+            $service->normalize([[
+                'product_id' => $product->id,
+                'product_variant_id' => $variant->id,
+                'quantity' => 1,
+                'price' => 999.99,
+            ]], $level->id);
+            $this->fail('Expected a price below the reseller price to be rejected.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(
+                'Selling price must be at least LKR 1,000.00.',
+                $exception->errors()['items.0.price'][0]
+            );
+        }
+    }
+
     private function createProduct(string $pricingModel, ?Level $level = null): array
     {
         $level ??= Level::create([

@@ -235,8 +235,28 @@
           <span class="font-semibold text-slate-900 dark:text-white">{{ pagination.total || 0 }}</span>
         </div>
 
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center justify-end gap-2">
           <button class="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" :disabled="pagination.current_page <= 1" @click="changePage(pagination.current_page - 1)">Prev</button>
+
+          <div class="flex items-center gap-1">
+            <template v-for="item in paginationItems" :key="item.key">
+              <span v-if="item.type === 'ellipsis'" class="min-w-7 px-1 text-center text-slate-400">…</span>
+              <button
+                v-else
+                type="button"
+                class="min-w-9 rounded-lg border px-2 py-1.5 text-center font-semibold transition disabled:cursor-default"
+                :class="item.page === pagination.current_page
+                  ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'"
+                :disabled="item.page === pagination.current_page"
+                :aria-current="item.page === pagination.current_page ? 'page' : undefined"
+                @click="changePage(item.page)"
+              >
+                {{ item.page }}
+              </button>
+            </template>
+          </div>
+
           <button class="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" :disabled="pagination.current_page >= pagination.last_page" @click="changePage(pagination.current_page + 1)">Next</button>
         </div>
       </div>
@@ -411,7 +431,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import { useToast } from 'vue-toastification'
 
@@ -433,6 +453,26 @@ const products = ref([])
 const search = ref(initialListParams.get('search') || '')
 const viewMode = ref(initialViewMode())
 const pagination = ref({ current_page: 1, last_page: 1, per_page: 10, total: 0, from: 0, to: 0 })
+const paginationItems = computed(() => {
+  const total = Math.max(1, Number(pagination.value.last_page || 1))
+  const current = Math.min(total, Math.max(1, Number(pagination.value.current_page || 1)))
+  let entries
+
+  if (total <= 7) {
+    entries = Array.from({ length: total }, (_, index) => index + 1)
+  } else if (current <= 4) {
+    entries = [1, 2, 3, 4, 5, 'ellipsis', total]
+  } else if (current >= total - 3) {
+    entries = [1, 'ellipsis', total - 4, total - 3, total - 2, total - 1, total]
+  } else {
+    entries = [1, 'ellipsis', current - 1, current, current + 1, 'ellipsis', total]
+  }
+
+  let ellipsisIndex = 0
+  return entries.map((entry) => entry === 'ellipsis'
+    ? { type: 'ellipsis', key: `ellipsis-${ellipsisIndex += 1}` }
+    : { type: 'page', page: entry, key: `page-${entry}` })
+})
 const showViewModal = ref(false)
 const viewingProduct = ref(null)
 const loadingView = ref(false)

@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Seller;
 use App\Models\User;
+use DomainException;
 use RuntimeException;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
@@ -405,57 +406,85 @@ class SellerController extends Controller
             ? (int) $validated['points']
             : (int) $selectedLevel->points;
 
-        if (User::where('email', $seller->email)->exists() && !$seller->user_id) {
-            return response()->json([
-                'message' => 'A user with this seller email already exists.',
-            ], 422);
-        }
-
         $password = Str::random(10);
 
         try {
             DB::transaction(function () use ($seller, $password, $selectedLevel, $assignedPoints) {
-            $sellerRole = Role::firstOrCreate([
-                'name' => 'Seller',
-                'guard_name' => 'web',
-            ]);
+                $lockedSeller = Seller::query()
+                    ->lockForUpdate()
+                    ->findOrFail($seller->id);
 
-            if ($seller->user_id) {
-                $user = User::findOrFail($seller->user_id);
+                $sellerRole = Role::firstOrCreate([
+                    'name' => 'Seller',
+                    'guard_name' => 'web',
+                ]);
+
+                if ($lockedSeller->user_id) {
+                    $user = User::query()
+                        ->lockForUpdate()
+                        ->findOrFail($lockedSeller->user_id);
+
+                    if ($user->roles()->where('name', '!=', $sellerRole->name)->exists()) {
+                        throw new DomainException('The linked user already has a different system role.');
+                    }
+                } else {
+                    $user = User::query()
+                        ->where('email', $lockedSeller->email)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($user) {
+                        if ($user->roles()->exists()) {
+                            throw new DomainException('A user with this seller email already has a system role.');
+                        }
+
+                        if ($user->seller()->whereKeyNot($lockedSeller->id)->exists()) {
+                            throw new DomainException('A user with this seller email is already linked to another seller.');
+                        }
+
+                        if ($user->is_blocked) {
+                            throw new DomainException('The existing user with this seller email is blocked.');
+                        }
+                    } else {
+                        $user = User::create([
+                            'name' => trim($lockedSeller->first_name.' '.$lockedSeller->last_name),
+                            'email' => $lockedSeller->email,
+                            'password' => Hash::make($password),
+                        ]);
+                    }
+                }
+
                 $user->update([
-                    'name' => trim($seller->first_name . ' ' . $seller->last_name),
-                    'email' => $seller->email,
+                    'name' => trim($lockedSeller->first_name.' '.$lockedSeller->last_name),
+                    'email' => $lockedSeller->email,
                     'password' => Hash::make($password),
                 ]);
-            } else {
-                $user = User::create([
-                    'name' => trim($seller->first_name . ' ' . $seller->last_name),
-                    'email' => $seller->email,
-                    'password' => Hash::make($password),
+
+                $user->syncRoles([$sellerRole->name]);
+
+                $lockedSeller->update([
+                    'user_id' => $user->id,
+                    'seller_level_id' => $selectedLevel->id,
+                    'points' => $assignedPoints,
+                    'status' => 'approved',
+                    'rejection_reason' => null,
                 ]);
-            }
 
-            $user->syncRoles([$sellerRole->name]);
-
-            $seller->update([
-                'user_id' => $user->id,
-                'seller_level_id' => $selectedLevel->id,
-                'points' => $assignedPoints,
-                'status' => 'approved',
-                'rejection_reason' => null,
-            ]);
-
-            $sent = $this->mailer->sendSellerOnboardingEmail(
-                $user->email,
-                $user->name,
-                $password,
-                $selectedLevel->level_name,
-                $assignedPoints
-            );
-            if (!$sent) {
-                throw new RuntimeException('Unable to send login details email right now.');
-            }
+                $sent = $this->mailer->sendSellerOnboardingEmail(
+                    $user->email,
+                    $user->name,
+                    $password,
+                    $selectedLevel->level_name,
+                    $assignedPoints
+                );
+                if (! $sent) {
+                    throw new RuntimeException('Unable to send login details email right now.');
+                }
             });
+        } catch (DomainException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Throwable $e) {
             return response()->json([
                 'message' => $e->getMessage() ?: 'Unable to approve seller right now.',
@@ -463,7 +492,7 @@ class SellerController extends Controller
         }
 
         return response()->json([
-            'message' => 'Seller approved, user account created, and login details emailed.',
+            'message' => 'Seller approved, user account activated, and login details emailed.',
         ]);
     }
 

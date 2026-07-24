@@ -62,6 +62,25 @@ class PasswordResetTest extends TestCase
         $this->assertStringContainsString(urlencode($user->email), $resetUrl);
     }
 
+    public function test_forgot_password_does_not_create_an_unknown_user(): void
+    {
+        if (! Features::enabled(Features::resetPasswords())) {
+            $this->markTestSkipped('Password updates are not enabled.');
+        }
+
+        $this->mock(BrevoMailer::class)
+            ->shouldNotReceive('sendPasswordResetLinkEmail');
+
+        $response = $this->post('/forgot-password', [
+            'email' => 'missing@example.com',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('users', [
+            'email' => 'missing@example.com',
+        ]);
+    }
+
     public function test_reset_password_screen_can_be_rendered(): void
     {
         if (! Features::enabled(Features::resetPasswords())) {

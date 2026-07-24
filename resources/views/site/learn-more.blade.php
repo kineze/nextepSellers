@@ -37,7 +37,7 @@
                 <a href="{{ route('sellerRegistration') }}" class="inline-flex rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white hover:bg-black dark:bg-white dark:text-slate-900">
                     View Seller Registration
                 </a>
-                <a href="{{ route('register') }}" class="inline-flex rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
+                <a href="{{ route('sellerRegistration') }}" class="inline-flex rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800">
                     Create Account
                 </a>
             </div>

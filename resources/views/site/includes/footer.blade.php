@@ -34,7 +34,7 @@
             <h4 class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Seller</h4>
             <ul class="mt-4 space-y-3 text-sm">
                 <li><a href="{{ route('sellerRegistration') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Registration Steps</a></li>
-                <li><a href="{{ route('register') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Create Account</a></li>
+                <li><a href="{{ route('sellerRegistration') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Create Account</a></li>
                 @guest
                     <li><a href="{{ route('login') }}" class="text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white">Login</a></li>
                 @endguest

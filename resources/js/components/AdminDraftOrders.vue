@@ -17,6 +17,14 @@
       <div class="flex gap-2">
         <button
           type="button"
+          class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="loading"
+          @click="toggleShowAll"
+        >
+          {{ showAll ? 'Show 20 per page' : 'Show all' }}
+        </button>
+        <button
+          type="button"
           class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black dark:bg-white dark:text-slate-900"
           @click="fetchOrders"
         >
@@ -165,24 +173,50 @@
       </table>
     </div>
 
-    <div class="mt-4 flex items-center justify-between">
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        :disabled="meta.current_page <= 1 || loading"
-        @click="changePage(meta.current_page - 1)"
-      >
-        Previous
-      </button>
-      <p class="text-xs text-slate-500 dark:text-slate-400">Page {{ meta.current_page }} of {{ meta.last_page }}</p>
-      <button
-        type="button"
-        class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-        :disabled="meta.current_page >= meta.last_page || loading"
-        @click="changePage(meta.current_page + 1)"
-      >
-        Next
-      </button>
+    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Showing {{ orders.length }} of {{ meta.total }} draft orders
+      </p>
+      <div v-if="!showAll" class="flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="meta.current_page <= 1 || loading"
+          @click="changePage(meta.current_page - 1)"
+        >
+          Previous
+        </button>
+        <template v-for="item in paginationItems" :key="item.key">
+          <span
+            v-if="item.type === 'ellipsis'"
+            class="min-w-8 px-1 text-center text-xs text-slate-400"
+            aria-hidden="true"
+          >
+            &hellip;
+          </span>
+          <button
+            v-else
+            type="button"
+            class="min-w-8 rounded-lg border px-2 py-1.5 text-xs font-semibold"
+            :class="item.page === meta.current_page
+              ? 'border-slate-900 bg-slate-900 text-white dark:border-white dark:bg-white dark:text-slate-900'
+              : 'border-slate-300 text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'"
+            :disabled="loading || item.page === meta.current_page"
+            :aria-current="item.page === meta.current_page ? 'page' : undefined"
+            @click="changePage(item.page)"
+          >
+            {{ item.page }}
+          </button>
+        </template>
+        <button
+          type="button"
+          class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="meta.current_page >= meta.last_page || loading"
+          @click="changePage(meta.current_page + 1)"
+        >
+          Next
+        </button>
+      </div>
     </div>
   </section>
 </template>
@@ -203,6 +237,7 @@ const loadingCityOrderId = ref(null)
 const cityDropdownOrderId = ref(null)
 const orders = ref([])
 const selectedIds = ref([])
+const showAll = ref(false)
 const cityInputs = reactive({})
 const cityOptions = reactive({})
 const citySearchTimers = {}
@@ -226,6 +261,35 @@ const meta = reactive({
 const allChecked = computed(() => {
   if (!orders.value.length) return false
   return orders.value.every((row) => selectedIds.value.includes(row.id))
+})
+
+const paginationItems = computed(() => {
+  const lastPage = Math.max(1, Number(meta.last_page || 1))
+  const currentPage = Math.min(lastPage, Math.max(1, Number(meta.current_page || 1)))
+
+  if (lastPage <= 7) {
+    return Array.from({ length: lastPage }, (_, index) => ({
+      type: 'page',
+      page: index + 1,
+      key: `page-${index + 1}`,
+    }))
+  }
+
+  const pages = new Set([1, lastPage])
+  for (let page = currentPage - 1; page <= currentPage + 1; page += 1) {
+    if (page > 1 && page < lastPage) pages.add(page)
+  }
+
+  const sortedPages = Array.from(pages).sort((a, b) => a - b)
+  const items = []
+  sortedPages.forEach((page, index) => {
+    if (index > 0 && page - sortedPages[index - 1] > 1) {
+      items.push({ type: 'ellipsis', key: `ellipsis-${sortedPages[index - 1]}-${page}` })
+    }
+    items.push({ type: 'page', page, key: `page-${page}` })
+  })
+
+  return items
 })
 
 const toMoney = (value) => Number(value || 0).toFixed(2)
@@ -274,6 +338,7 @@ const fetchOrders = async () => {
         seller_id: filters.seller_id || undefined,
         page: filters.page,
         per_page: filters.per_page,
+        show_all: showAll.value ? 1 : undefined,
       },
     })
 
@@ -373,7 +438,14 @@ const onGlobalFiltersChanged = (payload) => {
 }
 
 const changePage = (page) => {
+  if (loading.value || page < 1 || page > meta.last_page || page === meta.current_page) return
   filters.page = page
+  fetchOrders()
+}
+
+const toggleShowAll = () => {
+  showAll.value = !showAll.value
+  filters.page = 1
   fetchOrders()
 }
 

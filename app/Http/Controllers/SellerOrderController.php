@@ -57,6 +57,7 @@ class SellerOrderController extends Controller
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+            'show_all' => ['nullable', 'boolean'],
         ]);
 
         $search = trim((string) ($validated['search'] ?? ''));
@@ -108,6 +109,20 @@ class SellerOrderController extends Controller
                             ->orWhere('email', 'like', '%' . $search . '%');
                     });
             });
+        }
+
+        if (!empty($validated['show_all'])) {
+            $orders = $query->get();
+
+            return response()->json([
+                'orders' => $orders,
+                'meta' => [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $orders->count(),
+                    'total' => $orders->count(),
+                ],
+            ]);
         }
 
         $orders = $query->paginate($perPage);

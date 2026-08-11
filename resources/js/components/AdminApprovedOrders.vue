@@ -23,7 +23,6 @@
             autocomplete="off"
             class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-9 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             placeholder="Product name, code, or SKU"
-            @focus="openProductDropdown"
             @input="onProductSearchInput"
             @blur="closeProductDropdownWithDelay"
           />
@@ -484,11 +483,6 @@ const fetchProductOptions = async () => {
   }
 }
 
-const openProductDropdown = () => {
-  productDropdownOpen.value = true
-  fetchProductOptions()
-}
-
 const closeProductDropdownWithDelay = () => {
   window.setTimeout(() => {
     productDropdownOpen.value = false
@@ -503,8 +497,16 @@ const onProductSearchInput = () => {
     fetchOrders()
   }
 
-  productDropdownOpen.value = true
   window.clearTimeout(productSearchTimer)
+  if (!productSearchInput.value.trim()) {
+    productRequestSequence += 1
+    productOptions.value = []
+    productOptionsLoading.value = false
+    productDropdownOpen.value = false
+    return
+  }
+
+  productDropdownOpen.value = true
   productSearchTimer = window.setTimeout(fetchProductOptions, 250)
 }
 

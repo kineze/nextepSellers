@@ -10,11 +10,52 @@
         context-key="admin-approved-orders"
         @filters-changed="onGlobalFiltersChanged"
       />
+
+      <form class="flex flex-col gap-2 sm:flex-row sm:items-end" @submit.prevent="applyProductSearch">
+        <div class="w-full sm:max-w-md">
+          <label for="approved-product-search" class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Product search
+          </label>
+          <input
+            id="approved-product-search"
+            v-model.trim="productSearchInput"
+            type="search"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            placeholder="Product name, code, or SKU"
+          />
+        </div>
+        <div class="flex gap-2">
+          <button
+            type="submit"
+            class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="loading"
+          >
+            Search products
+          </button>
+          <button
+            v-if="filters.product_search"
+            type="button"
+            class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+            :disabled="loading"
+            @click="clearProductSearch"
+          >
+            Clear
+          </button>
+        </div>
+      </form>
     </div>
 
     <div class="mt-4 flex items-center justify-between">
       <p class="text-xs text-slate-500 dark:text-slate-400">Total {{ meta.total }} approved orders</p>
       <div class="flex gap-2">
+        <button
+          type="button"
+          class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          :disabled="loading"
+          @click="toggleShowAll"
+        >
+          {{ showAll ? 'Show 20 per page' : 'Show all results' }}
+        </button>
         <button
           type="button"
           class="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-black dark:bg-white dark:text-slate-900"
@@ -171,7 +212,11 @@
     </div>
 
     <div class="mt-4 flex items-center justify-between">
+      <p v-if="showAll" class="text-xs text-slate-500 dark:text-slate-400">
+        Showing all {{ meta.total }} matching approved orders
+      </p>
       <button
+        v-if="!showAll"
         type="button"
         class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
         :disabled="meta.current_page <= 1 || loading"
@@ -179,8 +224,9 @@
       >
         Previous
       </button>
-      <p class="text-xs text-slate-500 dark:text-slate-400">Page {{ meta.current_page }} of {{ meta.last_page }}</p>
+      <p v-if="!showAll" class="text-xs text-slate-500 dark:text-slate-400">Page {{ meta.current_page }} of {{ meta.last_page }}</p>
       <button
+        v-if="!showAll"
         type="button"
         class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
         :disabled="meta.current_page >= meta.last_page || loading"
@@ -259,9 +305,12 @@ const cancellingOrderId = ref(null)
 const orders = ref([])
 const selectedIds = ref([])
 const showDispatchModal = ref(false)
+const productSearchInput = ref('')
+const showAll = ref(false)
 
 const filters = reactive({
   search: '',
+  product_search: '',
   date_from: '',
   date_to: '',
   seller_id: null,
@@ -356,11 +405,13 @@ const fetchOrders = async () => {
     const { data } = await axios.get('/api/admin/orders/approved', {
       params: {
         search: filters.search || undefined,
+        product_search: filters.product_search || undefined,
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         seller_id: filters.seller_id || undefined,
         page: filters.page,
         per_page: filters.per_page,
+        show_all: showAll.value ? 1 : undefined,
       },
     })
 
@@ -388,8 +439,27 @@ const onGlobalFiltersChanged = (payload) => {
   fetchOrders()
 }
 
+const applyProductSearch = () => {
+  filters.product_search = productSearchInput.value
+  filters.page = 1
+  fetchOrders()
+}
+
+const clearProductSearch = () => {
+  productSearchInput.value = ''
+  filters.product_search = ''
+  filters.page = 1
+  fetchOrders()
+}
+
 const changePage = (page) => {
   filters.page = page
+  fetchOrders()
+}
+
+const toggleShowAll = () => {
+  showAll.value = !showAll.value
+  filters.page = 1
   fetchOrders()
 }
 

@@ -761,7 +761,6 @@ class DispatchNoteController extends Controller
                     });
             });
         }
-
         $orders = $query->paginate($perPage);
 
         $rows = collect($orders->items())->map(function ($order) {
@@ -1073,13 +1072,16 @@ class DispatchNoteController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
+            'product_search' => ['nullable', 'string', 'max:120'],
             'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+            'show_all' => ['nullable', 'boolean'],
         ]);
 
         $search = trim((string) ($validated['search'] ?? ''));
+        $productSearch = trim((string) ($validated['product_search'] ?? ''));
         $perPage = (int) ($validated['per_page'] ?? 20);
 
         $query = Order::query()
@@ -1116,11 +1118,27 @@ class DispatchNoteController extends Controller
                             ->where('first_name', 'like', '%' . $search . '%')
                             ->orWhere('last_name', 'like', '%' . $search . '%')
                             ->orWhere('email', 'like', '%' . $search . '%');
+                });
+            });
+        }
+        if ($productSearch !== '') {
+            $query->whereHas('items', function ($itemQuery) use ($productSearch) {
+                $itemQuery->where(function ($productOrVariantQuery) use ($productSearch) {
+                    $productOrVariantQuery->whereHas('product', function ($productQuery) use ($productSearch) {
+                        $productQuery
+                            ->where('title', 'like', '%' . $productSearch . '%')
+                            ->orWhere('product_code', 'like', '%' . $productSearch . '%');
+                    })
+                    ->orWhereHas('variant', function ($variantQuery) use ($productSearch) {
+                        $variantQuery->where('sku', 'like', '%' . $productSearch . '%');
                     });
+                });
             });
         }
 
-        $orders = $query->paginate($perPage);
+        $showAll = !empty($validated['show_all']);
+        $orders = $showAll ? $query->get() : $query->paginate($perPage);
+        $orderRows = $showAll ? $orders : collect($orders->items());
 
         $variantStock = LotItem::query()
             ->selectRaw('variant_id, COUNT(*) as available_qty')
@@ -1130,10 +1148,10 @@ class DispatchNoteController extends Controller
             ->pluck('available_qty', 'variant_id');
 
         $alreadyAssigned = DispatchNoteItem::query()
-            ->whereIn('order_id', collect($orders->items())->pluck('id'))
+            ->whereIn('order_id', $orderRows->pluck('id'))
             ->pluck('dispatch_note_id', 'order_id');
 
-        $rows = collect($orders->items())->map(function ($order) use ($variantStock, $alreadyAssigned) {
+        $rows = $orderRows->map(function ($order) use ($variantStock, $alreadyAssigned) {
             $requiredByVariant = collect($order->items)
                 ->filter(fn ($item) => !empty($item->product_variant_id))
                 ->groupBy('product_variant_id')
@@ -1165,12 +1183,19 @@ class DispatchNoteController extends Controller
 
         return response()->json([
             'orders' => $rows,
-            'meta' => [
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage(),
-                'per_page' => $orders->perPage(),
-                'total' => $orders->total(),
-            ],
+            'meta' => $showAll
+                ? [
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => $orders->count(),
+                    'total' => $orders->count(),
+                ]
+                : [
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'per_page' => $orders->perPage(),
+                    'total' => $orders->total(),
+                ],
         ]);
     }
 

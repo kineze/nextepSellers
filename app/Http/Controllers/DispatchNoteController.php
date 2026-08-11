@@ -26,15 +26,6 @@ class DispatchNoteController extends Controller
 
         $products = Product::query()
             ->select(['id', 'title', 'product_code'])
-            ->whereExists(function ($orderItemQuery) {
-                $orderItemQuery
-                    ->selectRaw('1')
-                    ->from('order_items')
-                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
-                    ->whereColumn('order_items.product_id', 'products.id')
-                    ->where('orders.status', 'approved')
-                    ->where('orders.is_draft', false);
-            })
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($productQuery) use ($search) {
                     $productQuery

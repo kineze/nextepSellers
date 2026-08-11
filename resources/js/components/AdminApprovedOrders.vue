@@ -59,7 +59,7 @@
               </button>
             </template>
             <p v-if="!productOptionsLoading && !productOptions.length" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
-              No matching products in approved orders.
+              No matching products found.
             </p>
           </div>
         </div>

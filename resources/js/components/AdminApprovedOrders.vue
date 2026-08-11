@@ -11,38 +11,59 @@
         @filters-changed="onGlobalFiltersChanged"
       />
 
-      <form class="flex flex-col gap-2 sm:flex-row sm:items-end" @submit.prevent="applyProductSearch">
-        <div class="w-full sm:max-w-md">
+      <div class="w-full sm:max-w-md">
+        <div class="relative">
           <label for="approved-product-search" class="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Product search
+            Filter by product
           </label>
           <input
             id="approved-product-search"
-            v-model.trim="productSearchInput"
+            v-model="productSearchInput"
             type="search"
-            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+            autocomplete="off"
+            class="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 pr-9 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
             placeholder="Product name, code, or SKU"
+            @focus="openProductDropdown"
+            @input="onProductSearchInput"
+            @blur="closeProductDropdownWithDelay"
           />
-        </div>
-        <div class="flex gap-2">
           <button
-            type="submit"
-            class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            :disabled="loading"
-          >
-            Search products
-          </button>
-          <button
-            v-if="filters.product_search"
+            v-if="productSearchInput"
             type="button"
-            class="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-            :disabled="loading"
-            @click="clearProductSearch"
+            class="absolute right-2 top-[2.15rem] flex h-6 w-6 items-center justify-center rounded-full text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            aria-label="Clear product filter"
+            @mousedown.prevent="clearProductSelection"
           >
-            Clear
+            &times;
           </button>
+
+          <div
+            v-if="productDropdownOpen"
+            class="absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl dark:border-slate-700 dark:bg-slate-900"
+            role="listbox"
+          >
+            <p v-if="productOptionsLoading" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+              Searching products...
+            </p>
+            <template v-else>
+              <button
+                v-for="product in productOptions"
+                :key="product.id"
+                type="button"
+                class="block w-full rounded-lg px-3 py-2 text-left hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                role="option"
+                @mousedown.prevent="selectProduct(product)"
+              >
+                <span class="block text-sm font-semibold text-slate-800 dark:text-slate-100">{{ product.title }}</span>
+                <span class="block text-[11px] text-slate-500 dark:text-slate-400">Code: {{ product.product_code || '-' }}</span>
+              </button>
+            </template>
+            <p v-if="!productOptionsLoading && !productOptions.length" class="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+              No matching products in approved orders.
+            </p>
+          </div>
         </div>
-      </form>
+      </div>
     </div>
 
     <div class="mt-4 flex items-center justify-between">
@@ -293,7 +314,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, reactive, ref } from 'vue'
 import axios from 'axios'
 import { useToast } from 'vue-toastification'
 
@@ -306,11 +327,17 @@ const orders = ref([])
 const selectedIds = ref([])
 const showDispatchModal = ref(false)
 const productSearchInput = ref('')
+const productOptions = ref([])
+const productOptionsLoading = ref(false)
+const productDropdownOpen = ref(false)
+const selectedProduct = ref(null)
 const showAll = ref(false)
+let productSearchTimer = null
+let productRequestSequence = 0
 
 const filters = reactive({
   search: '',
-  product_search: '',
+  product_id: null,
   date_from: '',
   date_to: '',
   seller_id: null,
@@ -405,7 +432,7 @@ const fetchOrders = async () => {
     const { data } = await axios.get('/api/admin/orders/approved', {
       params: {
         search: filters.search || undefined,
-        product_search: filters.product_search || undefined,
+        product_id: filters.product_id || undefined,
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         seller_id: filters.seller_id || undefined,
@@ -439,17 +466,69 @@ const onGlobalFiltersChanged = (payload) => {
   fetchOrders()
 }
 
-const applyProductSearch = () => {
-  filters.product_search = productSearchInput.value
+const fetchProductOptions = async () => {
+  const requestSequence = ++productRequestSequence
+  productOptionsLoading.value = true
+  try {
+    const { data } = await axios.get('/api/admin/orders/approved/product-options', {
+      params: { search: productSearchInput.value.trim() || undefined },
+    })
+    if (requestSequence !== productRequestSequence) return
+    productOptions.value = Array.isArray(data?.products) ? data.products : []
+  } catch (error) {
+    if (requestSequence !== productRequestSequence) return
+    productOptions.value = []
+    toast.error(error?.response?.data?.message || 'Failed to search products.')
+  } finally {
+    if (requestSequence === productRequestSequence) productOptionsLoading.value = false
+  }
+}
+
+const openProductDropdown = () => {
+  productDropdownOpen.value = true
+  fetchProductOptions()
+}
+
+const closeProductDropdownWithDelay = () => {
+  window.setTimeout(() => {
+    productDropdownOpen.value = false
+  }, 140)
+}
+
+const onProductSearchInput = () => {
+  if (selectedProduct.value) {
+    selectedProduct.value = null
+    filters.product_id = null
+    filters.page = 1
+    fetchOrders()
+  }
+
+  productDropdownOpen.value = true
+  window.clearTimeout(productSearchTimer)
+  productSearchTimer = window.setTimeout(fetchProductOptions, 250)
+}
+
+const selectProduct = (product) => {
+  selectedProduct.value = product
+  productSearchInput.value = product.title || product.product_code || `Product #${product.id}`
+  filters.product_id = Number(product.id)
   filters.page = 1
+  productDropdownOpen.value = false
+  productOptions.value = []
   fetchOrders()
 }
 
-const clearProductSearch = () => {
+const clearProductSelection = () => {
+  const hadFilter = Boolean(filters.product_id)
+  productRequestSequence += 1
+  window.clearTimeout(productSearchTimer)
   productSearchInput.value = ''
-  filters.product_search = ''
+  selectedProduct.value = null
+  filters.product_id = null
   filters.page = 1
-  fetchOrders()
+  productOptions.value = []
+  productDropdownOpen.value = false
+  if (hadFilter) fetchOrders()
 }
 
 const changePage = (page) => {
@@ -462,6 +541,11 @@ const toggleShowAll = () => {
   filters.page = 1
   fetchOrders()
 }
+
+onBeforeUnmount(() => {
+  window.clearTimeout(productSearchTimer)
+  productRequestSequence += 1
+})
 
 const toggleOrder = (id) => {
   if (selectedIds.value.includes(id)) {

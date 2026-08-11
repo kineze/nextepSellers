@@ -242,6 +242,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/admin/orders/{order}/reject', [SellerOrderController::class, 'adminReject']);
     Route::post('/admin/orders/{order}/cancel-approved', [SellerOrderController::class, 'adminCancelApproved'])->whereNumber('order');
     Route::post('/admin/orders/bulk-approve', [SellerOrderController::class, 'adminBulkApprove']);
+    Route::get('/admin/orders/approved/product-options', [DispatchNoteController::class, 'adminApprovedProductOptions']);
     Route::get('/admin/orders/approved', [DispatchNoteController::class, 'adminApprovedOrders']);
     Route::get('/admin/orders/packed', [DispatchNoteController::class, 'adminPackedOrders']);
     Route::get('/admin/orders/shipped', [DispatchNoteController::class, 'adminShippedOrders']);

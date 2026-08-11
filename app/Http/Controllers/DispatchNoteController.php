@@ -7,6 +7,7 @@ use App\Models\DispatchNoteItem;
 use App\Models\Lot;
 use App\Models\LotItem;
 use App\Models\Order;
+use App\Models\Product;
 use App\Models\Seller;
 use App\Models\Varient;
 use Illuminate\Http\Request;
@@ -15,6 +16,44 @@ use Illuminate\Validation\ValidationException;
 
 class DispatchNoteController extends Controller
 {
+    public function adminApprovedProductOptions(Request $request)
+    {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $search = trim((string) ($validated['search'] ?? ''));
+
+        $products = Product::query()
+            ->select(['id', 'title', 'product_code'])
+            ->whereExists(function ($orderItemQuery) {
+                $orderItemQuery
+                    ->selectRaw('1')
+                    ->from('order_items')
+                    ->join('orders', 'orders.id', '=', 'order_items.order_id')
+                    ->whereColumn('order_items.product_id', 'products.id')
+                    ->where('orders.status', 'approved')
+                    ->where('orders.is_draft', false);
+            })
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($productQuery) use ($search) {
+                    $productQuery
+                        ->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('product_code', 'like', '%' . $search . '%')
+                        ->orWhereHas('varients', function ($variantQuery) use ($search) {
+                            $variantQuery->where('sku', 'like', '%' . $search . '%');
+                        });
+                });
+            })
+            ->orderBy('title')
+            ->limit(20)
+            ->get();
+
+        return response()->json([
+            'products' => $products,
+        ]);
+    }
+
     public function adminDispatchNotes(Request $request)
     {
         $validated = $request->validate([
@@ -1072,7 +1111,7 @@ class DispatchNoteController extends Controller
     {
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:120'],
-            'product_search' => ['nullable', 'string', 'max:120'],
+            'product_id' => ['nullable', 'integer', 'exists:products,id'],
             'seller_id' => ['nullable', 'integer', 'exists:sellers,id'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
@@ -1081,7 +1120,6 @@ class DispatchNoteController extends Controller
         ]);
 
         $search = trim((string) ($validated['search'] ?? ''));
-        $productSearch = trim((string) ($validated['product_search'] ?? ''));
         $perPage = (int) ($validated['per_page'] ?? 20);
 
         $query = Order::query()
@@ -1121,18 +1159,9 @@ class DispatchNoteController extends Controller
                 });
             });
         }
-        if ($productSearch !== '') {
-            $query->whereHas('items', function ($itemQuery) use ($productSearch) {
-                $itemQuery->where(function ($productOrVariantQuery) use ($productSearch) {
-                    $productOrVariantQuery->whereHas('product', function ($productQuery) use ($productSearch) {
-                        $productQuery
-                            ->where('title', 'like', '%' . $productSearch . '%')
-                            ->orWhere('product_code', 'like', '%' . $productSearch . '%');
-                    })
-                    ->orWhereHas('variant', function ($variantQuery) use ($productSearch) {
-                        $variantQuery->where('sku', 'like', '%' . $productSearch . '%');
-                    });
-                });
+        if (!empty($validated['product_id'])) {
+            $query->whereHas('items', function ($itemQuery) use ($validated) {
+                $itemQuery->where('product_id', (int) $validated['product_id']);
             });
         }
 
